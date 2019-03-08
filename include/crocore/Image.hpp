@@ -69,12 +69,12 @@ public:
     Type m_type = Type::UNKNOWN;
 
     static Ptr create(T *theData, uint32_t the_width, uint32_t the_height,
-                      uint32_t the_num_components = 1, bool not_dispose = false)
+                      uint32_t the_num_components = 0, bool not_dispose = false)
     {
         return Ptr(new Image_<T>(theData, the_width, the_height, the_num_components, not_dispose));
     };
 
-    static Ptr create(uint32_t the_width, uint32_t the_height, uint32_t the_num_components = 1)
+    static Ptr create(uint32_t the_width, uint32_t the_height, uint32_t the_num_components = 0)
     {
         return Ptr(new Image_<T>(the_width, the_height, the_num_components));
     };
@@ -124,12 +124,12 @@ private:
     Image_(T *theData,
            uint32_t the_width,
            uint32_t the_height,
-           uint32_t the_num_components = 1,
-           bool not_dispose = false);
+           uint32_t the_num_components,
+           bool not_dispose);
 
     Image_(uint32_t the_width,
            uint32_t the_height,
-           uint32_t the_num_components = 1);
+           uint32_t the_num_components);
 };
 
 class ImageLoadException : public std::runtime_error

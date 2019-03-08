@@ -60,13 +60,13 @@ ImagePtr create_image_from_data(const uint8_t *the_data, size_t the_num_bytes, i
     {
         float *data = stbi_loadf_from_memory(the_data, the_num_bytes, &width, &height, &num_components, num_channels);
         if(!data) throw ImageLoadException();
-        ret = Image_<float>::create(data, width, height, num_components);
+        ret = Image_<float>::create(data, width, height, num_channels ? num_channels : num_components);
         STBI_FREE(data);
     }else
     {
         uint8_t *data = stbi_load_from_memory(the_data, the_num_bytes, &width, &height, &num_components, num_channels);
         if(!data) throw ImageLoadException();
-        ret = Image_<uint8_t>::create(data, width, height, num_components);
+        ret = Image_<uint8_t>::create(data, width, height, num_channels ? num_channels : num_components);
         STBI_FREE(data);
     }
     LOG_TRACE << "decoded image: " << width << " x " << height << " (" << num_components << " ch)";
