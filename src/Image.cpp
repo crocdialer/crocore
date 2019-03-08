@@ -20,7 +20,7 @@
 
 #include "stb_image_write.h"
 
-#include "crocore/file_functions.hpp"
+#include "crocore/filesystem.hpp"
 #include "crocore/Image.hpp"
 
 namespace crocore {
