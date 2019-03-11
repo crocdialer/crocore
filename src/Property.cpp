@@ -25,7 +25,7 @@ namespace crocore
         
     }
     
-    Property::Property(const std::string &theName, const std::any &theValue):
+    Property::Property(const std::string &theName, const boost::any &theValue):
     m_impl(new PropertyImpl), m_value(theValue)
     {
         m_impl->m_name = theName;
