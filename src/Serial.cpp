@@ -224,8 +224,11 @@ namespace crocore
                     {
                         LOG_TRACE_1 << "disconnected: " << impl_cp->m_device_name;
                         
-                        if(self && impl_cp->m_disconnect_cb){ impl_cp->m_disconnect_cb(self); }
-                        
+                        if(self && impl_cp->m_disconnect_cb)
+                        {
+                            auto diconnect_cb = std::move(impl_cp->m_disconnect_cb);
+                            diconnect_cb(self);
+                        }
                         std::lock_guard<std::mutex> lock(g_mutex);
                         g_connected_devices.erase(impl_cp->m_device_name);
                     }
