@@ -23,22 +23,22 @@ extern char const *const UNKNOWN_IP;
 
 std::string local_ip(bool ipV6 = false);
 
-typedef std::shared_ptr<class tcp_connection> tcp_connection_ptr;
+using tcp_connection_ptr = std::shared_ptr<class tcp_connection>;
 
-void send_tcp(const std::string &str, const std::string &ip_string, int port);
+void send_tcp(const std::string &str, const std::string &ip_string, uint16_t port);
 
 void send_tcp(const std::vector<uint8_t> &bytes,
-              const std::string &ip_string, int port);
+              const std::string &ip_string, uint16_t port);
 
 void send_udp(const std::vector<uint8_t> &bytes,
-              const std::string &ip_string, int port);
+              const std::string &ip_string, uint16_t port);
 
-void send_udp_broadcast(const std::vector<uint8_t> &bytes, int port);
+void send_udp_broadcast(const std::vector<uint8_t> &bytes, uint16_t port);
 
 tcp_connection_ptr async_send_tcp(io_service_t &io_service,
                                   const std::string &str,
                                   const std::string &ip,
-                                  int port);
+                                  uint16_t port);
 
 tcp_connection_ptr async_send_tcp(io_service_t &io_service,
                                   const std::vector<uint8_t> &bytes,
@@ -48,31 +48,36 @@ tcp_connection_ptr async_send_tcp(io_service_t &io_service,
 void async_send_udp(io_service_t &io_service,
                     const std::string &str,
                     const std::string &ip,
-                    int port);
+                    uint16_t port);
 
 void async_send_udp(io_service_t &io_service,
                     const std::vector<uint8_t> &bytes,
                     const std::string &ip,
-                    int port);
+                    uint16_t port);
 
 void async_send_udp_broadcast(io_service_t &io_service,
                               const std::vector<uint8_t> &bytes,
-                              int port);
+                              uint16_t port);
 
 void async_send_udp_broadcast(io_service_t &io_service,
                               const std::string &str,
-                              int port);
+                              uint16_t port);
 
 class udp_server
 {
 public:
 
-    typedef std::function<void(const std::vector<uint8_t> &, const std::string &, uint16_t)>
-            receive_cb_t;
+    using receive_cb_t = std::function<void(const std::vector<uint8_t> &, const std::string &, uint16_t)>;
 
-    udp_server();
+    explicit udp_server(io_service_t &io_service, receive_cb_t f = receive_cb_t());
 
-    udp_server(io_service_t &io_service, receive_cb_t f = receive_cb_t());
+    udp_server() = default;
+
+    udp_server(udp_server &&the_other) noexcept;
+
+    udp_server(const udp_server &) = delete;
+
+    udp_server &operator=(udp_server the_other);
 
     void start_listen(uint16_t port);
 
@@ -92,11 +97,17 @@ class tcp_server
 {
 public:
 
-    typedef std::function<void(tcp_connection_ptr)> tcp_connection_callback;
+    using tcp_connection_callback = std::function<void(tcp_connection_ptr)>;
 
-    tcp_server();
+    explicit tcp_server(io_service_t &io_service, tcp_connection_callback ccb = tcp_connection_callback());
 
-    tcp_server(io_service_t &io_service, tcp_connection_callback ccb = tcp_connection_callback());
+    tcp_server() = default;
+
+    tcp_server(tcp_server &&other) noexcept;
+
+    tcp_server(const tcp_server &) = delete;
+
+    tcp_server &operator=(tcp_server other);
 
     void start_listen(uint16_t port);
 
@@ -107,7 +118,7 @@ public:
     uint16_t listening_port() const;
 
 private:
-    std::shared_ptr<struct tcp_server_impl> m_impl;
+    std::unique_ptr<struct tcp_server_impl> m_impl;
 };
 
 class tcp_connection : public Connection, public std::enable_shared_from_this<tcp_connection>
@@ -119,8 +130,8 @@ public:
                                const std::vector<uint8_t> &)> tcp_receive_cb_t;
 
     static tcp_connection_ptr create(io_service_t &io_service,
-                                     const std::string &the_ip,
-                                     uint16_t the_port,
+                                     const std::string &ip,
+                                     uint16_t port,
                                      tcp_receive_cb_t f = tcp_receive_cb_t());
 
     virtual ~tcp_connection();
@@ -141,13 +152,13 @@ public:
 
     std::string description() const override;
 
-    void set_receive_cb(receive_cb_t the_cb = receive_cb_t()) override;
+    void set_receive_cb(receive_cb_t cb) override;
 
-    void set_connect_cb(connection_cb_t cb = connection_cb_t()) override;
+    void set_connect_cb(connection_cb_t cb) override;
 
-    void set_disconnect_cb(connection_cb_t cb = connection_cb_t()) override;
+    void set_disconnect_cb(connection_cb_t cb) override;
 
-    void set_tcp_receive_cb(tcp_receive_cb_t f = tcp_receive_cb_t());
+    void set_tcp_receive_cb(tcp_receive_cb_t f);
 
     uint16_t port() const;
 
@@ -157,23 +168,21 @@ public:
 
     double timeout() const;
 
-    void set_timeout(double the_timeout_secs);
+    void set_timeout(double timeout_secs);
 
 private:
 
     friend tcp_server_impl;
     std::shared_ptr<struct tcp_connection_impl> m_impl;
 
-    tcp_connection(io_service_t &io_service,
-                   const std::string &the_ip,
-                   uint16_t the_port,
-                   tcp_receive_cb_t f);
+    tcp_connection(io_service_t &io_service, const std::string &ip, uint16_t port, tcp_receive_cb_t f);
 
-    tcp_connection();
+    tcp_connection() = default;
 
     void start_receive();
 
     void check_deadline();
 };
+
 }
 }// namespaces net kinski

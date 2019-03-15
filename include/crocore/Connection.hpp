@@ -55,13 +55,13 @@ public:
     virtual std::string description() const = 0;
 
     //! set a receive callback, that triggers when data is available for reading
-    virtual void set_receive_cb(receive_cb_t the_cb = receive_cb_t()) = 0;
+    virtual void set_receive_cb(receive_cb_t the_cb) = 0;
 
     //! set a connect callback, that fires when the connection is succesfully established
-    virtual void set_connect_cb(connection_cb_t cb = connection_cb_t()) = 0;
+    virtual void set_connect_cb(connection_cb_t cb) = 0;
 
     //! set a disconnect callback, that fires when the connection is closed
-    virtual void set_disconnect_cb(connection_cb_t cb = connection_cb_t()) = 0;
+    virtual void set_disconnect_cb(connection_cb_t cb) = 0;
 
     //! c-strings
     inline size_t write(const char *the_cstring)
