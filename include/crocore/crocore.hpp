@@ -33,7 +33,7 @@ using CLASS_NAME##UPtr = std::unique_ptr<CLASS_NAME>;
 #if defined(__APPLE__)
 // forward declare boost io_service
 namespace boost{ namespace asio{ class io_context; } }
-namespace crocdialer{ using io_service_t = boost::asio::io_context; }
+namespace crocore{ using io_service_t = boost::asio::io_context; }
 #else
 // forward declare boost io_service
 namespace boost { namespace asio { class io_service; }}
