@@ -114,7 +114,7 @@ public:
         Logger::get()->log(m_severity, m_module, m_Id, m_stream.str());
     }
 
-    inline std::ostringstream &getStream() { return m_stream; }
+    inline std::ostringstream &stream() { return m_stream; }
 
 private:
 
@@ -137,7 +137,7 @@ void log(Severity the_severity, const std::string &the_format_text, Args ... arg
 }
 
 #define KINSKI_LOG_CHECK(SEVERITY, MODULE, MSGID) crocore::Logger::get()->if_log(SEVERITY,MODULE,MSGID) \
-    && (crocore::MessagePort(SEVERITY,MODULE,MSGID).getStream())
+    && (crocore::MessagePort(SEVERITY,MODULE,MSGID).stream())
 
 #define LOG_INFO KINSKI_LOG_CHECK(crocore::Severity::INFO, __FILE__ ,__LINE__)
 #define LOG_TRACE KINSKI_LOG_CHECK(crocore::Severity::TRACE, __FILE__ ,__LINE__)
