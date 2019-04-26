@@ -23,6 +23,8 @@ class Property : public std::enable_shared_from_this<Property>
 {
 public:
 
+    virtual ~Property() = default;
+
     inline boost::any get_value() const { return m_value; };
 
     const std::string &name() const;
@@ -105,7 +107,7 @@ public:
     class WrongTypeSetException : public std::runtime_error
     {
     public:
-        WrongTypeSetException(const std::string &thePropertyName) :
+        explicit WrongTypeSetException(const std::string &thePropertyName) :
                 std::runtime_error(std::string("Wrong type in setValue for Property: ") + thePropertyName
                                    + std::string(" - Only the original type can be set.")) {}
     };
@@ -113,7 +115,7 @@ public:
     class WrongTypeGetException : public std::runtime_error
     {
     public:
-        WrongTypeGetException(const std::string &thePropertyName) :
+        explicit WrongTypeGetException(const std::string &thePropertyName) :
                 std::runtime_error(std::string("Wrong type in getValue for Property: ") + thePropertyName) {}
     };
 
@@ -149,7 +151,7 @@ public:
         return *this;
     };
 
-    inline Property_<T> &operator=(const T &theVal)
+    virtual inline Property_<T> &operator=(const T &theVal)
     {
         set(theVal);
         return *this;
@@ -191,7 +193,7 @@ protected:
     Property_(const std::string &theName, const T &theValue) :
             Property(theName, theValue) {};
 
-    explicit Property_(const Property_<T> &other) :
+    Property_(const Property_<T> &other) :
             Property(other.name(), other.get_value<T>()) {};
 
 };
@@ -224,9 +226,9 @@ public:
 
     typedef std::shared_ptr<RangedProperty<T>> Ptr;
 
-    virtual ~RangedProperty<T>() {};
+    ~RangedProperty<T>() override = default;
 
-    inline RangedProperty<T> &operator=(const T &theVal)
+    inline RangedProperty<T> &operator=(const T &theVal) override
     {
         this->set(theVal);
         return *this;
@@ -235,8 +237,8 @@ public:
     class BadBoundsException : public std::runtime_error
     {
     public:
-        BadBoundsException(std::string thePropertyName) :
-                std::runtime_error(std::string("Bad bounds set for Property: ") + thePropertyName) {}
+        explicit BadBoundsException(const std::string &property_name) :
+                std::runtime_error(std::string("Bad bounds set for Property: ") + property_name) {}
     };
 
     static Ptr create(const std::string &theName,
@@ -262,7 +264,7 @@ public:
         return std::make_pair(m_min, m_max);
     };
 
-    bool check_value(const boost::any &theVal)
+    bool check_value(const boost::any &theVal) override
     {
         T v;
 
