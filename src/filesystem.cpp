@@ -16,7 +16,7 @@ using namespace std;
 using namespace boost::filesystem;
 
 namespace crocore {
-namespace fs {
+namespace filesystem {
 
 /////////// implementation internal /////////////
 
@@ -351,11 +351,11 @@ fs::path search_file(const fs::path &the_file_name, bool use_entire_path)
         {
             return ret_path.string();
         }
-        std::set<std::string>::const_iterator it = get_search_paths().begin();
 
-        for(; it != get_search_paths().end(); ++it)
+        for(const auto &p : get_search_paths())
         {
-            ret_path = path(*it) / path(expanded_name);
+            ret_path = path(p) / path(expanded_name);
+
             if(boost::filesystem::exists(ret_path) && is_regular_file(ret_path))
             {
                 LOG_TRACE_2 << "found '" << trim_file_name << "' as: " << ret_path.string();

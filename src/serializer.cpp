@@ -76,38 +76,22 @@ bool PropertyIO::read_property(const PropertyConstPtr &theProperty,
     }else if(theProperty->is_of_type<std::vector<float>>())
     {
         theJsonValue[PROPERTY_TYPE] = PROPERTY_TYPE_FLOAT_ARRAY;
-        const auto &vals = theProperty->get_value<std::vector<float>>();
-        for(uint32_t i = 0; i < vals.size(); ++i)
-        {
-            theJsonValue[PROPERTY_VALUE][i] = vals[i];
-        }
+        theJsonValue[PROPERTY_VALUE] = theProperty->get_value<std::vector<float>>();;
         success = true;
     }else if(theProperty->is_of_type<std::vector<int>>())
     {
         theJsonValue[PROPERTY_TYPE] = PROPERTY_TYPE_INT_ARRAY;
-        const auto &vals = theProperty->get_value<std::vector<int>>();
-        for(uint32_t i = 0; i < vals.size(); ++i)
-        {
-            theJsonValue[PROPERTY_VALUE][i] = vals[i];
-        }
+        theJsonValue[PROPERTY_VALUE] = theProperty->get_value<std::vector<int>>();
         success = true;
     }else if(theProperty->is_of_type<std::vector<uint32_t>>())
     {
         theJsonValue[PROPERTY_TYPE] = PROPERTY_TYPE_UINT_ARRAY;
-        const auto &vals = theProperty->get_value<std::vector<uint32_t>>();
-        for(uint32_t i = 0; i < vals.size(); ++i)
-        {
-            theJsonValue[PROPERTY_VALUE][i] = vals[i];
-        }
+        theJsonValue[PROPERTY_VALUE] = theProperty->get_value<std::vector<uint32_t>>();
         success = true;
     }else if(theProperty->is_of_type<std::vector<std::string>>())
     {
         theJsonValue[PROPERTY_TYPE] = PROPERTY_TYPE_STRING_ARRAY;
-        const std::vector<std::string> &vals = theProperty->get_value<std::vector<std::string>>();
-        for(uint32_t i = 0; i < vals.size(); ++i)
-        {
-            theJsonValue[PROPERTY_VALUE][i] = vals[i];
-        }
+        theJsonValue[PROPERTY_VALUE] = theProperty->get_value<std::vector<std::string>>();
         success = true;
     }
     return success;
@@ -150,7 +134,7 @@ bool PropertyIO::write_property(PropertyPtr &theProperty,
 
     }else if(theJsonValue[PROPERTY_TYPE] == PROPERTY_TYPE_FLOAT_ARRAY)
     {
-        if(theJsonValue[PROPERTY_VALUE])
+        if(theJsonValue.contains(PROPERTY_VALUE))
         {
             std::vector<float> vals = theJsonValue[PROPERTY_VALUE];
 
@@ -160,13 +144,16 @@ bool PropertyIO::write_property(PropertyPtr &theProperty,
 
     }else if(theJsonValue[PROPERTY_TYPE] == PROPERTY_TYPE_STRING_ARRAY)
     {
-        std::vector<std::string> vals = theJsonValue[PROPERTY_VALUE];
-        theProperty->set_value<std::vector<std::string>>(vals);
-        success = true;
+        if(theJsonValue.contains(PROPERTY_VALUE))
+        {
+            const std::vector<std::string> &vals = theJsonValue[PROPERTY_VALUE];
+            theProperty->set_value<std::vector<std::string>>(vals);
+            success = true;
+        }
 
     }else if(theJsonValue[PROPERTY_TYPE] == PROPERTY_TYPE_INT_ARRAY)
     {
-        if(theJsonValue[PROPERTY_VALUE])
+        if(theJsonValue.contains(PROPERTY_VALUE))
         {
             std::vector<int> vals = theJsonValue[PROPERTY_VALUE];
             theProperty->set_value<std::vector<int>>(vals);
@@ -175,8 +162,11 @@ bool PropertyIO::write_property(PropertyPtr &theProperty,
 
     }else if(theJsonValue[PROPERTY_TYPE] == PROPERTY_TYPE_UINT_ARRAY)
     {
-        std::vector<uint32_t> vals = theJsonValue[PROPERTY_VALUE];
-        theProperty->set_value<std::vector<uint32_t>>(vals);
+        if(theJsonValue.contains(PROPERTY_VALUE))
+        {
+            std::vector<uint32_t> vals = theJsonValue[PROPERTY_VALUE];
+            theProperty->set_value<std::vector<uint32_t>>(vals);
+        }
         success = true;
 
     }else if(theJsonValue[PROPERTY_TYPE] == PROPERTY_TYPE_UNKNOWN)
@@ -195,7 +185,7 @@ void add_to_json_object(const std::list<ComponentPtr> &theComponentList,
                         const PropertyIO &theIO = PropertyIO(),
                         bool ignore_non_tweakable = false);
 
-bool is_valid(const std::string &the_string)
+bool is_valid_json(const std::string &the_string)
 {
     return json::parse(the_string) != json::value_t::discarded;
 }

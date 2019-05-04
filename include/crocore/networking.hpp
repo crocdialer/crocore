@@ -118,7 +118,7 @@ public:
     uint16_t listening_port() const;
 
 private:
-    std::unique_ptr<struct tcp_server_impl> m_impl;
+    std::shared_ptr<struct tcp_server_impl> m_impl;
 };
 
 class tcp_connection : public Connection, public std::enable_shared_from_this<tcp_connection>

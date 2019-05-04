@@ -12,7 +12,7 @@
 #include "crocore/crocore.hpp"
 
 namespace crocore {
-namespace fs {
+namespace filesystem {
 
 using path = std::string;
 
@@ -63,7 +63,7 @@ std::string get_filename_part(const path &the_file_name);
 
 std::string get_directory_part(const path &the_file_name);
 
-fs::path search_file(const path &the_file_name, bool use_entire_path = true);
+filesystem::path search_file(const path &the_file_name, bool use_entire_path = true);
 
 std::string get_working_directory();
 
@@ -100,5 +100,8 @@ public:
     explicit OpenFileFailed(const std::string &the_file_name) :
             std::runtime_error(std::string("Could not open file: ") + the_file_name) {}
 };
-}
-}
+}// namespace filesystem
+
+namespace fs = filesystem;
+
+}// namespace crocore
