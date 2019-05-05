@@ -8,7 +8,6 @@
 // __ ___ ____ _____ ______ _______ ________ _______ ______ _____ ____ ___ __
 
 #pragma once
-#pragma GCC diagnostic ignored "-Wint-in-bool-context"
 
 //#include <any>
 #include <boost/any.hpp>
