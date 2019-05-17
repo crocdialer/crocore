@@ -90,20 +90,15 @@ inline std::vector<std::string> split_by_string(const std::string &s,
 
     // remainder
     std::string remainder = s.substr(current_pos, s.size() - current_pos);
-    if(!remainder.empty())
-        elems.push_back(remainder);
-
+    if(!remainder.empty()){ elems.push_back(remainder); }
     return elems;
 }
 
 inline std::string remove_whitespace(const std::string &input)
 {
     std::string ret(input);
-    ret.erase(std::remove_if(ret.begin(),
-                             ret.end(),
-                             std::bind(std::isspace<char>,
-                                       std::placeholders::_1,
-                                       std::locale::classic())),
+    ret.erase(std::remove_if(ret.begin(), ret.end(),
+                             [](char c) { return std::isspace<char>(c, std::locale::classic()); }),
               ret.end());
     return ret;
 }
@@ -168,8 +163,8 @@ inline T swap_endian(T u)
 
 inline void swap_endian(void *dest, const void *src, size_t num_bytes)
 {
-    uint8_t *tmp = new uint8_t[num_bytes];
-    const uint8_t *src_ptr = (const uint8_t *)src;
+    auto tmp = new uint8_t[num_bytes];
+    auto src_ptr = (const uint8_t *)src;
 
     for(size_t i = 0; i < num_bytes; ++i)
     {

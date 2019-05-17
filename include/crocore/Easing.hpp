@@ -41,7 +41,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 #include <math.h>
 
-namespace crocdialer {
+namespace crocore {
 namespace animation {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -810,5 +810,5 @@ struct EaseInOutAtan
     float mInv2M, mA;
 };
 
-}
-} // namespace crocdialer + animation
+} // namespace animation
+} // namespace crocore
