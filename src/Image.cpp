@@ -80,24 +80,24 @@ void copy_image(const typename Image_<T>::Ptr &src_mat, typename Image_<T>::Ptr 
     if(!dst_mat){ dst_mat = Image_<T>::create(src_mat->width(), src_mat->height(), src_mat->num_components()); }
     uint32_t bytes_per_pixel = src_mat->num_components() * sizeof(T);
 
-    assert(src_mat->roi().width() <= src_mat->width() && src_mat->roi().height() <= src_mat->height());
-    assert(dst_mat->roi().width() <= dst_mat->width() && dst_mat->roi().height() <= dst_mat->height());
-    assert(src_mat->roi().width() == src_mat->roi().width() && src_mat->roi().height() == src_mat->roi().height());
+    assert(src_mat->roi().width <= src_mat->width() && src_mat->roi().height <= src_mat->height());
+    assert(dst_mat->roi().width <= dst_mat->width() && dst_mat->roi().height <= dst_mat->height());
+    assert(src_mat->roi().width == src_mat->roi().width && src_mat->roi().height == src_mat->roi().height);
 
-    uint32_t src_row_offset = src_mat->width() - src_mat->roi().width();
-    uint32_t dst_row_offset = dst_mat->width() - dst_mat->roi().width();
+    uint32_t src_row_offset = src_mat->width() - src_mat->roi().width;
+    uint32_t dst_row_offset = dst_mat->width() - dst_mat->roi().width;
 
     const T *src_area_start =
-            (uint8_t *)src_mat->data() + (src_mat->roi().y0 * src_mat->width() + src_mat->roi().x0) * bytes_per_pixel;
+            (uint8_t *)src_mat->data() + (src_mat->roi().y * src_mat->width() + src_mat->roi().x) * bytes_per_pixel;
     T *dst_area_start =
-            (uint8_t *)dst_mat->data() + (dst_mat->roi().y0 * dst_mat->width() + dst_mat->roi().x0) * bytes_per_pixel;
+            (uint8_t *)dst_mat->data() + (dst_mat->roi().y * dst_mat->width() + dst_mat->roi().x) * bytes_per_pixel;
 
-    for(uint32_t r = 0; r < src_mat->roi().height(); r++)
+    for(uint32_t r = 0; r < src_mat->roi().height; r++)
     {
-        const T *src_row_start = src_area_start + r * (src_mat->roi().width() + src_row_offset) * bytes_per_pixel;
-        T *dst_row_start = dst_area_start + r * (dst_mat->roi().width() + dst_row_offset) * bytes_per_pixel;
+        const T *src_row_start = src_area_start + r * (src_mat->roi().width + src_row_offset) * bytes_per_pixel;
+        T *dst_row_start = dst_area_start + r * (dst_mat->roi().width + dst_row_offset) * bytes_per_pixel;
 
-        for(uint32_t c = 0; c < src_mat->roi().width(); c++)
+        for(uint32_t c = 0; c < src_mat->roi().width; c++)
         {
             for(uint32_t ch = 0; ch < bytes_per_pixel; ch++)
                 dst_row_start[c * bytes_per_pixel + ch] = src_row_start[c * bytes_per_pixel + ch];
@@ -127,30 +127,30 @@ std::vector<uint8_t> encode_jpg(const ImagePtr &the_img)
 }
 
 template<class T>
-Image_<T>::Image_(T *the_data, uint32_t the_width, uint32_t the_height,
+Image_<T>::Image_(T *data, uint32_t width, uint32_t height,
                   uint32_t the_num_components, bool not_dispose):
-        m_data(the_data),
-        m_width(the_width),
-        m_height(the_height),
+        m_data(data),
+        m_width(width),
+        m_height(height),
         m_num_components(the_num_components),
-        m_roi(Area_<uint32_t>(0, 0, the_width - 1, the_height - 1)),
+        m_roi({0, 0, width, height}),
         do_not_dispose(not_dispose)
 {
     if(!do_not_dispose)
     {
         size_t num_bytes = m_height * m_width * m_num_components * sizeof(T);
         m_data = new T[num_bytes];
-        memcpy(m_data, the_data, num_bytes);
+        memcpy(m_data, data, num_bytes);
     }
 };
 
 template<class T>
-Image_<T>::Image_(uint32_t the_width, uint32_t the_height, uint32_t the_num_components):
-        m_data(new T[the_width * the_height * the_num_components * sizeof(T)]()),
-        m_width(the_width),
-        m_height(the_height),
-        m_num_components(the_num_components),
-        m_roi(Area_<uint32_t>(0, 0, the_width - 1, the_height - 1)),
+Image_<T>::Image_(uint32_t width, uint32_t height, uint32_t num_components):
+        m_data(new T[width * height * num_components * sizeof(T)]()),
+        m_width(width),
+        m_height(height),
+        m_num_components(num_components),
+        m_roi({0, 0, width, height}),
         do_not_dispose(false),
         m_type(Type::UNKNOWN)
 {

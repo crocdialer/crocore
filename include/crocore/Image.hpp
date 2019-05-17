@@ -83,7 +83,7 @@ public:
 
     inline T *data_start_for_roi() const
     {
-        return m_data + (m_roi.y0 * m_width + m_roi.x0) * m_num_components * sizeof(T);
+        return m_data + (m_roi.y * m_width + m_roi.x) * m_num_components * sizeof(T);
     }
 
     inline size_t num_bytes() const override { return m_height * m_width * m_num_components * sizeof(T); }
@@ -121,15 +121,15 @@ public:
 
 private:
 
-    Image_(T *theData,
-           uint32_t the_width,
-           uint32_t the_height,
+    Image_(T *data,
+           uint32_t width,
+           uint32_t height,
            uint32_t the_num_components,
            bool not_dispose);
 
-    Image_(uint32_t the_width,
-           uint32_t the_height,
-           uint32_t the_num_components);
+    Image_(uint32_t width,
+           uint32_t height,
+           uint32_t num_components);
 };
 
 class ImageLoadException : public std::runtime_error

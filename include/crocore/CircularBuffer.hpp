@@ -19,7 +19,9 @@ public:
 
     using value_type = T;
 
-    CircularBuffer(uint32_t the_cap = 10) :
+    CircularBuffer() = default;
+
+    explicit CircularBuffer(uint32_t the_cap) :
             m_array_size(the_cap + 1),
             m_first(0),
             m_last(0),
@@ -39,13 +41,9 @@ public:
     }
 
     // move constructor
-    CircularBuffer(CircularBuffer &&other) :
-            m_array_size(other.m_array_size),
-            m_first(other.m_first),
-            m_last(other.m_last),
-            m_data(other.m_data)
+    CircularBuffer(CircularBuffer &&other) noexcept : CircularBuffer()
     {
-        other.m_data = nullptr;
+        swap(*this, other);
     }
 
     ~CircularBuffer()
@@ -55,10 +53,7 @@ public:
 
     CircularBuffer &operator=(CircularBuffer other)
     {
-        std::swap(m_array_size, other.m_array_size);
-        std::swap(m_first, other.m_first);
-        std::swap(m_last, other.m_last);
-        std::swap(m_data, other.m_data);
+        swap(*this, other);
         return *this;
     }
 
@@ -96,7 +91,7 @@ public:
 
     inline const T &back() const { return m_data[(m_last - 1) % m_array_size]; }
 
-    inline uint32_t capacity() const { return m_array_size - 1; };
+    inline uint32_t capacity() const { return std::max(0, m_array_size - 1); };
 
     inline void set_capacity(uint32_t the_cap) { *this = CircularBuffer(the_cap); }
 
@@ -220,10 +215,18 @@ public:
 
     const_iterator end() const { return iterator(this, m_last); }
 
+    friend void swap(CircularBuffer<T> &lhs, CircularBuffer<T> &rhs)
+    {
+        std::swap(lhs.m_array_size, rhs.m_array_size);
+        std::swap(lhs.m_first, rhs.m_first);
+        std::swap(lhs.m_last, rhs.m_last);
+        std::swap(lhs.m_data, rhs.m_data);
+    }
+
 private:
 
-    int32_t m_array_size, m_first, m_last;
-    T *m_data;
+    int32_t m_array_size = 0, m_first = 0, m_last = 0;
+    T *m_data = nullptr;
 };
 
 }// namespace
