@@ -106,13 +106,13 @@ public:
 
     inline T &operator[](uint32_t the_index)
     {
-        if(the_index >= size()){ throw std::runtime_error("Out of bounds"); }
+        if(the_index >= size()){ throw std::runtime_error("CircularBuffer: index out of bounds"); }
         return m_data[(m_first + the_index) % m_array_size];
     };
 
     inline const T &operator[](uint32_t the_index) const
     {
-        if(the_index >= size()){ throw std::runtime_error("Out of bounds"); }
+        if(the_index >= size()){ throw std::runtime_error("CircularBuffer: index out of bounds"); }
         return m_data[(m_first + the_index) % m_array_size];
     };
 

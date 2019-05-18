@@ -17,7 +17,6 @@ namespace crocore {
 
 const std::string PropertyIO::PROPERTY_TYPE = "type";
 const std::string PropertyIO::PROPERTY_VALUE = "value";
-const std::string PropertyIO::PROPERTY_VALUES = "values";
 const std::string PropertyIO::PROPERTY_TYPE_FLOAT = "float";
 const std::string PropertyIO::PROPERTY_TYPE_STRING = "string";
 const std::string PropertyIO::PROPERTY_TYPE_DOUBLE = "double";

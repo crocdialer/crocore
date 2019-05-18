@@ -197,6 +197,10 @@ protected:
 
 };
 
+// avoids GCC warning int-in_bool-context
+template<>
+Property_<bool>& Property_<bool>::operator*=(const bool &theVal);
+
 extern template
 class Property_<int32_t>;
 

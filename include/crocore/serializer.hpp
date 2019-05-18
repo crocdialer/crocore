@@ -24,7 +24,6 @@ public:
 
     static const std::string PROPERTY_TYPE;
     static const std::string PROPERTY_VALUE;
-    static const std::string PROPERTY_VALUES;
     static const std::string PROPERTY_TYPE_FLOAT;
     static const std::string PROPERTY_TYPE_STRING;
     static const std::string PROPERTY_TYPE_DOUBLE;
@@ -38,8 +37,6 @@ public:
     static const std::string PROPERTY_TYPE_UNKNOWN;
     static const std::string PROPERTY_NAME;
     static const std::string PROPERTIES;
-
-    virtual ~PropertyIO() = default;
 
     virtual bool read_property(const PropertyConstPtr &theProperty, crocore::json &theJsonValue) const;
 
