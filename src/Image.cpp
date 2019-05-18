@@ -80,24 +80,24 @@ void copy_image(const typename Image_<T>::Ptr &src_mat, typename Image_<T>::Ptr 
     if(!dst_mat){ dst_mat = Image_<T>::create(src_mat->width(), src_mat->height(), src_mat->num_components()); }
     uint32_t bytes_per_pixel = src_mat->num_components() * sizeof(T);
 
-    assert(src_mat->roi().width <= src_mat->width() && src_mat->roi().height <= src_mat->height());
-    assert(dst_mat->roi().width <= dst_mat->width() && dst_mat->roi().height <= dst_mat->height());
-    assert(src_mat->roi().width == src_mat->roi().width && src_mat->roi().height == src_mat->roi().height);
+    assert(src_mat->roi.width <= src_mat->width() && src_mat->roi.height <= src_mat->height());
+    assert(dst_mat->roi.width <= dst_mat->width() && dst_mat->roi.height <= dst_mat->height());
+    assert(src_mat->roi.width == dst_mat->roi.width && src_mat->roi.height == dst_mat->roi.height);
 
-    uint32_t src_row_offset = src_mat->width() - src_mat->roi().width;
-    uint32_t dst_row_offset = dst_mat->width() - dst_mat->roi().width;
+    uint32_t src_row_offset = src_mat->width() - src_mat->roi.width;
+    uint32_t dst_row_offset = dst_mat->width() - dst_mat->roi.width;
 
     const T *src_area_start =
-            (uint8_t *)src_mat->data() + (src_mat->roi().y * src_mat->width() + src_mat->roi().x) * bytes_per_pixel;
+            (uint8_t *)src_mat->data() + (src_mat->roi.y * src_mat->width() + src_mat->roi.x) * bytes_per_pixel;
     T *dst_area_start =
-            (uint8_t *)dst_mat->data() + (dst_mat->roi().y * dst_mat->width() + dst_mat->roi().x) * bytes_per_pixel;
+            (uint8_t *)dst_mat->data() + (dst_mat->roi.y * dst_mat->width() + dst_mat->roi.x) * bytes_per_pixel;
 
-    for(uint32_t r = 0; r < src_mat->roi().height; r++)
+    for(uint32_t r = 0; r < src_mat->roi.height; r++)
     {
-        const T *src_row_start = src_area_start + r * (src_mat->roi().width + src_row_offset) * bytes_per_pixel;
-        T *dst_row_start = dst_area_start + r * (dst_mat->roi().width + dst_row_offset) * bytes_per_pixel;
+        const T *src_row_start = src_area_start + r * (src_mat->roi.width + src_row_offset) * bytes_per_pixel;
+        T *dst_row_start = dst_area_start + r * (dst_mat->roi.width + dst_row_offset) * bytes_per_pixel;
 
-        for(uint32_t c = 0; c < src_mat->roi().width; c++)
+        for(uint32_t c = 0; c < src_mat->roi.width; c++)
         {
             for(uint32_t ch = 0; ch < bytes_per_pixel; ch++)
                 dst_row_start[c * bytes_per_pixel + ch] = src_row_start[c * bytes_per_pixel + ch];
@@ -133,7 +133,6 @@ Image_<T>::Image_(T *data, uint32_t width, uint32_t height,
         m_width(width),
         m_height(height),
         m_num_components(the_num_components),
-        m_roi({0, 0, width, height}),
         do_not_dispose(not_dispose)
 {
     if(!do_not_dispose)
@@ -142,6 +141,7 @@ Image_<T>::Image_(T *data, uint32_t width, uint32_t height,
         m_data = new T[num_bytes];
         memcpy(m_data, data, num_bytes);
     }
+    roi = {0, 0, width, height};
 };
 
 template<class T>
@@ -150,49 +150,22 @@ Image_<T>::Image_(uint32_t width, uint32_t height, uint32_t num_components):
         m_width(width),
         m_height(height),
         m_num_components(num_components),
-        m_roi({0, 0, width, height}),
-        do_not_dispose(false),
-        m_type(Type::UNKNOWN)
+        do_not_dispose(false)
 {
-
-}
-
-template<class T>
-Image_<T>::Image_(const Image_<T> &the_other):
-        m_data(new T[the_other.m_width * the_other.m_height * the_other.m_num_components * sizeof(T)]),
-        m_width(the_other.m_width),
-        m_height(the_other.m_height),
-        m_num_components(the_other.m_num_components),
-        m_roi(the_other.m_roi),
-        do_not_dispose(the_other.do_not_dispose),
-        m_type(the_other.m_type)
-{
-    memcpy(m_data, the_other.m_data, m_width * m_height * m_num_components);
+    roi = {0, 0, width, height};
 }
 
 template<class T>
 Image_<T>::Image_(Image_<T> &&the_other) noexcept :
-        m_data(the_other.m_data),
-        m_width(the_other.m_width),
-        m_height(the_other.m_height),
-        m_num_components(the_other.m_num_components),
-        m_roi(the_other.m_roi),
-        do_not_dispose(the_other.do_not_dispose),
-        m_type(the_other.m_type)
+        Image_()
 {
-    the_other.m_data = nullptr;
+    swap(*this, the_other);
 }
 
 template<class T>
 Image_<T> &Image_<T>::operator=(Image_<T> the_other)
 {
-    std::swap(m_data, the_other.m_data);
-    std::swap(m_height, the_other.m_height);
-    std::swap(m_width, the_other.m_width);
-    std::swap(m_num_components, the_other.m_num_components);
-    std::swap(m_roi, the_other.m_roi);
-    std::swap(do_not_dispose, the_other.do_not_dispose);
-    std::swap(m_type, the_other.m_type);
+    swap(*this, the_other);
     return *this;
 }
 
@@ -200,6 +173,18 @@ template<class T>
 Image_<T>::~Image_()
 {
     if(!do_not_dispose){ delete[](m_data); }
+}
+
+template<class T>
+void swap(Image_<T> &lhs, Image_<T> &rhs)
+{
+    std::swap(lhs.m_data, rhs.m_data);
+    std::swap(lhs.m_height, rhs.m_height);
+    std::swap(lhs.m_width, rhs.m_width);
+    std::swap(lhs.m_num_components, rhs.m_num_components);
+    std::swap(lhs.roi, rhs.roi);
+    std::swap(lhs.do_not_dispose, rhs.do_not_dispose);
+    std::swap(lhs.type, rhs.type);
 }
 
 template<class T>
@@ -332,7 +317,7 @@ ImagePtr Image_<T>::convolve(const std::vector<float> &the_kernel)
 template<class T>
 void Image_<T>::offsets(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a) const
 {
-    switch(m_type)
+    switch(type)
     {
         case Type::BGR:
             *r = 2 * sizeof(T);

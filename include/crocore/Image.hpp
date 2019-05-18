@@ -38,10 +38,6 @@ public:
 
     virtual size_t num_bytes() const = 0;
 
-    virtual Type type() const = 0;
-
-    virtual const Area_ <uint32_t> &roi() const = 0;
-
     virtual void offsets(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a = nullptr) const = 0;
 
     virtual ImagePtr resize(uint32_t the_width, uint32_t the_height, uint32_t the_num_channels = 0) = 0;
@@ -52,6 +48,10 @@ public:
     virtual ImagePtr blur() = 0;
 
     virtual void flip(bool horizontal = false) = 0;
+
+    Type type = Type::UNKNOWN;
+
+    Area_<uint32_t> roi = {};
 };
 
 template<class T>
@@ -76,14 +76,10 @@ public:
 
     inline T *data_start_for_roi() const
     {
-        return m_data + (m_roi.y * m_width + m_roi.x) * m_num_components * sizeof(T);
+        return m_data + (roi.y * m_width + roi.x) * m_num_components * sizeof(T);
     }
 
     inline size_t num_bytes() const override { return m_height * m_width * m_num_components * sizeof(T); }
-
-    inline const Area_ <uint32_t> &roi() const override { return m_roi; }
-
-    inline Type type() const override { return m_type; };
 
     ImagePtr resize(uint32_t the_width, uint32_t the_height, uint32_t the_num_channels = 0) override;
 
@@ -104,7 +100,7 @@ public:
 
     inline uint32_t num_components() const override { return m_num_components; };
 
-    Image_(const Image_ &the_other);
+    Image_(const Image_ &the_other) = delete;
 
     Image_(Image_ &&the_other) noexcept;
 
@@ -112,7 +108,12 @@ public:
 
     virtual ~Image_();
 
+    template<class S>
+    friend void swap(Image_<S> &lhs, Image_<S> &rhs);
+
 private:
+
+    Image_() = default;
 
     Image_(T *data,
            uint32_t width,
@@ -127,9 +128,7 @@ private:
     T *m_data = nullptr;
     uint32_t m_width = 0, m_height = 0;
     uint32_t m_num_components = 1;
-    Area_<uint32_t> m_roi;
     bool do_not_dispose = false;
-    Type m_type = Type::UNKNOWN;
 };
 
 class ImageLoadException : public std::runtime_error
