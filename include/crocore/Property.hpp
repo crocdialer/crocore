@@ -16,7 +16,7 @@
 
 namespace crocore {
 
-DEFINE_CLASS_PTR(Property);
+DEFINE_CLASS_PTR(Property)
 
 class Property : public std::enable_shared_from_this<Property>
 {
