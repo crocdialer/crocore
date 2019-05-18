@@ -247,7 +247,7 @@ namespace crocore
         }
     }
     
-    void Logger::add_outstream(ConnectionPtr the_con)
+    void Logger::add_outstream(const ConnectionPtr& the_con)
     {
         if(the_con && the_con->is_open())
         {

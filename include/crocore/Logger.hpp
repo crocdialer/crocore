@@ -11,11 +11,10 @@
 
 #include <sstream>
 #include <set>
-#include "crocore.hpp"
+#include "crocore/crocore.hpp"
+#include "crocore/Connection.hpp"
 
 namespace crocore {
-// forward declare
-DEFINE_CLASS_PTR(Connection);
 
 enum class Severity
 {
@@ -71,7 +70,7 @@ public:
 
     void remove_outstream(std::ostream *the_stream);
 
-    void add_outstream(ConnectionPtr the_con);
+    void add_outstream(const ConnectionPtr &the_con);
 
     void remove_outstream(const ConnectionPtr &the_con);
 
@@ -136,18 +135,18 @@ void log(Severity the_severity, const std::string &the_format_text, Args ... arg
     l->log(the_severity, __FILE__, __LINE__, buf.get());
 }
 
-#define KINSKI_LOG_CHECK(SEVERITY, MODULE, MSGID) crocore::Logger::get()->if_log(SEVERITY,MODULE,MSGID) \
+#define CROCORE_LOG_CHECK(SEVERITY, MODULE, MSGID) crocore::Logger::get()->if_log(SEVERITY,MODULE,MSGID) \
     && (crocore::MessagePort(SEVERITY,MODULE,MSGID).stream())
 
-#define LOG_INFO KINSKI_LOG_CHECK(crocore::Severity::INFO, __FILE__ ,__LINE__)
-#define LOG_TRACE KINSKI_LOG_CHECK(crocore::Severity::TRACE, __FILE__ ,__LINE__)
-#define LOG_TRACE_1 KINSKI_LOG_CHECK(crocore::Severity::TRACE_1, __FILE__ ,__LINE__)
-#define LOG_TRACE_2 KINSKI_LOG_CHECK(crocore::Severity::TRACE_2, __FILE__ ,__LINE__)
-#define LOG_TRACE_3 KINSKI_LOG_CHECK(crocore::Severity::TRACE_3, __FILE__ ,__LINE__)
-#define LOG_DEBUG KINSKI_LOG_CHECK(crocore::Severity::DEBUG, __FILE__ ,__LINE__)
-#define LOG_PRINT KINSKI_LOG_CHECK(crocore::Severity::PRINT, __FILE__ ,__LINE__)
-#define LOG_ERROR KINSKI_LOG_CHECK(crocore::Severity::ERROR, __FILE__ ,__LINE__)
-#define LOG_WARNING KINSKI_LOG_CHECK(crocore::Severity::WARNING, __FILE__ ,__LINE__)
+#define LOG_INFO CROCORE_LOG_CHECK(crocore::Severity::INFO, __FILE__, __LINE__)
+#define LOG_TRACE CROCORE_LOG_CHECK(crocore::Severity::TRACE, __FILE__, __LINE__)
+#define LOG_TRACE_1 CROCORE_LOG_CHECK(crocore::Severity::TRACE_1, __FILE__, __LINE__)
+#define LOG_TRACE_2 CROCORE_LOG_CHECK(crocore::Severity::TRACE_2, __FILE__, __LINE__)
+#define LOG_TRACE_3 CROCORE_LOG_CHECK(crocore::Severity::TRACE_3, __FILE__, __LINE__)
+#define LOG_DEBUG CROCORE_LOG_CHECK(crocore::Severity::DEBUG, __FILE__, __LINE__)
+#define LOG_PRINT CROCORE_LOG_CHECK(crocore::Severity::PRINT, __FILE__, __LINE__)
+#define LOG_ERROR CROCORE_LOG_CHECK(crocore::Severity::ERROR, __FILE__, __LINE__)
+#define LOG_WARNING CROCORE_LOG_CHECK(crocore::Severity::WARNING, __FILE__, __LINE__)
 
 #define LOG_INFO_IF(b) b && LOG_INFO
 #define LOG_TRACE_IF(b) b && LOG_TRACE

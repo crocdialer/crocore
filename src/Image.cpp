@@ -171,7 +171,7 @@ Image_<T>::Image_(const Image_<T> &the_other):
 }
 
 template<class T>
-Image_<T>::Image_(Image_<T> &&the_other):
+Image_<T>::Image_(Image_<T> &&the_other) noexcept :
         m_data(the_other.m_data),
         m_width(the_other.m_width),
         m_height(the_other.m_height),
