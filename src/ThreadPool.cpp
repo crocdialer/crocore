@@ -1,3 +1,5 @@
+#include <memory>
+
 // __ ___ ____ _____ ______ _______ ________ _______ ______ _____ ____ ___ __
 //
 // Copyright (C) 2012-2016, Fabian Schmidt <crocdialer@googlemail.com>
@@ -17,8 +19,7 @@
 #include "crocore/Timer.hpp"
 #include "crocore/ThreadPool.hpp"
 
-namespace crocore
-{
+namespace crocore {
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -58,13 +59,13 @@ struct ThreadPoolImpl
     std::vector<std::thread> threads;
 };
 
-ThreadPool::ThreadPool(size_t num):
-m_impl(std::make_unique<ThreadPoolImpl>())
+ThreadPool::ThreadPool(size_t num) :
+        m_impl(std::make_unique<ThreadPoolImpl>())
 {
     set_num_threads(num);
 }
 
-ThreadPool::ThreadPool(ThreadPool &&other)
+ThreadPool::ThreadPool(ThreadPool &&other) noexcept
 {
     m_impl = std::move(other.m_impl);
 }
@@ -75,7 +76,7 @@ ThreadPool::~ThreadPool()
     join_all();
 }
 
-ThreadPool& ThreadPool::operator=(ThreadPool other)
+ThreadPool &ThreadPool::operator=(ThreadPool other)
 {
     std::swap(m_impl, other.m_impl);
     return *this;
@@ -87,15 +88,13 @@ void ThreadPool::submit(std::function<void()> the_task)
     m_impl->io_service.post(the_task);
 }
 
-void ThreadPool::submit_with_delay(std::function<void()> the_task, double the_delay)
+void ThreadPool::submit_with_delay(const std::function<void()> &the_task, double the_delay)
 {
     if(!the_task){ return; }
 
     Timer t(m_impl->io_service);
-    t.set_callback([t, the_task]()
-    {
-        the_task();
-    });
+    auto functor = [t, the_task]() { the_task(); };
+    t.set_callback(functor);
     t.expires_from_now(the_delay);
 }
 
@@ -104,12 +103,12 @@ std::size_t ThreadPool::poll()
     return m_impl->io_service.poll();
 }
 
-io_service_t& ThreadPool::io_service()
+io_service_t &ThreadPool::io_service()
 {
     return m_impl->io_service;
 }
 
-int ThreadPool::get_num_threads()
+int ThreadPool::num_threads()
 {
     return m_impl->threads.size();
 }
@@ -118,13 +117,13 @@ void ThreadPool::join_all()
 {
     m_impl->io_work.reset();
 
-    for (auto &thread : m_impl->threads)
+    for(auto &thread : m_impl->threads)
     {
         try
         {
             if(thread.joinable()){ thread.join(); }
         }
-        catch(std::exception &e){LOG_ERROR<<e.what();}
+        catch(std::exception &e) { LOG_ERROR << e.what(); }
     }
     m_impl->threads.clear();
 }
@@ -136,14 +135,14 @@ void ThreadPool::set_num_threads(int num)
         try
         {
             join_all();
-            m_impl->io_work = io_work_ptr(new boost::asio::io_service::work(m_impl->io_service));
+            m_impl->io_work = std::make_unique<boost::asio::io_service::work>(m_impl->io_service);
 
             for(int i = 0; i < num; ++i)
             {
-                m_impl->threads.push_back(std::thread([this](){ m_impl->io_service.run(); }));
+                m_impl->threads.emplace_back([this]() { m_impl->io_service.run(); });
             }
         }
-        catch(std::exception &e){LOG_ERROR<<e.what();}
+        catch(std::exception &e) { LOG_ERROR << e.what(); }
     }
 }
 }

@@ -1,3 +1,5 @@
+#include <utility>
+
 // __ ___ ____ _____ ______ _______ ________ _______ ______ _____ ____ ___ __
 //
 // Copyright (C) 2012-2016, Fabian Schmidt <crocdialer@googlemail.com>
@@ -113,7 +115,7 @@ struct timer_impl
     
     timer_impl(boost::asio::io_service &io, Timer::timer_cb_t cb):
     m_timer(io),
-    m_callback(cb),
+    m_callback(std::move(cb)),
     m_periodic(false),
     m_running(false)
     {}
@@ -124,8 +126,6 @@ struct timer_impl
         catch(boost::system::system_error& e){ LOG_WARNING << e.what(); }
     }
 };
-
-Timer::Timer(){}
 
 Timer::Timer(io_service_t &io, Timer::timer_cb_t cb):
 m_impl(new timer_impl(io, cb)){}

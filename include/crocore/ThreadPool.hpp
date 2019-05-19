@@ -28,7 +28,7 @@ class Task : public std::enable_shared_from_this<Task>
 {
 public:
     static TaskPtr create(const std::string &the_desc = "",
-                          std::function<void()> the_functor = std::function<void()>())
+                          const std::function<void()>& the_functor = std::function<void()>())
     {
         auto task = TaskPtr(new Task());
         if(the_functor){ task->add_work(the_functor); }
@@ -61,7 +61,7 @@ public:
 
     double duration() const;
 
-    inline void add_work(std::function<void()> the_work) { m_functors.push_back(the_work); }
+    inline void add_work(const std::function<void()>& the_work) { m_functors.push_back(the_work); }
 
 private:
     Task() : m_id(s_id_counter++), m_start_time(std::chrono::steady_clock::now())
@@ -84,7 +84,9 @@ public:
 
     explicit ThreadPool(size_t num = 1);
 
-    ThreadPool(ThreadPool &&other);
+    ThreadPool(ThreadPool &&other) noexcept;
+
+    ThreadPool(const ThreadPool &other) = delete;
 
     ~ThreadPool();
 
@@ -92,7 +94,7 @@ public:
 
     void set_num_threads(int num);
 
-    int get_num_threads();
+    int num_threads();
 
     io_service_t &io_service();
 
@@ -105,7 +107,7 @@ public:
      * submit a task to be processed by the threadpool
      * with an delay in seconds
      */
-    void submit_with_delay(std::function<void()> the_task, double the_delay);
+    void submit_with_delay(const std::function<void()>& the_task, double the_delay);
 
     /*!
      * poll
