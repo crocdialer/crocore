@@ -12,9 +12,10 @@
 #include <sstream>
 #include <set>
 #include "crocore/crocore.hpp"
-#include "crocore/Connection.hpp"
 
 namespace crocore {
+
+class Connection;
 
 enum class Severity
 {
@@ -70,9 +71,9 @@ public:
 
     void remove_outstream(std::ostream *the_stream);
 
-    void add_outstream(const ConnectionPtr &the_con);
+    void add_outstream(const std::shared_ptr<Connection> &the_con);
 
-    void remove_outstream(const ConnectionPtr &the_con);
+    void remove_outstream(const std::shared_ptr<Connection> &the_con);
 
     void clear_streams();
 
