@@ -1,5 +1,3 @@
-#include <memory>
-
 // __ ___ ____ _____ ______ _______ ________ _______ ______ _____ ____ ___ __
 //
 // Copyright (C) 2012-2016, Fabian Schmidt <crocdialer@googlemail.com>
@@ -82,10 +80,14 @@ ThreadPool &ThreadPool::operator=(ThreadPool other)
     return *this;
 }
 
-void ThreadPool::submit(std::function<void()> the_task)
+std::future<void> ThreadPool::submit(const std::function<void()> &fn)
 {
-    if(!the_task){ return; }
-    m_impl->io_service.post(the_task);
+    if(!fn){ return {}; }
+    using task_t = std::packaged_task<void()>;
+    auto packed_task = std::make_shared<task_t>(fn);
+    auto future = packed_task->get_future();
+    m_impl->io_service.post(std::bind(&task_t::operator(), packed_task));
+    return future;
 }
 
 void ThreadPool::submit_with_delay(const std::function<void()> &the_task, double the_delay)

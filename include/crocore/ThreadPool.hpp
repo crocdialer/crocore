@@ -15,6 +15,7 @@
 #pragma once
 
 #include <atomic>
+#include <future>
 #include <map>
 #include <mutex>
 #include <chrono>
@@ -101,7 +102,7 @@ public:
     /*!
      * submit a task to be processed by the threadpool
      */
-    void submit(std::function<void()> the_task);
+    std::future<void> submit(const std::function<void()> &fn);
 
     /*!
      * submit a task to be processed by the threadpool
