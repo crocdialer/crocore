@@ -25,11 +25,20 @@ namespace crocore {
 
 DEFINE_CLASS_PTR(Task);
 
+/**
+ * @brief   wait for completion of all tasks, represented by their futures
+ * @param   tasks   the provided futures to wait for
+ */
+inline void wait_all(const std::vector<std::future<void>> &tasks)
+{
+    for(auto &t : tasks){ t.wait(); }
+}
+
 class Task : public std::enable_shared_from_this<Task>
 {
 public:
     static TaskPtr create(const std::string &the_desc = "",
-                          const std::function<void()>& the_functor = std::function<void()>())
+                          const std::function<void()> &the_functor = std::function<void()>())
     {
         auto task = TaskPtr(new Task());
         if(the_functor){ task->add_work(the_functor); }
@@ -62,7 +71,7 @@ public:
 
     double duration() const;
 
-    inline void add_work(const std::function<void()>& the_work) { m_functors.push_back(the_work); }
+    inline void add_work(const std::function<void()> &the_work) { m_functors.push_back(the_work); }
 
 private:
     Task() : m_id(s_id_counter++), m_start_time(std::chrono::steady_clock::now())
@@ -102,13 +111,13 @@ public:
     /*!
      * submit a task to be processed by the threadpool
      */
-    std::future<void> submit(const std::function<void()> &fn);
+    std::future<void> post(const std::function<void()> &fn);
 
     /*!
      * submit a task to be processed by the threadpool
      * with an delay in seconds
      */
-    void submit_with_delay(const std::function<void()>& the_task, double the_delay);
+    void post_with_delay(const std::function<void()> &the_task, double the_delay);
 
     /*!
      * poll

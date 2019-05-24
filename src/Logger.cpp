@@ -219,11 +219,11 @@ namespace crocore
         std::string log_str = stream.str();
         
         // pass log string to outstreams
-        thread_pool.submit([this, log_str]()
-        {
-            std::lock_guard<std::mutex> lock(mutex);
-            for (auto &os : m_out_streams){ *os << log_str << std::endl; }
-        });
+        thread_pool.post([this, log_str]()
+                         {
+                             std::lock_guard<std::mutex> lock(mutex);
+                             for(auto &os : m_out_streams){ *os << log_str << std::endl; }
+                         });
     }
     
     void Logger::add_outstream(std::ostream *the_stream)

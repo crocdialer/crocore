@@ -80,7 +80,7 @@ ThreadPool &ThreadPool::operator=(ThreadPool other)
     return *this;
 }
 
-std::future<void> ThreadPool::submit(const std::function<void()> &fn)
+std::future<void> ThreadPool::post(const std::function<void()> &fn)
 {
     if(!fn){ return {}; }
     using task_t = std::packaged_task<void()>;
@@ -90,7 +90,7 @@ std::future<void> ThreadPool::submit(const std::function<void()> &fn)
     return future;
 }
 
-void ThreadPool::submit_with_delay(const std::function<void()> &the_task, double the_delay)
+void ThreadPool::post_with_delay(const std::function<void()> &the_task, double the_delay)
 {
     if(!the_task){ return; }
 
