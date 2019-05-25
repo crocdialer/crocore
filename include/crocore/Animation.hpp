@@ -1,9 +1,3 @@
-#include <utility>
-
-#include <utility>
-
-#include <utility>
-
 // __ ___ ____ _____ ______ _______ ________ _______ ______ _____ ____ ___ __
 //
 // Copyright (C) 2012-2016, Fabian Schmidt <crocdialer@googlemail.com>
