@@ -29,11 +29,12 @@ DEFINE_CLASS_PTR(Task)
  * @brief   wait for completion of all tasks, represented by their futures
  * @param   tasks   the provided futures to wait for
  */
-inline void wait_all(const std::vector<std::future<void>> &tasks)
+template <typename Collection>
+inline void wait_all(const Collection &futures)
 {
-    for(auto &t : tasks)
+    for(const auto &f : futures)
     {
-        if(t.valid()){ t.wait(); }
+        if(f.valid()){ f.wait(); }
     }
 }
 
@@ -111,10 +112,24 @@ public:
 
     io_service_t &io_service();
 
-    /*!
-     * submit a task to be processed by the threadpool
+    /**
+     *
+     * @tparam  Func function template parameter
+     * @tparam  Args template params for optional arguments
+     * @param   f
+     * @param   args
+     * @return  a std::future
      */
-    std::future<void> post(const std::function<void()> &fn);
+    template<typename Func, typename... Args>
+    std::future<std::result_of_t<Func(Args...)>> post(Func &&f, Args&&... args)
+    {
+        using result_t = std::result_of_t<Func(Args...)>;
+        using task_t = std::packaged_task<result_t()>;
+        auto packed_task = std::make_shared<task_t>(std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
+        auto future = packed_task->get_future();
+        post_impl(std::bind(&task_t::operator(), packed_task));
+        return future;
+    }
 
     /*!
      * submit a task to be processed by the threadpool
@@ -133,6 +148,9 @@ public:
     void join_all();
 
 private:
+
+    void post_impl(const std::function<void()> &fn);
+
     std::unique_ptr<struct ThreadPoolImpl> m_impl;
 };
 }//namespace

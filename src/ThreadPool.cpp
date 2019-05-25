@@ -80,14 +80,9 @@ ThreadPool &ThreadPool::operator=(ThreadPool other)
     return *this;
 }
 
-std::future<void> ThreadPool::post(const std::function<void()> &fn)
+void ThreadPool::post_impl(const std::function<void()> &fn)
 {
-    if(!fn){ return {}; }
-    using task_t = std::packaged_task<void()>;
-    auto packed_task = std::make_shared<task_t>(fn);
-    auto future = packed_task->get_future();
-    m_impl->io_service.post(std::bind(&task_t::operator(), packed_task));
-    return future;
+    m_impl->io_service.post(fn);
 }
 
 void ThreadPool::post_with_delay(const std::function<void()> &the_task, double the_delay)
