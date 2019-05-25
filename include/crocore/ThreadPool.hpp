@@ -23,7 +23,7 @@
 
 namespace crocore {
 
-DEFINE_CLASS_PTR(Task);
+DEFINE_CLASS_PTR(Task)
 
 /**
  * @brief   wait for completion of all tasks, represented by their futures
@@ -31,7 +31,10 @@ DEFINE_CLASS_PTR(Task);
  */
 inline void wait_all(const std::vector<std::future<void>> &tasks)
 {
-    for(auto &t : tasks){ t.wait(); }
+    for(auto &t : tasks)
+    {
+        if(t.valid()){ t.wait(); }
+    }
 }
 
 class Task : public std::enable_shared_from_this<Task>
