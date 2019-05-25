@@ -87,11 +87,15 @@ void Animation::update()
         }
     }
 
-    // this applies easing and passes it to an interpolation function
-    float val = m_ease_fn(progress());
-
+    // get current progress, eventually revert it
+    float val = progress();
     if(m_playback_type == PLAYBACK_BACKWARD){ val = 1.f - val; }
-    m_interpolate_fn(val);
+
+    // optionally apply easing
+    if(m_ease_fn){ val = m_ease_fn(val); }
+
+    // pass the value to an interpolation function
+    if(m_interpolate_fn){ m_interpolate_fn(val); }
 
     // fire update callback, if any
     if(m_update_fn){ m_update_fn(); }
