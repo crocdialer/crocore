@@ -101,8 +101,6 @@ public:
 
     void set_start_callback(callback_t cb) { m_start_fn = std::move(cb); }
 
-    void set_update_callback(callback_t cb) { m_update_fn = std::move(cb); }
-
     void set_finish_callback(callback_t cb) { m_finish_fn = std::move(cb); }
 
     void set_reverse_start_callback(callback_t cb) { m_reverse_start_fn = std::move(cb); }
@@ -123,7 +121,7 @@ private:
     std::chrono::steady_clock::time_point m_start_time, m_end_time;
     ease_fn_t m_ease_fn = animation::EaseNone();
     interpolate_fn_t m_interpolate_fn;
-    callback_t m_start_fn, m_update_fn, m_finish_fn, m_reverse_start_fn, m_reverse_finish_fn;
+    callback_t m_start_fn, m_finish_fn, m_reverse_start_fn, m_reverse_finish_fn;
 
 };
 

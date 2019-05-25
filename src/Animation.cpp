@@ -94,9 +94,6 @@ void Animation::update()
 
     // pass the value to an interpolation function
     if(m_interpolate_fn){ m_interpolate_fn(val); }
-
-    // fire update callback, if any
-    if(m_update_fn){ m_update_fn(); }
 }
 
 /*!
