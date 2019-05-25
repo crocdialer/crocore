@@ -13,8 +13,6 @@
 
 #include <boost/asio.hpp>
 #include <thread>
-
-#include "crocore/Timer.hpp"
 #include "crocore/ThreadPool.hpp"
 
 namespace crocore {
@@ -83,16 +81,6 @@ ThreadPool &ThreadPool::operator=(ThreadPool other)
 void ThreadPool::post_impl(const std::function<void()> &fn)
 {
     m_impl->io_service.post(fn);
-}
-
-void ThreadPool::post_with_delay(const std::function<void()> &the_task, double the_delay)
-{
-    if(!the_task){ return; }
-
-    Timer t(m_impl->io_service);
-    auto functor = [t, the_task]() { the_task(); };
-    t.set_callback(functor);
-    t.expires_from_now(the_delay);
 }
 
 std::size_t ThreadPool::poll()

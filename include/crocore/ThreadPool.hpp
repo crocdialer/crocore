@@ -132,12 +132,6 @@ public:
     }
 
     /*!
-     * submit a task to be processed by the threadpool
-     * with an delay in seconds
-     */
-    void post_with_delay(const std::function<void()> &the_task, double the_delay);
-
-    /*!
      * poll
      */
     std::size_t poll();
