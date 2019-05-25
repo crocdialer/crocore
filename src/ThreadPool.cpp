@@ -132,6 +132,7 @@ void ThreadPool::set_num_threads(int num)
         try
         {
             join_all();
+            m_impl->io_service.reset();
             m_impl->io_work = std::make_unique<boost::asio::io_service::work>(m_impl->io_service);
 
             for(int i = 0; i < num; ++i)
