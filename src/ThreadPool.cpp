@@ -93,7 +93,7 @@ io_service_t &ThreadPool::io_service()
     return m_impl->io_service;
 }
 
-int ThreadPool::num_threads()
+size_t ThreadPool::num_threads()
 {
     return m_impl->threads.size();
 }
@@ -113,22 +113,19 @@ void ThreadPool::join_all()
     m_impl->threads.clear();
 }
 
-void ThreadPool::set_num_threads(int num)
+void ThreadPool::set_num_threads(size_t num)
 {
-    if(num >= 0)
+    try
     {
-        try
-        {
-            join_all();
-            m_impl->io_service.reset();
-            m_impl->io_work = std::make_unique<boost::asio::io_service::work>(m_impl->io_service);
+        join_all();
+        m_impl->io_service.reset();
+        m_impl->io_work = std::make_unique<boost::asio::io_service::work>(m_impl->io_service);
 
-            for(int i = 0; i < num; ++i)
-            {
-                m_impl->threads.emplace_back([this]() { m_impl->io_service.run(); });
-            }
+        for(size_t i = 0; i < num; ++i)
+        {
+            m_impl->threads.emplace_back([this]() { m_impl->io_service.run(); });
         }
-        catch(std::exception &e) { LOG_ERROR << e.what(); }
     }
+    catch(std::exception &e) { LOG_ERROR << e.what(); }
 }
 }

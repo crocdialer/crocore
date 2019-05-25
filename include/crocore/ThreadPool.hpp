@@ -106,9 +106,9 @@ public:
 
     ThreadPool &operator=(ThreadPool other);
 
-    void set_num_threads(int num);
+    void set_num_threads(size_t num);
 
-    int num_threads();
+    size_t num_threads();
 
     io_service_t &io_service();
 

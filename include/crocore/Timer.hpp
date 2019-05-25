@@ -13,6 +13,7 @@
 
 #pragma once
 
+#include <chrono>
 #include "crocore.hpp"
 
 namespace crocore {
@@ -20,6 +21,7 @@ namespace crocore {
 class Stopwatch
 {
 public:
+
     Stopwatch();
 
     /*!
@@ -64,7 +66,9 @@ public:
     const std::vector<double> &laps() const;
 
 private:
-    std::shared_ptr<struct stopwatch_impl> m_impl;
+    bool m_running = false;
+    std::chrono::steady_clock::time_point m_start_time;
+    std::vector<double> m_laps;
 };
 
 class Timer
@@ -73,6 +77,8 @@ public:
     typedef std::function<void(void)> timer_cb_t;
 
     Timer() = default;
+
+    Timer(const Timer&) = delete;
 
     explicit Timer(io_service_t &io, timer_cb_t cb = timer_cb_t());
 
