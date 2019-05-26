@@ -106,19 +106,27 @@ public:
 
     ThreadPool &operator=(ThreadPool other);
 
+    /**
+     * @brief   Set the number of worker-threads
+     * @param   num     the desired number of threads
+     */
     void set_num_threads(size_t num);
 
+    /**
+     * @return  the number of worker-threads
+     */
     size_t num_threads();
 
     io_service_t &io_service();
 
     /**
+     * @brief   post work to be processed by the ThreadPool
      *
-     * @tparam  Func function template parameter
-     * @tparam  Args template params for optional arguments
-     * @param   f
-     * @param   args
-     * @return  a std::future
+     * @tparam  Func    function template parameter
+     * @tparam  Args    template params for optional arguments
+     * @param   f       the function object to execute
+     * @param   args    optional params to bind to the function object
+     * @return  a std::future holding the return value.
      */
     template<typename Func, typename... Args>
     std::future<std::result_of_t<Func(Args...)>> post(Func &&f, Args&&... args)
@@ -131,13 +139,16 @@ public:
         return future;
     }
 
-    /*!
-     * poll
+    /**
+     * @brief   Manually poll the contained io_service.
+     *          Necessary when this ThreadPool has no threads (is synchronous)
+     *
+     * @return  The number of handlers that were executed
      */
     std::size_t poll();
 
-    /*!
-     * join_all
+    /**
+     * @brief   Stop execution and join all threads.
      */
     void join_all();
 

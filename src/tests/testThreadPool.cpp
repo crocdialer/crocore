@@ -13,7 +13,7 @@ std::vector<std::future<float>> schedule_work(crocore::ThreadPool &pool)
 {
     std::vector<std::future<float>> async_tasks;
 
-    for(size_t n : {66666666, 100, 1000, 100000})
+    for(size_t n : {6666666, 100, 1000, 100000})
     {
         auto fn = [](size_t n) -> float
         {
