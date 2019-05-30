@@ -34,17 +34,6 @@ enum class Severity
 
 class Logger
 {
-    struct ModuleSeverity
-    {
-        ModuleSeverity() {}
-
-        ModuleSeverity(Severity theSeverity, int theMinId, int myMaxId)
-                : m_severity(theSeverity), m_minId(theMinId), m_maxId(myMaxId) {}
-
-        Severity m_severity;
-        int m_minId;
-        int m_maxId;
-    };
 
 public:
 
@@ -63,7 +52,7 @@ public:
 
     void log(Severity the_severity, const char *theModule, int theId, const std::string &theText);
 
-    void set_severity(const Severity the_severity);
+    void set_severity(const Severity &the_severity);
 
     Severity severity() const { return m_global_severity; };
 

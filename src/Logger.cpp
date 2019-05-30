@@ -1,3 +1,5 @@
+#include <utility>
+
 // __ ___ ____ _____ ______ _______ ________ _______ ______ _____ ____ ___ __
 //
 // Copyright (C) 2012-2016, Fabian Schmidt <crocdialer@googlemail.com>
@@ -25,23 +27,23 @@ namespace crocore
     class ConnectionStreamBuf : public std::streambuf
     {
     public:
-        ConnectionStreamBuf(const ConnectionPtr &the_con, size_t buff_sz = 1 << 10);
+        explicit ConnectionStreamBuf(ConnectionPtr the_con, size_t buff_sz = 1 << 10);
         const ConnectionPtr& connection() const { return m_connection; }
         
     protected:
         
         // flush the characters in the buffer
         int flushBuffer ();
-        virtual int overflow (int c = EOF);
-        virtual int sync();
+        int overflow (int c) override;
+        int sync() override;
         
     private:
         ConnectionPtr m_connection;
         std::vector<char> m_buffer;
     };
     
-    ConnectionStreamBuf::ConnectionStreamBuf(const ConnectionPtr &the_con, size_t buff_sz):
-    m_connection(the_con),
+    ConnectionStreamBuf::ConnectionStreamBuf(ConnectionPtr the_con, size_t buff_sz):
+    m_connection(std::move(the_con)),
     m_buffer(buff_sz + 1)
     {
         //set putbase pointer and endput pointer
@@ -91,7 +93,7 @@ namespace crocore
     
     const std::string currentDateTime()
     {
-        time_t now = time(0);
+        time_t now = time(nullptr);
         struct tm  tstruct;
         char buf[80];
         tstruct = *localtime(&now);
@@ -122,7 +124,7 @@ namespace crocore
         log_file_stream.close();
     }
     
-    void Logger::set_severity(const Severity theSeverity)
+    void Logger::set_severity(const Severity &theSeverity)
     {
         std::lock_guard<std::mutex> lock(mutex);
         
@@ -138,40 +140,6 @@ namespace crocore
     */
     bool Logger::if_log(Severity theSeverity, const char *theModule, int theId)
     {
-//        if (!m_severitySettings.empty())
-//        {
-//            Severity mySeverity = m_globalSeverity;
-//            const std::string myModule(theModule); // remove everything before the last backslash
-//            
-//            // find all setting for a particular module
-//            std::multimap<std::string,ModuleSeverity>::const_iterator myLowerBound =
-//                m_severitySettings.lower_bound(myModule);
-//            if (myLowerBound != m_severitySettings.end()) {
-//                std::multimap<std::string,ModuleSeverity>::const_iterator myUpperBound =
-//                    m_severitySettings.upper_bound(myModule);
-//    
-//                // find smallest range containing theId with matching module name
-//                unsigned int myRange = std::numeric_limits<unsigned int>::max();
-//                for (std::multimap<std::string,ModuleSeverity>::const_iterator myIter = myLowerBound;
-//                    myIter != myUpperBound; ++myIter)
-//                {
-//                    if (myIter->first == myModule) {
-//                        int myMinId = myIter->second.m_minId;
-//                        int myMaxId = myIter->second.m_maxId;
-//                        if (theId >= myMinId && theId <= myMaxId)
-//                        {
-//                            unsigned int myNewRange = myMaxId - myMinId;
-//                            if (myNewRange < myRange)
-//                            {
-//                                mySeverity = myIter->second.m_severity;
-//                                myRange = myNewRange;
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//            return theSeverity <= mySeverity;
-//        }
         return theSeverity <= m_global_severity;
     }
 
@@ -309,25 +277,5 @@ namespace crocore
             remove_outstream(&log_file_stream);
             log_file_stream.close();
         }
-        
     }
-    
-//    void log(Severity the_severity, const std::string &the_format_text, Args ... args)
-//    {
-//        Logger *l = Logger::get();
-//        if(the_severity > l->severity()){ return; }
-//        
-////        const size_t buf_sz = 1024 * 2;
-////        char buf[buf_sz];
-////        va_list argptr;
-////        va_start(argptr, the_format_text);
-////        vsnprintf(buf, buf_sz, the_format_text, argptr);
-////        va_end(argptr);
-//        
-//        int size = snprintf(nullptr, 0, the_format_text.c_str(), args ...) + 1;
-//        std::unique_ptr<char[]> buf(new char[size]);
-//        snprintf(buf.get(), size, format.c_str(), args ...);
-//        
-//        l->log(the_severity, "unknown module", 0, buf);
-//    }
-};
+}
