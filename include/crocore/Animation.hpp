@@ -23,15 +23,13 @@
 
 namespace crocore {
 
-DEFINE_CLASS_PTR(Animation)
-
 class Animation
 {
 public:
 
     using ease_fn_t = std::function<float(float)>;
     using interpolate_fn_t = std::function<void(float)>;
-    using callback_t = std::function<void(void)>;
+    using callback_fn_t = std::function<void(Animation&)>;
 
     enum LoopType
     {
@@ -42,26 +40,22 @@ public:
         PLAYBACK_PAUSED = 0, PLAYBACK_FORWARD = 1, PLAYBACK_BACKWARD = 2
     };
 
-    AnimationPtr create() { return AnimationPtr(new Animation()); }
-
     template<typename T>
-    AnimationPtr create(T *value_ptr, const T &from_value, const T &to_value, float duration,
-                        float delay = 0)
+    static Animation create(T *value_ptr, const T &from_value, const T &to_value, float duration)
     {
-        return std::make_shared<Animation>(duration, delay, [=](float progress)
+        return Animation(duration, [=](float progress)
         {
             *value_ptr = crocore::mix(from_value, to_value, progress);
         });
     };
 
     template<typename T>
-    AnimationPtr create(typename Property_<T>::WeakPtr weak_property,
-                        const T &from_value,
-                        const T &to_value,
-                        float duration,
-                        float delay = 0)
+    static Animation create(typename Property_<T>::WeakPtr weak_property,
+                            const T &from_value,
+                            const T &to_value,
+                            float duration)
     {
-        return std::make_shared<Animation>(duration, delay, [=](float progress)
+        return Animation(duration, [=](float progress)
         {
             if(auto property = weak_property.lock())
             {
@@ -70,7 +64,17 @@ public:
         });
     };
 
+    Animation() = default;
+
+    Animation(float duration, interpolate_fn_t interpolate_fn);
+
+    Animation(Animation &&other) noexcept;
+
     Animation(const Animation &) = delete;
+
+    Animation &operator=(Animation other);
+
+    friend void swap(Animation &lhs, Animation &rhs);
 
     /*!
      * Start the animation with an optional delay in seconds
@@ -91,38 +95,30 @@ public:
 
     void set_playback_type(PlaybackType playback_type) { m_playback_type = playback_type; }
 
-    Animation::LoopType loop() const { return m_loop_type; }
+    Animation::LoopType loop_type() const { return m_loop_type; }
 
-    void set_loop(LoopType loop_type = LOOP) { m_loop_type = loop_type; }
+    void set_loop_type(LoopType loop_type = LOOP) { m_loop_type = loop_type; }
 
     void set_interpolation_function(interpolate_fn_t fn) { m_interpolate_fn = std::move(fn); }
 
     void set_ease_function(ease_fn_t fn) { m_ease_fn = std::move(fn); }
 
-    void set_start_callback(callback_t cb) { m_start_fn = std::move(cb); }
+    void set_finish_callback(callback_fn_t cb) { m_finish_fn = std::move(cb); }
 
-    void set_finish_callback(callback_t cb) { m_finish_fn = std::move(cb); }
-
-    void set_reverse_start_callback(callback_t cb) { m_reverse_start_fn = std::move(cb); }
-
-    void set_reverse_finish_callback(callback_t cb) { m_reverse_finish_fn = std::move(cb); }
+    void set_reverse_finish_callback(callback_fn_t cb) { m_reverse_finish_fn = std::move(cb); }
 
     float progress() const;
 
     bool finished() const;
 
 private:
-    Animation() = default;
 
-    Animation(float duration, float delay, interpolate_fn_t interpolate_fn);
-
-    PlaybackType m_playback_type = PLAYBACK_FORWARD;
+    PlaybackType m_playback_type = PLAYBACK_PAUSED;
     LoopType m_loop_type = LOOP_NONE;
     std::chrono::steady_clock::time_point m_start_time, m_end_time;
-    ease_fn_t m_ease_fn = animation::EaseNone();
+    ease_fn_t m_ease_fn = easing::EaseNone();
     interpolate_fn_t m_interpolate_fn;
-    callback_t m_start_fn, m_finish_fn, m_reverse_start_fn, m_reverse_finish_fn;
-
+    callback_fn_t m_finish_fn, m_reverse_finish_fn;
 };
 
 }//namespace

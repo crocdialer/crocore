@@ -22,15 +22,39 @@ using float_second = std::chrono::duration<float>;
 
 namespace crocore {
 
-Animation::Animation(float duration, float delay, interpolate_fn_t interpolate_fn) :
+Animation::Animation(float duration, interpolate_fn_t interpolate_fn) :
         m_playback_type(PLAYBACK_PAUSED),
         m_loop_type(LOOP_NONE),
-        m_start_time(steady_clock::now() + duration_cast<steady_clock::duration>(float_second(delay))),
+        m_start_time(steady_clock::now()),
         m_end_time(m_start_time + duration_cast<steady_clock::duration>(float_second(duration))),
-        m_ease_fn(animation::EaseNone()),
+        m_ease_fn(easing::EaseNone()),
         m_interpolate_fn(std::move(interpolate_fn))
 {
 
+}
+
+Animation::Animation(Animation &&other) noexcept:
+        Animation()
+{
+    swap(*this, other);
+}
+
+Animation &Animation::operator=(Animation other)
+{
+    swap(*this, other);
+    return *this;
+}
+
+void swap(Animation &lhs, Animation &rhs)
+{
+    std::swap(lhs.m_playback_type, rhs.m_playback_type);
+    std::swap(lhs.m_loop_type, rhs.m_loop_type);
+    std::swap(lhs.m_start_time, rhs.m_start_time);
+    std::swap(lhs.m_end_time, rhs.m_end_time);
+    std::swap(lhs.m_ease_fn, rhs.m_ease_fn);
+    std::swap(lhs.m_interpolate_fn, rhs.m_interpolate_fn);
+    std::swap(lhs.m_finish_fn, rhs.m_finish_fn);
+    std::swap(lhs.m_reverse_finish_fn, rhs.m_reverse_finish_fn);
 }
 
 float Animation::duration() const
@@ -67,17 +91,20 @@ void Animation::update()
     if(finished())
     {
         // fire finish callback, if any
-        if(m_playback_type == PLAYBACK_FORWARD && m_finish_fn){ m_finish_fn(); }
-        else if(m_playback_type == PLAYBACK_BACKWARD && m_reverse_finish_fn){ m_reverse_finish_fn(); }
+        if(m_playback_type == PLAYBACK_FORWARD && m_finish_fn){ m_finish_fn(*this); }
+        else if(m_playback_type == PLAYBACK_BACKWARD && m_reverse_finish_fn){ m_reverse_finish_fn(*this); }
 
-        if(loop())
+        if(loop_type())
         {
             if(m_loop_type == LOOP_BACK_FORTH)
             {
                 m_playback_type = m_playback_type == PLAYBACK_FORWARD ?
                                   PLAYBACK_BACKWARD : PLAYBACK_FORWARD;
             }
-            start();
+
+            float dur = duration();
+            m_start_time = steady_clock::now() - (steady_clock::now() - m_end_time);
+            m_end_time = m_start_time + duration_cast<steady_clock::duration>(float_second(dur));
         }else
         {
             // end playback
@@ -108,11 +135,6 @@ void Animation::start(float delay)
     float dur = duration();
     m_start_time = steady_clock::now() + duration_cast<steady_clock::duration>(float_second(delay));
     m_end_time = m_start_time + duration_cast<steady_clock::duration>(float_second(dur));
-
-    // fire start callback, if any
-    if(m_playback_type == PLAYBACK_FORWARD && m_start_fn){ m_start_fn(); }
-    else if(m_playback_type == PLAYBACK_BACKWARD && m_reverse_start_fn){ m_reverse_start_fn(); }
-
 }
 
 void Animation::stop()
