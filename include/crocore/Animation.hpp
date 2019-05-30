@@ -105,8 +105,6 @@ public:
 
     void set_finish_callback(callback_fn_t cb) { m_finish_fn = std::move(cb); }
 
-    void set_reverse_finish_callback(callback_fn_t cb) { m_reverse_finish_fn = std::move(cb); }
-
     float progress() const;
 
     bool finished() const;
@@ -118,7 +116,7 @@ private:
     std::chrono::steady_clock::time_point m_start_time, m_end_time;
     ease_fn_t m_ease_fn = easing::EaseNone();
     interpolate_fn_t m_interpolate_fn;
-    callback_fn_t m_finish_fn, m_reverse_finish_fn;
+    callback_fn_t m_finish_fn;
 };
 
 }//namespace

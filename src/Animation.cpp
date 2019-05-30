@@ -54,7 +54,6 @@ void swap(Animation &lhs, Animation &rhs)
     std::swap(lhs.m_ease_fn, rhs.m_ease_fn);
     std::swap(lhs.m_interpolate_fn, rhs.m_interpolate_fn);
     std::swap(lhs.m_finish_fn, rhs.m_finish_fn);
-    std::swap(lhs.m_reverse_finish_fn, rhs.m_reverse_finish_fn);
 }
 
 float Animation::duration() const
@@ -91,8 +90,7 @@ void Animation::update()
     if(finished())
     {
         // fire finish callback, if any
-        if(m_playback_type == PLAYBACK_FORWARD && m_finish_fn){ m_finish_fn(*this); }
-        else if(m_playback_type == PLAYBACK_BACKWARD && m_reverse_finish_fn){ m_reverse_finish_fn(*this); }
+        if(m_finish_fn){ m_finish_fn(*this); }
 
         if(loop_type())
         {
