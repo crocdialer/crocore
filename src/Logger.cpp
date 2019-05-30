@@ -230,6 +230,10 @@ namespace crocore
             the_con->set_disconnect_cb([this, out_stream](ConnectionPtr c)
             {
                 LOG_DEBUG << "removing outstream: " << c->description();
+
+                // avoid a cyclic ref after destruction
+                c->set_disconnect_cb({});
+
                 std::lock_guard<std::mutex> lock(mutex);
                 m_out_streams.erase(out_stream);
             });
