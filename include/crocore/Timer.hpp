@@ -80,6 +80,12 @@ public:
 
     Timer(const Timer&) = delete;
 
+    Timer(Timer &&other) noexcept;
+
+    Timer& operator=(Timer other);
+
+    friend void swap(Timer &lhs, Timer &rhs);
+
     explicit Timer(io_service_t &io, timer_cb_t cb = timer_cb_t());
 
     /*!

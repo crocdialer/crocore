@@ -22,9 +22,9 @@ using duration_t = std::chrono::duration<double>;
 
 namespace crocore {
 
-Stopwatch::Stopwatch():
-m_running(true),
-m_start_time(steady_clock::now())
+Stopwatch::Stopwatch() :
+        m_running(true),
+        m_start_time(steady_clock::now())
 {
 
 }
@@ -111,8 +111,25 @@ struct timer_impl
     }
 };
 
+Timer::Timer(Timer &&other) noexcept :
+        Timer()
+{
+    swap(*this, other);
+}
+
 Timer::Timer(io_service_t &io, Timer::timer_cb_t cb) :
         m_impl(new timer_impl(io, std::move(cb))) {}
+
+Timer &Timer::operator=(Timer other)
+{
+    swap(*this, other);
+    return *this;
+}
+
+void swap(Timer &lhs, Timer &rhs)
+{
+    std::swap(lhs.m_impl, rhs.m_impl);
+}
 
 void Timer::expires_from_now(double secs)
 {
