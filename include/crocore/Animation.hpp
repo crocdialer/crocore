@@ -18,7 +18,7 @@
 #pragma once
 
 #include <chrono>
-#include "crocore/Property.hpp"
+#include "crocore/crocore.hpp"
 #include "crocore/Easing.hpp"
 
 namespace crocore {
@@ -35,6 +35,7 @@ public:
     {
         LOOP_NONE = 0, LOOP = 1, LOOP_BACK_FORTH = 2
     };
+
     enum PlaybackType
     {
         PLAYBACK_PAUSED = 0, PLAYBACK_FORWARD = 1, PLAYBACK_BACKWARD = 2
@@ -46,21 +47,6 @@ public:
         return Animation(duration, [=](float progress)
         {
             *value_ptr = crocore::mix(from_value, to_value, progress);
-        });
-    };
-
-    template<typename T>
-    static Animation create(typename Property_<T>::WeakPtr weak_property,
-                            const T &from_value,
-                            const T &to_value,
-                            float duration)
-    {
-        return Animation(duration, [=](float progress)
-        {
-            if(auto property = weak_property.lock())
-            {
-                *property = crocore::mix(from_value, to_value, progress);
-            }
         });
     };
 
