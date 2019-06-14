@@ -100,9 +100,9 @@ void Animation::update()
                                   PLAYBACK_BACKWARD : PLAYBACK_FORWARD;
             }
 
-            float dur = duration();
-            m_start_time = steady_clock::now() - (steady_clock::now() - m_end_time);
-            m_end_time = m_start_time + duration_cast<steady_clock::duration>(float_second(dur));
+            auto duration = m_end_time - m_start_time;
+            m_start_time = m_end_time;
+            m_end_time = m_start_time + duration;
         }else
         {
             // end playback
@@ -130,9 +130,9 @@ void Animation::start(float delay)
 {
     if(!is_playing()){ m_playback_type = PLAYBACK_FORWARD; }
 
-    float dur = duration();
+    auto duration = m_end_time - m_start_time;
     m_start_time = steady_clock::now() + duration_cast<steady_clock::duration>(float_second(delay));
-    m_end_time = m_start_time + duration_cast<steady_clock::duration>(float_second(dur));
+    m_end_time = m_start_time + duration;
 }
 
 void Animation::stop()
