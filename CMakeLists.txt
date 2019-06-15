@@ -12,8 +12,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wall -Wformat=0")
 
-#set(LIB_TYPE STATIC)
-
 set(LIB_TYPE SHARED)
 if (NOT BUILD_SHARED_LIBS)
     set(LIB_TYPE STATIC)
@@ -36,6 +34,12 @@ endif (BUILD_TESTS)
 find_package(Boost REQUIRED COMPONENTS ${BOOST_COMPONENTS})
 include_directories(${Boost_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${Boost_LIBRARIES})
+#####
+
+##### CURL
+find_package(CURL REQUIRED)
+include_directories(${CURL_INCLUDE_DIR})
+set(LIBS ${LIBS} ${CURL_LIBRARY})
 #####
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
