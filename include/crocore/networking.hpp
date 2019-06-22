@@ -100,7 +100,9 @@ public:
 
     explicit tcp_server(io_service_t &io_service, tcp_connection_callback ccb = tcp_connection_callback());
 
-    tcp_server() = default;
+    tcp_server();
+
+    ~tcp_server();
 
     tcp_server(tcp_server &&other) noexcept;
 
