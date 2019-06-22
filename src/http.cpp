@@ -4,12 +4,9 @@
 #include <chrono>
 #include "crocore/http.hpp"
 
-using namespace std;
 using duration_t = std::chrono::duration<double>;
 
-namespace crocore {
-namespace net {
-namespace http {
+namespace crocore::net::http {
 
 using ActionPtr = std::shared_ptr<class CurlAction>;
 using handle_map_t = std::map<CURL *, ActionPtr>;
@@ -192,7 +189,7 @@ private:
     std::shared_ptr<struct curl_slist> m_headers;
 
 public:
-    Action_POST(const string &the_url,
+    Action_POST(const std::string &the_url,
                 std::vector<uint8_t> the_data,
                 const std::string &the_mime_type) :
             CurlAction(the_url),
@@ -219,7 +216,7 @@ private:
     std::shared_ptr<struct curl_slist> m_headers;
 
 public:
-    Action_PUT(const string &the_url,
+    Action_PUT(const std::string &the_url,
                std::vector<uint8_t> the_data,
                const std::string &the_mime_type) :
             CurlAction(the_url),
@@ -247,7 +244,7 @@ public:
 class Action_DELETE : public CurlAction
 {
 public:
-    explicit Action_DELETE(const string &the_url) :
+    explicit Action_DELETE(const std::string &the_url) :
             CurlAction(the_url)
     {
         curl_easy_setopt(handle(), CURLOPT_CUSTOMREQUEST, "DELETE");
@@ -259,7 +256,7 @@ public:
 response_t head(const std::string &the_url)
 {
     LOG_DEBUG << "head: '" << the_url << "'";
-    ActionPtr url_action = make_shared<Action_GET>(the_url);
+    ActionPtr url_action = std::make_shared<Action_GET>(the_url);
     curl_easy_setopt(url_action->handle(), CURLOPT_NOBODY, 1L);
     url_action->perform();
     return url_action->response();
@@ -270,7 +267,7 @@ response_t head(const std::string &the_url)
 response_t get(const std::string &the_url)
 {
     LOG_DEBUG << "get: '" << the_url << "'";
-    ActionPtr url_action = make_shared<Action_GET>(the_url);
+    ActionPtr url_action = std::make_shared<Action_GET>(the_url);
     url_action->perform();
     return url_action->response();
 }
@@ -282,7 +279,7 @@ response_t post(const std::string &the_url,
                 const std::string &the_mime_type)
 {
     LOG_DEBUG << "post: '" << the_url << "'";
-    ActionPtr url_action = make_shared<Action_POST>(the_url, the_data, the_mime_type);
+    ActionPtr url_action = std::make_shared<Action_POST>(the_url, the_data, the_mime_type);
     url_action->perform();
     return url_action->response();
 }
@@ -294,7 +291,7 @@ response_t put(const std::string &the_url,
                const std::string &the_mime_type)
 {
     LOG_DEBUG << "put: '" << the_url << "'";
-    ActionPtr url_action = make_shared<Action_PUT>(the_url, the_data, the_mime_type);
+    ActionPtr url_action = std::make_shared<Action_PUT>(the_url, the_data, the_mime_type);
     url_action->perform();
     return url_action->response();
 }
@@ -304,7 +301,7 @@ response_t put(const std::string &the_url,
 response_t del(const std::string &the_url)
 {
     LOG_DEBUG << "delete: '" << the_url << "'";
-    ActionPtr url_action = make_shared<Action_DELETE>(the_url);
+    ActionPtr url_action = std::make_shared<Action_DELETE>(the_url);
     url_action->perform();
     return url_action->response();
 }
@@ -415,7 +412,7 @@ void Client::async_head(const std::string &the_url,
                         progress_cb_t ph)
 {
     LOG_DEBUG << "async_head: '" << the_url << "'";
-    ActionPtr url_action = make_shared<Action_GET>(the_url);
+    ActionPtr url_action = std::make_shared<Action_GET>(the_url);
     curl_easy_setopt(url_action->handle(), CURLOPT_NOBODY, 1L);
     m_impl->add_action(url_action, std::move(ch), std::move(ph));
 }
@@ -429,7 +426,7 @@ void Client::async_get(const std::string &the_url,
     LOG_DEBUG << "async_get: '" << the_url << "'";
 
     // create an action which holds an easy handle
-    ActionPtr url_action = make_shared<Action_GET>(the_url);
+    ActionPtr url_action = std::make_shared<Action_GET>(the_url);
     m_impl->add_action(url_action, std::move(ch), std::move(ph));
 }
 
@@ -442,7 +439,7 @@ void Client::async_post(const std::string &the_url,
                         progress_cb_t ph)
 {
     LOG_DEBUG << "async_post: '" << the_url << "'";
-    ActionPtr url_action = make_shared<Action_POST>(the_url, the_data, the_mime_type);
+    ActionPtr url_action = std::make_shared<Action_POST>(the_url, the_data, the_mime_type);
     m_impl->add_action(url_action, std::move(ch), std::move(ph));
 }
 
@@ -455,7 +452,7 @@ void Client::async_put(const std::string &the_url,
                        progress_cb_t ph)
 {
     LOG_DEBUG << "async_put: '" << the_url << "'";
-    ActionPtr url_action = make_shared<Action_PUT>(the_url, the_data, the_mime_type);
+    ActionPtr url_action = std::make_shared<Action_PUT>(the_url, the_data, the_mime_type);
     m_impl->add_action(url_action, std::move(ch), std::move(ph));
 }
 
@@ -464,7 +461,7 @@ void Client::async_put(const std::string &the_url,
 void Client::async_del(const std::string &the_url, completion_cb_t ch)
 {
     LOG_DEBUG << "async_del: '" << the_url << "'";
-    ActionPtr url_action = make_shared<Action_DELETE>(the_url);
+    ActionPtr url_action = std::make_shared<Action_DELETE>(the_url);
     m_impl->add_action(url_action, std::move(ch));
 }
 
@@ -484,6 +481,4 @@ void Client::set_timeout(uint64_t t)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-}
-}
 }// namespace
