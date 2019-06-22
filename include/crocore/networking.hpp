@@ -16,8 +16,7 @@
 #include "crocore.hpp"
 #include "Connection.hpp"
 
-namespace crocore {
-namespace net {
+namespace crocore::net {
 
 extern char const *const UNKNOWN_IP;
 
@@ -118,7 +117,7 @@ public:
     uint16_t listening_port() const;
 
 private:
-    std::shared_ptr<struct tcp_server_impl> m_impl;
+    std::unique_ptr<struct tcp_server_impl> m_impl;
 };
 
 class tcp_connection : public Connection, public std::enable_shared_from_this<tcp_connection>
@@ -126,13 +125,16 @@ class tcp_connection : public Connection, public std::enable_shared_from_this<tc
 public:
 
     // tcp receive function
-    typedef std::function<void(tcp_connection_ptr,
-                               const std::vector<uint8_t> &)> tcp_receive_cb_t;
+    using tcp_receive_cb_t = std::function<void(tcp_connection_ptr, const std::vector<uint8_t> &)>;
 
     static tcp_connection_ptr create(io_service_t &io_service,
                                      const std::string &ip,
                                      uint16_t port,
                                      tcp_receive_cb_t f = tcp_receive_cb_t());
+
+    tcp_connection(const tcp_connection &) = delete;
+
+    tcp_connection(tcp_connection &&) = delete;
 
     virtual ~tcp_connection();
 
@@ -184,5 +186,4 @@ private:
     void check_deadline();
 };
 
-}
 }// namespaces net kinski

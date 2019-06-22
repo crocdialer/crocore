@@ -10,7 +10,7 @@
 
 #include "crocore/networking.hpp"
 
-namespace crocore{ namespace net{ namespace http{
+namespace crocore::net::http{
     
 struct connection_info_t
 {
@@ -124,4 +124,4 @@ private:
     std::unique_ptr<struct ClientImpl> m_impl;
 };
     
-}}}// namespace
+}// namespace
