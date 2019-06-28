@@ -20,6 +20,10 @@
 
 #include "stb_image_write.h"
 
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+
+#include "stb_image_resize.h"
+
 #include "crocore/filesystem.hpp"
 #include "crocore/Image.hpp"
 
@@ -231,40 +235,19 @@ ImagePtr Image_<T>::blur()
     return convolve(gaussian);
 }
 
-template<class T>
-ImagePtr Image_<T>::resize(uint32_t the_width, uint32_t the_height, uint32_t the_num_channels)
+template<>
+ImagePtr Image_<uint8_t>::resize(uint32_t the_width, uint32_t the_height)
 {
-    if(!the_num_channels){ the_num_channels = m_num_components; };
+    auto ret = Image_<uint8_t>::create(the_width, the_height, m_num_components);
+    stbir_resize_uint8(m_data, m_width, m_height, 0, ret->m_data, ret->m_width, ret->m_height, 0, m_num_components);
+    return ret;
+}
 
-    auto ret = Image_<T>::create(the_width, the_height, the_num_channels);
-    float scale_x = the_width / (float)m_width, scale_y = the_height / (float)m_height;
-
-    // blur
-//        ImagePtr blur_img = blur();
-
-    // for all components in all pixels, calculate new value
-    for(uint32_t y = 0; y < the_height; ++y)
-    {
-        for(uint32_t x = 0; x < the_width; ++x)
-        {
-            float src_x = x / scale_x, src_y = y / scale_y;
-            T *dst_ptr = ret->at(x, y);
-
-            // nearest neighbour
-            T *src_ptr = at(roundf(src_x), roundf(src_y));
-
-            if(the_num_channels <= m_num_components)
-            {
-                for(uint32_t c = 0; c < the_num_channels; ++c){ dst_ptr[c] = src_ptr[c]; }
-            }else
-            {
-                for(uint32_t c = 0; c < the_num_channels; ++c)
-                {
-                    dst_ptr[c] = c > m_num_components ? 0 : src_ptr[c];
-                }
-            }
-        }
-    }
+template<>
+ImagePtr Image_<float>::resize(uint32_t the_width, uint32_t the_height)
+{
+    auto ret = Image_<float>::create(the_width, the_height, m_num_components);
+    stbir_resize_float(m_data, m_width, m_height, 0, ret->m_data, ret->m_width, ret->m_height, 0, m_num_components);
     return ret;
 }
 

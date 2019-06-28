@@ -40,7 +40,7 @@ public:
 
     virtual void offsets(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a = nullptr) const = 0;
 
-    virtual ImagePtr resize(uint32_t the_width, uint32_t the_height, uint32_t the_num_channels = 0) = 0;
+    virtual ImagePtr resize(uint32_t the_width, uint32_t the_height) = 0;
 
     //! kernel is interpreted col-major
     virtual ImagePtr convolve(const std::vector<float> &the_kernel) = 0;
@@ -81,7 +81,7 @@ public:
 
     inline size_t num_bytes() const override { return m_height * m_width * m_num_components * sizeof(T); }
 
-    ImagePtr resize(uint32_t the_width, uint32_t the_height, uint32_t the_num_channels = 0) override;
+    ImagePtr resize(uint32_t the_width, uint32_t the_height) override;
 
     //! kernel is interpreted col-major
     ImagePtr convolve(const std::vector<float> &the_kernel) override;
