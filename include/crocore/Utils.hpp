@@ -136,7 +136,7 @@ inline void hash_combine(std::size_t &seed, const T &v)
 }
 
 template<class T, class U>
-struct PairHash
+struct pair_hash
 {
     inline size_t operator()(const std::pair<T, U> &the_pair) const
     {
