@@ -18,15 +18,15 @@ using std::chrono::microseconds;
 using std::chrono::steady_clock;
 
 // ratio is 1 second per second, wow :D
-using float_second = std::chrono::duration<float>;
+using double_second = std::chrono::duration<double>;
 
 namespace crocore {
 
-Animation::Animation(float duration, interpolate_fn_t interpolate_fn) :
+Animation::Animation(double duration, interpolate_fn_t interpolate_fn) :
         m_playback_type(PLAYBACK_PAUSED),
         m_loop_type(LOOP_NONE),
         m_start_time(steady_clock::now()),
-        m_end_time(m_start_time + duration_cast<steady_clock::duration>(float_second(duration))),
+        m_end_time(m_start_time + duration_cast<steady_clock::duration>(double_second(duration))),
         m_ease_fn(easing::EaseNone()),
         m_interpolate_fn(std::move(interpolate_fn))
 {
@@ -56,14 +56,18 @@ void swap(Animation &lhs, Animation &rhs)
     std::swap(lhs.m_finish_fn, rhs.m_finish_fn);
 }
 
-float Animation::duration() const
+double Animation::duration() const
 {
-    return duration_cast<float_second>(m_end_time - m_start_time).count();
+    return duration_cast<double_second>(m_end_time - m_start_time).count();
 }
 
-void Animation::set_duration(float d)
+void Animation::set_duration(double d)
 {
-    m_end_time = m_start_time + duration_cast<steady_clock::duration>(float_second(d));
+    auto new_duration = double_second(d);
+    auto frac = progress();
+    auto frac_duration = new_duration * frac;
+    m_start_time = steady_clock::now() - duration_cast<steady_clock::duration>(frac_duration);
+    m_end_time = m_start_time + duration_cast<steady_clock::duration>(new_duration);
 }
 
 bool Animation::is_playing() const
@@ -71,11 +75,14 @@ bool Animation::is_playing() const
     return m_playback_type && (steady_clock::now() >= m_start_time);
 }
 
-float Animation::progress() const
+double Animation::progress(bool eased) const
 {
-    return clamp(duration_cast<float_second>(steady_clock::now() - m_start_time).count() /
-                 duration_cast<float_second>(m_end_time - m_start_time).count(),
-                 0.f, 1.f);
+    auto val = clamp(duration_cast<double_second>(steady_clock::now() - m_start_time).count() /
+                     duration_cast<double_second>(m_end_time - m_start_time).count(),
+                     0., 1.);
+
+    // optionally apply easing
+    return eased && m_ease_fn ? m_ease_fn(val) : val;
 }
 
 bool Animation::finished() const
@@ -111,14 +118,11 @@ void Animation::update()
         }
     }
 
-    // get current progress
-    float val = progress();
-
-    // optionally apply easing
-    if(m_ease_fn){ val = m_ease_fn(val); }
+    // get current progress with easing applied
+    double val = progress(true);
 
     // eventually revert it
-    if(m_playback_type == PLAYBACK_BACKWARD){ val = 1.f - val; }
+    if(m_playback_type == PLAYBACK_BACKWARD){ val = 1. - val; }
 
     // pass the value to an interpolation function
     if(m_interpolate_fn){ m_interpolate_fn(val); }
@@ -127,12 +131,12 @@ void Animation::update()
 /*!
  * Start the animation with an optional delay in seconds
  */
-void Animation::start(float delay)
+void Animation::start(double delay)
 {
     if(!is_playing()){ m_playback_type = PLAYBACK_FORWARD; }
 
     auto duration = m_end_time - m_start_time;
-    m_start_time = steady_clock::now() + duration_cast<steady_clock::duration>(float_second(delay));
+    m_start_time = steady_clock::now() + duration_cast<steady_clock::duration>(double_second(delay));
     m_end_time = m_start_time + duration;
 }
 

@@ -42,9 +42,9 @@ public:
     };
 
     template<typename T>
-    static Animation create(T *value_ptr, const T &from_value, const T &to_value, float duration)
+    static Animation create(T *value_ptr, const T &from_value, const T &to_value, double duration)
     {
-        return Animation(duration, [=](float progress)
+        return Animation(duration, [=](double progress)
         {
             *value_ptr = crocore::mix(from_value, to_value, progress);
         });
@@ -52,7 +52,7 @@ public:
 
     Animation() = default;
 
-    Animation(float duration, interpolate_fn_t interpolate_fn);
+    Animation(double duration, interpolate_fn_t interpolate_fn);
 
     Animation(Animation &&other) noexcept;
 
@@ -65,15 +65,15 @@ public:
     /*!
      * Start the animation with an optional delay in seconds
      */
-    void start(float delay = 0.f);
+    void start(double delay = 0.f);
 
     void stop();
 
     void update();
 
-    float duration() const;
+    double duration() const;
 
-    void set_duration(float d);
+    void set_duration(double d);
 
     bool is_playing() const;
 
@@ -91,7 +91,7 @@ public:
 
     void set_finish_callback(callback_fn_t cb) { m_finish_fn = std::move(cb); }
 
-    float progress() const;
+    double progress(bool eased = false) const;
 
     bool finished() const;
 
