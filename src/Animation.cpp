@@ -101,7 +101,8 @@ void Animation::update()
             }
 
             auto duration = m_end_time - m_start_time;
-            m_start_time = m_end_time;
+            auto frac = (steady_clock::now() - m_end_time) % duration;
+            m_start_time = steady_clock::now() - frac;
             m_end_time = m_start_time + duration;
         }else
         {
