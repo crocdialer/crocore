@@ -19,6 +19,8 @@
 
 namespace crocore {
 
+Logger g_logger;
+
 ////////////////////////// ConnectionStreamBuf ////////////////////////////////////////////
 
 class ConnectionStreamBuf : public std::streambuf

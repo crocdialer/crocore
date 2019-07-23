@@ -89,7 +89,7 @@ private:
 };
 
 // global instance
-static Logger g_logger;
+extern Logger g_logger;
 
 /**
 This class is used to collect the output and deliver it to the Logger on destruction
