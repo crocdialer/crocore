@@ -11,7 +11,6 @@
 
 #include <sstream>
 #include <set>
-#include "crocore/crocore.hpp"
 
 namespace crocore {
 
@@ -37,9 +36,15 @@ class Logger
 
 public:
 
-    virtual ~Logger();
+    Logger() noexcept;
 
-    static Logger *get();
+    Logger(Logger &&other) noexcept;
+
+    Logger(const Logger&) = delete;
+
+    ~Logger();
+
+    Logger& operator=(Logger other);
 
     /**
     Used to detect if a message should be logged depending on its severity and the logger severity settings.
@@ -54,7 +59,7 @@ public:
 
     void set_severity(const Severity &the_severity);
 
-    Severity severity() const { return m_global_severity; };
+    Severity severity() const;
 
     void add_outstream(std::ostream *the_stream);
 
@@ -66,28 +71,25 @@ public:
 
     void clear_streams();
 
-    bool use_time_stamp() const { return m_use_timestamp; };
+    bool use_time_stamp() const;
 
-    void set_use_time_stamp(bool b) { m_use_timestamp = b; }
+    void set_use_time_stamp(bool b);
 
     bool use_log_file() const;
 
     void set_use_log_file(bool b, const std::string &the_log_file = "kinski.log");
 
-    bool use_thread_id() const { return m_use_thread_id; };
+    bool use_thread_id() const;
 
-    void set_use_thread_id(bool b) { m_use_thread_id = b; }
+    void set_use_thread_id(bool b);
 
 private:
 
-    Logger();
-
-    static Logger *s_instance;
-    Severity m_global_severity;
-    std::set<std::shared_ptr<std::ostream>> m_out_streams;
-
-    bool m_use_timestamp, m_use_thread_id;
+    std::unique_ptr<struct LoggerImpl> m_impl;
 };
+
+// global instance
+static Logger g_logger;
 
 /**
 This class is used to collect the output and deliver it to the Logger on destruction
@@ -100,7 +102,7 @@ public:
 
     ~MessagePort()
     {
-        Logger::get()->log(m_severity, m_module, m_Id, m_stream.str());
+        g_logger.log(m_severity, m_module, m_Id, m_stream.str());
     }
 
     inline std::ostringstream &stream() { return m_stream; }
@@ -117,15 +119,15 @@ private:
 template<typename ... Args>
 void log(Severity the_severity, const std::string &the_format_text, Args ... args)
 {
-    Logger *l = Logger::get();
-    if(the_severity > l->severity()){ return; }
+    Logger &l = g_logger;
+    if(the_severity > l.severity()){ return; }
     int size = snprintf(nullptr, 0, the_format_text.c_str(), args ...) + 1;
     std::unique_ptr<char[]> buf(new char[size]);
     snprintf(buf.get(), size, the_format_text.c_str(), args ...);
-    l->log(the_severity, __FILE__, __LINE__, buf.get());
+    l.log(the_severity, __FILE__, __LINE__, buf.get());
 }
 
-#define CROCORE_LOG_CHECK(SEVERITY, MODULE, MSGID) crocore::Logger::get()->if_log(SEVERITY,MODULE,MSGID) \
+#define CROCORE_LOG_CHECK(SEVERITY, MODULE, MSGID) crocore::g_logger.if_log(SEVERITY,MODULE,MSGID) \
     && (crocore::MessagePort(SEVERITY,MODULE,MSGID).stream())
 
 #define LOG_INFO CROCORE_LOG_CHECK(crocore::Severity::INFO, __FILE__, __LINE__)
