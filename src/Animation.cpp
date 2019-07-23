@@ -82,7 +82,12 @@ double Animation::progress(bool eased) const
                      0., 1.);
 
     // optionally apply easing
-    return eased && m_ease_fn ? m_ease_fn(val) : val;
+    if(eased && m_ease_fn){ val = m_ease_fn(val); }
+
+    // eventually revert it
+    if(m_playback_type == PLAYBACK_BACKWARD){ val = 1. - val; }
+
+    return val;
 }
 
 bool Animation::finished() const
@@ -118,11 +123,8 @@ void Animation::update()
         }
     }
 
-    // get current progress with easing applied
+    // get current progress with easing and playtype applied
     double val = progress(true);
-
-    // eventually revert it
-    if(m_playback_type == PLAYBACK_BACKWARD){ val = 1. - val; }
 
     // pass the value to an interpolation function
     if(m_interpolate_fn){ m_interpolate_fn(val); }
