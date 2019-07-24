@@ -40,11 +40,11 @@ public:
 
     Logger(Logger &&other) noexcept;
 
-    Logger(const Logger&) = delete;
+    Logger(const Logger &) = delete;
 
     ~Logger();
 
-    Logger& operator=(Logger other);
+    Logger &operator=(Logger other);
 
     /**
     Used to detect if a message should be logged depending on its severity and the logger severity settings.
@@ -97,18 +97,19 @@ This class is used to collect the output and deliver it to the Logger on destruc
 class MessagePort
 {
 public:
-    MessagePort(Severity theSeverity, const char *theModule, int theId)
-            : m_severity(theSeverity), m_module(theModule), m_Id(theId) {}
+    MessagePort(Logger *logger, Severity theSeverity, const char *theModule, int theId)
+            : m_logger(logger), m_severity(theSeverity), m_module(theModule), m_Id(theId) {}
 
     ~MessagePort()
     {
-        g_logger.log(m_severity, m_module, m_Id, m_stream.str());
+        m_logger->log(m_severity, m_module, m_Id, m_stream.str());
     }
 
     inline std::ostringstream &stream() { return m_stream; }
 
 private:
 
+    Logger *m_logger;
     std::ostringstream m_stream;
     const Severity m_severity;
     const char *m_module;
@@ -127,18 +128,18 @@ void log(Severity the_severity, const std::string &the_format_text, Args ... arg
     l.log(the_severity, __FILE__, __LINE__, buf.get());
 }
 
-#define CROCORE_LOG_CHECK(SEVERITY, MODULE, MSGID) crocore::g_logger.if_log(SEVERITY,MODULE,MSGID) \
-    && (crocore::MessagePort(SEVERITY,MODULE,MSGID).stream())
+#define CROCORE_LOG_CHECK(LOGGER, SEVERITY, MODULE, MSGID) LOGGER.if_log(SEVERITY,MODULE,MSGID) \
+    && (crocore::MessagePort(&LOGGER, SEVERITY,MODULE,MSGID).stream())
 
-#define LOG_INFO CROCORE_LOG_CHECK(crocore::Severity::INFO, __FILE__, __LINE__)
-#define LOG_TRACE CROCORE_LOG_CHECK(crocore::Severity::TRACE, __FILE__, __LINE__)
-#define LOG_TRACE_1 CROCORE_LOG_CHECK(crocore::Severity::TRACE_1, __FILE__, __LINE__)
-#define LOG_TRACE_2 CROCORE_LOG_CHECK(crocore::Severity::TRACE_2, __FILE__, __LINE__)
-#define LOG_TRACE_3 CROCORE_LOG_CHECK(crocore::Severity::TRACE_3, __FILE__, __LINE__)
-#define LOG_DEBUG CROCORE_LOG_CHECK(crocore::Severity::DEBUG, __FILE__, __LINE__)
-#define LOG_PRINT CROCORE_LOG_CHECK(crocore::Severity::PRINT, __FILE__, __LINE__)
-#define LOG_ERROR CROCORE_LOG_CHECK(crocore::Severity::ERROR, __FILE__, __LINE__)
-#define LOG_WARNING CROCORE_LOG_CHECK(crocore::Severity::WARNING, __FILE__, __LINE__)
+#define LOG_INFO CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::INFO, __FILE__, __LINE__)
+#define LOG_TRACE CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::TRACE, __FILE__, __LINE__)
+#define LOG_TRACE_1 CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::TRACE_1, __FILE__, __LINE__)
+#define LOG_TRACE_2 CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::TRACE_2, __FILE__, __LINE__)
+#define LOG_TRACE_3 CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::TRACE_3, __FILE__, __LINE__)
+#define LOG_DEBUG CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::DEBUG, __FILE__, __LINE__)
+#define LOG_PRINT CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::PRINT, __FILE__, __LINE__)
+#define LOG_ERROR CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::ERROR, __FILE__, __LINE__)
+#define LOG_WARNING CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::WARNING, __FILE__, __LINE__)
 
 #define LOG_INFO_IF(b) b && LOG_INFO
 #define LOG_TRACE_IF(b) b && LOG_TRACE
