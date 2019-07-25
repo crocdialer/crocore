@@ -128,8 +128,8 @@ void log(Severity the_severity, const std::string &the_format_text, Args ... arg
     l.log(the_severity, __FILE__, __LINE__, buf.get());
 }
 
-#define CROCORE_LOG_CHECK(LOGGER, SEVERITY, MODULE, MSGID) LOGGER.if_log(SEVERITY,MODULE,MSGID) \
-    && (crocore::MessagePort(&LOGGER, SEVERITY,MODULE,MSGID).stream())
+#define CROCORE_LOG_CHECK(LOGGER, SEVERITY, MODULE, MSGID) LOGGER.if_log(SEVERITY, MODULE, MSGID) \
+    && (crocore::MessagePort(&LOGGER, SEVERITY, MODULE, MSGID).stream())
 
 #define LOG_INFO CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::INFO, __FILE__, __LINE__)
 #define LOG_TRACE CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::TRACE, __FILE__, __LINE__)
