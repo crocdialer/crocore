@@ -22,6 +22,8 @@ public:
 
     bool teardown_complete = false;
 
+    bool background_task_complete = false;
+
     uint32_t num_updates = 0;
 
     uint32_t num_poll_events = 0;
@@ -35,7 +37,12 @@ private:
         if(++num_updates >= num_runs){ set_running(false); }
     }
 
-    void teardown() override { teardown_complete = true; }
+    void teardown() override
+    {
+        teardown_complete = true;
+        auto future = background_queue().post([&] { background_task_complete = true; });
+        future.wait();
+    }
 
     void poll_events() override { num_poll_events++; }
 };
@@ -46,6 +53,7 @@ BOOST_AUTO_TEST_CASE(testApplication)
     BOOST_CHECK_EQUAL(app->run(), EXIT_SUCCESS);
     BOOST_CHECK(app->setup_complete);
     BOOST_CHECK(app->teardown_complete);
+    BOOST_CHECK(app->background_task_complete);
     BOOST_CHECK_EQUAL(app->num_poll_events, app->num_updates);
     BOOST_CHECK_EQUAL(num_runs, app->num_updates);
 }
