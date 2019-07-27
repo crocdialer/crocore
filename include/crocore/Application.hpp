@@ -6,7 +6,7 @@
 #include <crocore/Component.hpp>
 #include "crocore/ThreadPool.hpp"
 
-namespace vierkant {
+namespace crocore {
 
 DEFINE_CLASS_PTR(Application);
 
@@ -80,6 +80,5 @@ private:
     crocore::Property_<uint32_t>::Ptr
             m_log_level = crocore::Property_<uint32_t>::create("log_level", (uint32_t)crocore::Severity::INFO);
 };
-
 
 }

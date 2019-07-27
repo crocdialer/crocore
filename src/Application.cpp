@@ -5,7 +5,7 @@
 #include "crocore/filesystem.hpp"
 #include "crocore/Application.hpp"
 
-namespace vierkant {
+namespace crocore {
 
 // 1 double per second
 using double_sec_t = std::chrono::duration<double, std::chrono::seconds::period>;
