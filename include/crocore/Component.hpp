@@ -24,7 +24,7 @@ public:
 
     typedef std::function<void(const std::vector<std::string> &)> Functor;
 
-    Component(const std::string &theName = "Component");
+    explicit Component(const std::string &theName = "Component");
 
     virtual ~Component();
 
@@ -40,7 +40,7 @@ public:
      * inherited from Property::Observer and called whenever a registered property changes.
      * override this in a subclass
      */
-    virtual void update_property(const PropertyConstPtr &theProperty) override {};
+    void update_property(const PropertyConstPtr &theProperty) override {};
 
     void observe_properties(bool b = true);
 

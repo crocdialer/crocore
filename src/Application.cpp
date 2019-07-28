@@ -12,8 +12,8 @@ using double_sec_t = std::chrono::duration<double, std::chrono::seconds::period>
 
 Application::Application(int argc, char *argv[]) :
         Component(argc ? crocore::fs::get_filename_part(argv[0]) : "vierkant_app"),
-        m_start_time(std::chrono::high_resolution_clock::now()),
-        m_last_timestamp(std::chrono::high_resolution_clock::now()),
+        m_start_time(std::chrono::steady_clock::now()),
+        m_last_timestamp(std::chrono::steady_clock::now()),
         m_timingInterval(1.0),
         m_current_fps(0.f),
         m_running(false),
@@ -35,7 +35,7 @@ int Application::run()
     // user setup-hook
     setup();
 
-    std::chrono::high_resolution_clock::time_point time_stamp;
+    std::chrono::steady_clock::time_point time_stamp;
 
     try
     {
@@ -43,7 +43,7 @@ int Application::run()
         while(m_running)
         {
             // get currennt time
-            time_stamp = std::chrono::high_resolution_clock::now();
+            time_stamp = std::chrono::steady_clock::now();
 
             // poll io_service if no seperate worker-threads exist
             if(!m_main_queue.num_threads()) m_main_queue.poll();
@@ -76,7 +76,7 @@ int Application::run()
 
 double Application::application_time() const
 {
-    auto current_time = std::chrono::high_resolution_clock::now();
+    auto current_time = std::chrono::steady_clock::now();
     return double_sec_t(current_time - m_start_time).count();
 }
 

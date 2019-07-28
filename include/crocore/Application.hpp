@@ -65,7 +65,7 @@ private:
 
     // timing
     size_t m_num_loop_iterations = 0;
-    std::chrono::high_resolution_clock::time_point m_start_time, m_last_timestamp, m_last_measure;
+    std::chrono::steady_clock::time_point m_start_time, m_last_timestamp, m_last_measure;
     double m_timingInterval = 1;
 
     float m_current_fps;

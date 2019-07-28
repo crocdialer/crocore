@@ -18,6 +18,15 @@
 #include "crocore.hpp"
 
 namespace crocore {
+
+template<typename T>
+std::vector<uint8_t> to_bytes(const T &t)
+{
+    std::vector<uint8_t> ret(sizeof(t));
+    memcpy(ret.data(), &t, sizeof(t));
+    return ret;
+}
+
 template<typename T>
 inline std::string to_string(const T &theObj, int precision = 0)
 {
