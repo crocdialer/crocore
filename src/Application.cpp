@@ -2,6 +2,8 @@
 // Created by crocdialer on 4/13/19.
 //
 
+#include <signal.h>
+
 #include "crocore/filesystem.hpp"
 #include "crocore/Application.hpp"
 
@@ -9,6 +11,12 @@ namespace crocore {
 
 // 1 double per second
 using double_sec_t = std::chrono::duration<double, std::chrono::seconds::period>;
+
+namespace {
+std::function<void(int)> shutdown_handler;
+
+void signal_handler(int signal) { if(shutdown_handler){ shutdown_handler(signal); }}
+} // namespace
 
 Application::Application(int argc, char *argv[]) :
         Component(argc ? crocore::fs::get_filename_part(argv[0]) : "vierkant_app"),
@@ -20,6 +28,9 @@ Application::Application(int argc, char *argv[]) :
         m_main_queue(0),
         m_background_queue(4)
 {
+    shutdown_handler = [app = this](int) { app->set_running(false); };
+    signal(SIGINT, signal_handler);
+
     srand(time(nullptr));
     for(int i = 0; i < argc; i++){ m_args.emplace_back(argv[i]); }
 
