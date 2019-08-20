@@ -332,7 +332,7 @@ void udp_server::start_listen(uint16_t port)
                     std::vector<uint8_t> datavec(impl->recv_buffer.begin(),
                                                  impl->recv_buffer.begin() +
                                                  bytes_transferred);
-                    impl->receive_function(datavec,
+                    impl->receive_function(std::move(datavec),
                                            impl->remote_endpoint.address().to_string(),
                                            impl->remote_endpoint.port());
                 }
@@ -396,7 +396,7 @@ struct tcp_server_impl
                 // Start the persistent actor that checks for deadline expiry.
                 con->check_deadline();
 
-                con->set_tcp_receive_cb([](tcp_connection_ptr, const std::vector<uint8_t> &data)
+                con->set_tcp_receive_cb([](tcp_connection_ptr, std::vector<uint8_t> data)
                                         {
                                             LOG_DEBUG << std::string(data.begin(), data.end());
                                         });
@@ -607,7 +607,7 @@ size_t tcp_connection::write_bytes(const void *buffer, size_t num_bytes)
         impl_cp->m_deadline_timer.expires_from_now(dur);
     }
 
-    boost::asio::async_write(m_impl->socket, boost::asio::buffer(bytes), [impl_cp, bytes]
+    boost::asio::async_write(m_impl->socket, boost::asio::buffer(bytes), [impl_cp, bytes{std::move(bytes)}]
             (const boost::system::error_code &error, std::size_t bytes_transferred)
     {
         if(!error)
@@ -663,16 +663,19 @@ void tcp_connection::start_receive()
         {
             if(bytes_transferred)
             {
-                std::vector<uint8_t> datavec(impl_cp->recv_buffer.begin(),
-                                             impl_cp->recv_buffer.begin() +
-                                             bytes_transferred);
                 if(self && impl_cp->tcp_receive_cb)
                 {
-                    impl_cp->tcp_receive_cb(self, datavec);
+                    std::vector<uint8_t> datavec(impl_cp->recv_buffer.begin(),
+                                                 impl_cp->recv_buffer.begin() +
+                                                 bytes_transferred);
+                    impl_cp->tcp_receive_cb(self, std::move(datavec));
                 }
                 if(self && impl_cp->m_receive_cb)
                 {
-                    impl_cp->m_receive_cb(self, datavec);
+                    std::vector<uint8_t> datavec(impl_cp->recv_buffer.begin(),
+                                                 impl_cp->recv_buffer.begin() +
+                                                 bytes_transferred);
+                    impl_cp->m_receive_cb(self, std::move(datavec));
                 }
                 LOG_TRACE_2 << "tcp: received " << bytes_transferred << " bytes";
             }

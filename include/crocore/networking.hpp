@@ -66,7 +66,7 @@ class udp_server
 {
 public:
 
-    using receive_cb_t = std::function<void(const std::vector<uint8_t> &, const std::string &, uint16_t)>;
+    using receive_cb_t = std::function<void(std::vector<uint8_t>, const std::string &, uint16_t)>;
 
     explicit udp_server(io_service_t &io_service, receive_cb_t f = receive_cb_t());
 
@@ -127,12 +127,12 @@ class tcp_connection : public Connection, public std::enable_shared_from_this<tc
 public:
 
     // tcp receive function
-    using tcp_receive_cb_t = std::function<void(tcp_connection_ptr, const std::vector<uint8_t> &)>;
+    using tcp_receive_cb_t = std::function<void(tcp_connection_ptr, std::vector<uint8_t>)>;
 
     static tcp_connection_ptr create(io_service_t &io_service,
                                      const std::string &ip,
                                      uint16_t port,
-                                     tcp_receive_cb_t f = tcp_receive_cb_t());
+                                     tcp_receive_cb_t f = {});
 
     tcp_connection(const tcp_connection &) = delete;
 
