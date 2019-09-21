@@ -53,10 +53,10 @@ int Application::run()
         // main loop
         while(m_running)
         {
-            // get currennt time
+            // get current time
             time_stamp = std::chrono::steady_clock::now();
 
-            // poll io_service if no seperate worker-threads exist
+            // poll io_service if no separate worker-threads exist
             if(!m_main_queue.num_threads()) m_main_queue.poll();
 
             // poll input events
