@@ -17,7 +17,8 @@
 #include <random>
 #include "crocore.hpp"
 
-namespace crocore {
+namespace crocore
+{
 
 template<typename T>
 std::vector<uint8_t> to_bytes(const T &t)
@@ -107,7 +108,7 @@ inline std::string remove_whitespace(const std::string &input)
 {
     std::string ret(input);
     ret.erase(std::remove_if(ret.begin(), ret.end(),
-                             [](char c) { return std::isspace<char>(c, std::locale::classic()); }),
+                             [](char c){ return std::isspace<char>(c, std::locale::classic()); }),
               ret.end());
     return ret;
 }
@@ -163,7 +164,7 @@ inline T swap_endian(T u)
     {
         T u;
         unsigned char u8[sizeof(T)];
-    }source, dest;
+    } source, dest;
     source.u = u;
 
     for(size_t k = 0; k < sizeof(T); k++){ dest.u8[k] = source.u8[sizeof(T) - k - 1]; }
@@ -173,7 +174,7 @@ inline T swap_endian(T u)
 inline static void swap_endian(void *dest, const void *src, size_t num_bytes)
 {
     auto tmp = new uint8_t[num_bytes];
-    auto src_ptr = (const uint8_t *)src;
+    auto src_ptr = (const uint8_t *) src;
 
     for(size_t i = 0; i < num_bytes; ++i)
     {
@@ -185,38 +186,38 @@ inline static void swap_endian(void *dest, const void *src, size_t num_bytes)
 
 inline static uint8_t crc8(const uint8_t *buff, size_t size)
 {
-    uint8_t* p = (uint8_t*)buff;
+    uint8_t *p = (uint8_t *) buff;
     uint8_t result = 0xFF;
 
-    for (result = 0 ; size != 0 ; size--)
+    for(result = 0; size != 0; size--)
     {
         result ^= *p++;
 
-        for (size_t i = 0 ; i < 8; i++)
+        for(size_t i = 0; i < 8; i++)
         {
-            if (result & 0x80)
+            if(result & 0x80)
             {
                 result <<= 1;
                 result ^= 0x85; // x8 + x7 + x2 + x0
-            }
-            else{ result <<= 1; }
+            } else{ result <<= 1; }
         }
     }
     return result;
 }
 
-inline static uint16_t crc16(const uint8_t* buff, size_t size)
+inline static uint16_t crc16(const uint8_t *buff, size_t size)
 {
-    uint8_t* data = (uint8_t*)buff;
+    uint8_t *data = (uint8_t *) buff;
     uint16_t result = 0xFFFF;
 
-    for (size_t i = 0; i < size; ++i)
+    for(size_t i = 0; i < size; ++i)
     {
         result ^= data[i];
-        for (size_t j = 0; j < 8; ++j)
+
+        for(size_t j = 0; j < 8; ++j)
         {
-            if (result & 0x01) result = (result >> 1) ^ 0xA001;
-            else result >>= 1;
+            if(result & 0x01){ result = (result >> 1) ^ 0xA001; }
+            else{ result >>= 1; }
         }
     }
     return result;
@@ -228,12 +229,13 @@ inline bool contains(const C &container, const T &elem)
     return std::find(std::begin(container), std::end(container), elem) != std::end(container);
 }
 
-namespace details {
+namespace details
+{
 // allow in-order expansion of parameter packs.
 struct do_in_order
 {
     template<typename T>
-    do_in_order(std::initializer_list<T> &&) {}
+    do_in_order(std::initializer_list<T> &&){}
 };
 
 template<typename C1, typename C2>
@@ -261,7 +263,7 @@ template<typename T = double, typename C>
 inline const T mean(const C &the_container)
 {
     size_t size = std::end(the_container) - std::begin(the_container);
-    return size ? sum<T>(the_container) / (T)(size) : T(0);
+    return size ? sum<T>(the_container) / (T) (size) : T(0);
 }
 
 template<typename T = double, typename C>
@@ -270,9 +272,9 @@ inline const T standard_deviation(const C &the_container)
     auto mean = crocore::mean<T>(the_container);
     std::vector<T> diff(std::begin(the_container), std::end(the_container));
     std::transform(std::begin(the_container), std::end(the_container), diff.begin(),
-                   [mean](T x) { return x - mean; });
+                   [mean](T x){ return x - mean; });
     T sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), T(0));
-    T stdev = std::sqrt(sq_sum / (T)diff.size());
+    T stdev = std::sqrt(sq_sum / (T) diff.size());
     return stdev;
 }
 
@@ -321,7 +323,7 @@ template<typename T>
 inline T map_value(const T &val, const T &src_min, const T &src_max,
                    const T &dst_min, const T &dst_max)
 {
-    float mix_val = clamp<float>((val - src_min) / (float)(src_max - src_min), 0.f, 1.f);
+    float mix_val = clamp<float>((val - src_min) / (float) (src_max - src_min), 0.f, 1.f);
     return mix_slow<T>(dst_min, dst_max, mix_val);
 }
 
