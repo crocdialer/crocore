@@ -45,6 +45,6 @@ namespace cc = crocore;
 #include "Logger.hpp"
 #include "Utils.hpp"
 
-#include <nlohmann/json_fwd.hpp>
+#include <nlohmann/json.hpp>
 
 namespace crocore { using nlohmann::json; }
