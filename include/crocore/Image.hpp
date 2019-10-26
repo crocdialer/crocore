@@ -47,7 +47,7 @@ public:
 
     virtual ImagePtr blur() = 0;
 
-    virtual void flip(bool horizontal = false) = 0;
+    virtual void flip(bool horizontal) = 0;
 
     Type type = Type::UNKNOWN;
 
@@ -88,7 +88,7 @@ public:
 
     ImagePtr blur() override;
 
-    void flip(bool horizontal = false) override;
+    void flip(bool horizontal) override;
 
     void offsets(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a = nullptr) const override;
 
