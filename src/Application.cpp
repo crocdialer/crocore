@@ -7,15 +7,17 @@
 #include "crocore/filesystem.hpp"
 #include "crocore/Application.hpp"
 
-namespace crocore {
+namespace crocore
+{
 
 // 1 double per second
 using double_sec_t = std::chrono::duration<double, std::chrono::seconds::period>;
 
-namespace {
+namespace
+{
 std::function<void(int)> shutdown_handler;
 
-void signal_handler(int signal) { if(shutdown_handler){ shutdown_handler(signal); }}
+void signal_handler(int signal){ if(shutdown_handler){ shutdown_handler(signal); }}
 } // namespace
 
 Application::Application(int argc, char *argv[]) :
@@ -28,7 +30,7 @@ Application::Application(int argc, char *argv[]) :
         m_main_queue(0),
         m_background_queue(4)
 {
-    shutdown_handler = [app = this](int) { app->set_running(false); };
+    shutdown_handler = [app = this](int){ app->set_running(false); };
     signal(SIGINT, signal_handler);
 
     srand(time(nullptr));
@@ -77,7 +79,7 @@ int Application::run()
         // manage teardown, save stuff etc.
         teardown();
 
-    }catch(std::exception &e)
+    } catch(std::exception &e)
     {
         LOG_ERROR << e.what();
         return EXIT_FAILURE;
