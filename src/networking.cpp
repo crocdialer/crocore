@@ -596,9 +596,10 @@ bool tcp_connection::open()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-size_t tcp_connection::write_bytes(const void *buffer, size_t num_bytes)
+size_t tcp_connection::write_bytes(const void *data, size_t num_bytes)
 {
-    auto bytes = std::vector<uint8_t>((uint8_t *)buffer, (uint8_t *)buffer + num_bytes);
+    auto bytes = std::vector<uint8_t>((uint8_t *)data, (uint8_t *)data + num_bytes);
+    auto buffer = boost::asio::buffer(bytes.data(), bytes.size());
     auto impl_cp = m_impl;
 
     if(impl_cp->m_timeout != duration_t(0))
@@ -607,12 +608,15 @@ size_t tcp_connection::write_bytes(const void *buffer, size_t num_bytes)
         impl_cp->m_deadline_timer.expires_from_now(dur);
     }
 
-    boost::asio::async_write(m_impl->socket, boost::asio::buffer(bytes), [impl_cp, bytes{std::move(bytes)}]
+    boost::asio::async_write(m_impl->socket, buffer, [impl_cp, bytes{std::move(bytes)}]
             (const boost::system::error_code &error, std::size_t bytes_transferred)
     {
         if(!error)
         {
-            if(bytes_transferred < bytes.size()){ LOG_WARNING << "not all bytes written"; }
+            if(bytes_transferred < bytes.size())
+            {
+                LOG_WARNING << "not all bytes written";
+            }
         }else
         {
             switch(error.value())

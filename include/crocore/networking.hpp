@@ -148,7 +148,7 @@ public:
 
     size_t read_bytes(void *buffer, size_t sz) override;
 
-    size_t write_bytes(const void *buffer, size_t num_bytes) override;
+    size_t write_bytes(const void *data, size_t num_bytes) override;
 
     size_t available() const override;
 
