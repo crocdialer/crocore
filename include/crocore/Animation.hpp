@@ -44,7 +44,7 @@ public:
     template<typename T>
     static Animation create(T *value_ptr, const T &from_value, const T &to_value, double duration)
     {
-        return Animation(duration, [=](double progress)
+        return Animation(duration, [=](float progress)
         {
             *value_ptr = crocore::mix(from_value, to_value, progress);
         });
