@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(Constructors)
 
         auto poolState = pool->state();
 
-        // nothing was pre-allocated
+        // check for pre-allocated blocks
         BOOST_CHECK_EQUAL(poolState.numBlocks, minNumBlocks);
 
         // we have passed a non pow2 -> check for correct rounding to next pow2
@@ -137,21 +137,23 @@ BOOST_AUTO_TEST_CASE(Allocations)
     };
     std::unordered_map<void *, allocation_test_data_t> pointer_map;
 
+    constexpr size_t num_iterations = 100;
+    constexpr size_t num_allocations = 10;
+
     // loop and create more involved allocations and checks
-    for(uint32_t i = 0; i < 10; ++i)
+    for(uint32_t i = 0; i < num_iterations; ++i)
     {
-        // pow2 from 1 kB ... 1 MB
-        size_t numBytes = (1024U << i);
-
-        // check for proper upscaling to pow2
-        numBytes -= i + 3;
-
-        // actual size will be next power of two
-        size_t allocatedBytes = next_pow_2(numBytes);
-        constexpr size_t num_allocations = 100;
-
         for(uint32_t j = 0; j < num_allocations; ++j)
         {
+            // pow2 from 1 kB ... 1 MB
+            size_t numBytes = (1024U << j);
+
+            // check for proper upscaling to pow2
+            numBytes -= j + 3;
+
+            // actual size will be next power of two
+            size_t allocatedBytes = next_pow_2(numBytes);
+
             uint8_t *ptr = static_cast<uint8_t *>(pool->allocate(numBytes));
             BOOST_CHECK_NE(ptr, nullptr);
 
@@ -160,19 +162,16 @@ BOOST_AUTO_TEST_CASE(Allocations)
 
             // fill memory with dummy values
             auto data = std::unique_ptr<uint8_t[]>(new uint8_t[numBytes]);
-
-            for(uint32_t k = 0; k < numBytes; ++k)
-            {
-                uint8_t rnd_value = static_cast<uint8_t>(rand() % 255);
-                ptr[k] = data[k] = rnd_value;
-            }
+            for(uint32_t k = 0; k < numBytes; ++k){ ptr[k] = data[k] = static_cast<uint8_t>(rand() % 256); }
             pointer_map[ptr] = {numBytes, std::move(data)};
-        }
-        poolState = pool->state();
 
-        BOOST_CHECK_EQUAL(poolState.allocations.size(), i + 1);
-        BOOST_CHECK_EQUAL(poolState.allocations[allocatedBytes], num_allocations);
+            poolState = pool->state();
+            BOOST_CHECK_EQUAL(poolState.allocations[allocatedBytes], i + 1);
+        }
     }
+
+    poolState = pool->state();
+    BOOST_CHECK_EQUAL(poolState.allocations.size(), num_allocations);
 
     // sanity-check for correct content, free everything again
     for(auto &pair : pointer_map)
