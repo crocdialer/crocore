@@ -184,6 +184,7 @@ BOOST_AUTO_TEST_CASE(Allocations)
     // expect an empty pool again
     poolState = pool->state();
     BOOST_CHECK_EQUAL(poolState.allocations.size(), 0);
+    BOOST_CHECK_EQUAL(poolState.numBlocks, fmt.minNumBlocks);
 
     // double free -> violates assert|Expects
 //    pool->free(ptr2);

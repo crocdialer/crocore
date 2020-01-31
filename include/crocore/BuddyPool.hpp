@@ -1,10 +1,9 @@
 #pragma once
 
-#include "crocore/crocore.hpp"
-
-//#include <vector>
-//#include <map>
+#include <list>
 #include <mutex>
+
+#include "crocore/crocore.hpp"
 
 namespace crocore
 {
@@ -103,7 +102,7 @@ private:
 
     create_info_t _format;
 
-    std::vector<struct block_t> _topLevelBlocks;
+    std::list<struct block_t> _topLevelBlocks;
 
     std::mutex _mutex;
 };
