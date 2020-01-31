@@ -17,7 +17,7 @@ class Area_
 public:
     T x = 0, y = 0, width = 0, height = 0;
 
-    explicit operator bool() const { return width && height; }
+    explicit operator bool() const { return width != T(0) && height != T(0); }
 
     inline bool operator==(const Area_<T> &other) const
     {
