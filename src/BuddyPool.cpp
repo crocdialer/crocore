@@ -282,7 +282,7 @@ BuddyPool::BuddyPool(create_info_t fmt) :
         m_format(std::move(fmt))
 {
     // enforce pow2 on all blocksizes, derive num_leaves
-    m_format.blockSize = next_pow_2(m_format.blockSize);
+    m_format.block_size = next_pow_2(m_format.block_size);
     m_format.min_block_size = next_pow_2(m_format.min_block_size);
 
     // create toplevel blocks
@@ -294,14 +294,14 @@ BuddyPool::BuddyPool(create_info_t fmt) :
 
 block_t BuddyPool::create_block()
 {
-    size_t max_level = std::log2(m_format.blockSize / m_format.min_block_size);
+    size_t max_level = std::log2(m_format.block_size / m_format.min_block_size);
     block_t new_block = buddy_create(max_level);
 
     // allocate the actual memory to be managed
     if(m_format.alloc_fn && m_format.dealloc_fn)
     {
         new_block.data = std::unique_ptr<uint8_t, std::function<void(void *)>>(
-                (uint8_t *) m_format.alloc_fn(m_format.blockSize),
+                (uint8_t *) m_format.alloc_fn(m_format.block_size),
                 m_format.dealloc_fn);
     }
     return new_block;
@@ -310,7 +310,7 @@ block_t BuddyPool::create_block()
 void *BuddyPool::allocate(size_t num_bytes)
 {
     // requested numBytes is zero or too large
-    if(!num_bytes || num_bytes > m_format.blockSize){ return nullptr; }
+    if(!num_bytes || num_bytes > m_format.block_size){ return nullptr; }
 
     std::unique_lock<std::mutex> lock(m_mutex);
 
@@ -360,7 +360,7 @@ void BuddyPool::free(void *ptr)
     {
         auto &b = *blockIter;
 
-        auto block_end = b.data.get() + m_format.blockSize;
+        auto block_end = b.data.get() + m_format.block_size;
 
         // address is inside this block
         if(ptr >= b.data.get() && ptr < block_end)
@@ -393,8 +393,8 @@ BuddyPool::state_t BuddyPool::state()
 
     BuddyPool::state_t ret = {};
     ret.num_blocks = m_toplevel_blocks.size();
-    ret.block_size = m_format.blockSize;
-    ret.max_level = std::log2(m_format.blockSize / m_format.min_block_size);
+    ret.block_size = m_format.block_size;
+    ret.max_level = std::log2(m_format.block_size / m_format.min_block_size);
 
     for(const auto &b : m_toplevel_blocks)
     {

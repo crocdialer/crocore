@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(Constructors)
         crocore::BuddyPool::create_info_t createInfo;
 
         // 256MB - something
-        createInfo.blockSize = numBytes_256Mb - 12345;
+        createInfo.block_size = numBytes_256Mb - 12345;
         createInfo.min_block_size = 512;
 
         // check for existence of default allocator/de-allocator (malloc/free)
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(Constructors)
         crocore::BuddyPool::create_info_t createInfo = {};
 
         // 128MB - something
-        createInfo.blockSize = numBytes_128Mb - 54321;
+        createInfo.block_size = numBytes_128Mb - 54321;
         createInfo.min_block_size = 2048;
 
         // request a minimum of blocks to be around -> pre-allocation
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(Allocations)
     crocore::BuddyPool::create_info_t fmt;
 
     // 256MB
-    fmt.blockSize = numBytes_256Mb;
+    fmt.block_size = numBytes_256Mb;
     fmt.min_block_size = 512;
 
     // no preallocation, pool will allocate on first request
@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(Allocations)
     BOOST_CHECK_EQUAL(pool->allocate(0), nullptr);
 
     // test too large allocation fails
-    BOOST_CHECK_EQUAL(pool->allocate(fmt.blockSize + 1), nullptr);
+    BOOST_CHECK_EQUAL(pool->allocate(fmt.block_size + 1), nullptr);
 
     struct allocation_test_data_t
     {

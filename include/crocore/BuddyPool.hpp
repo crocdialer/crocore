@@ -25,7 +25,7 @@ public:
     struct create_info_t
     {
         //! blocksize of toplevel blocks in bytes
-        size_t blockSize;
+        size_t block_size;
 
         //! minimum blocksize in bytes
         size_t min_block_size = 512;
