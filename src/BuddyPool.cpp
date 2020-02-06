@@ -273,52 +273,52 @@ void buddy_collect_allocations(const block_t &b, size_t index, size_t level,
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-BuddyPoolPtr BuddyPool::create(create_info_t fmt)
+BuddyPoolPtr BuddyPool::create(create_info_t create_info)
 {
-    return BuddyPoolPtr(new BuddyPool(std::move(fmt)));
+    return BuddyPoolPtr(new BuddyPool(std::move(create_info)));
 }
 
 BuddyPool::BuddyPool(create_info_t fmt) :
-        _format(std::move(fmt))
+        m_format(std::move(fmt))
 {
     // enforce pow2 on all blocksizes, derive num_leaves
-    _format.blockSize = next_pow_2(_format.blockSize);
-    _format.minBlockSize = next_pow_2(_format.minBlockSize);
+    m_format.blockSize = next_pow_2(m_format.blockSize);
+    m_format.min_block_size = next_pow_2(m_format.min_block_size);
 
     // create toplevel blocks
-    for(size_t i = 0; i < _format.minNumBlocks; ++i)
+    for(size_t i = 0; i < m_format.min_num_blocks; ++i)
     {
-        _topLevelBlocks.push_back(createBlock());
+        m_toplevel_blocks.push_back(create_block());
     }
 }
 
-block_t BuddyPool::createBlock()
+block_t BuddyPool::create_block()
 {
-    size_t max_level = std::log2(_format.blockSize / _format.minBlockSize);
+    size_t max_level = std::log2(m_format.blockSize / m_format.min_block_size);
     block_t new_block = buddy_create(max_level);
 
     // allocate the actual memory to be managed
-    if(_format.allocFn && _format.deallocFn)
+    if(m_format.alloc_fn && m_format.dealloc_fn)
     {
         new_block.data = std::unique_ptr<uint8_t, std::function<void(void *)>>(
-                (uint8_t *) _format.allocFn(_format.blockSize),
-                _format.deallocFn);
+                (uint8_t *) m_format.alloc_fn(m_format.blockSize),
+                m_format.dealloc_fn);
     }
     return new_block;
 }
 
-void *BuddyPool::allocate(size_t numBytes)
+void *BuddyPool::allocate(size_t num_bytes)
 {
     // requested numBytes is zero or too large
-    if(!numBytes || numBytes > _format.blockSize){ return nullptr; }
+    if(!num_bytes || num_bytes > m_format.blockSize){ return nullptr; }
 
-    std::unique_lock<std::mutex> lock(_mutex);
+    std::unique_lock<std::mutex> lock(m_mutex);
 
     // derive number of minimum blocks required
-    size_t size = std::ceil(numBytes / (float) _format.minBlockSize);
+    size_t size = std::ceil(num_bytes / (float) m_format.min_block_size);
 
     // iterate toplevel blocks
-    for(auto &b : _topLevelBlocks)
+    for(auto &b : m_toplevel_blocks)
     {
         // within block, try to allocate, recursively split, find proper index
         int allocation_index = buddy_alloc(b, size);
@@ -326,22 +326,22 @@ void *BuddyPool::allocate(size_t numBytes)
         // allocation succeeded
         if(allocation_index >= 0)
         {
-            return b.data.get() + allocation_index * _format.minBlockSize;
+            return b.data.get() + allocation_index * m_format.min_block_size;
         }
     }
 
     // add new toplevel block, if maxNumBlocks permits it
-    if(!_format.maxNumBlocks || _topLevelBlocks.size() < _format.maxNumBlocks)
+    if(!m_format.max_num_blocks || m_toplevel_blocks.size() < m_format.max_num_blocks)
     {
-        auto new_block = createBlock();
+        auto new_block = create_block();
 
         int allocation_index = buddy_alloc(new_block, size);
 
         // this here should always work
         if(allocation_index >= 0)
         {
-            auto ptr = new_block.data.get() + allocation_index * _format.minBlockSize;
-            _topLevelBlocks.push_back(std::move(new_block));
+            auto ptr = new_block.data.get() + allocation_index * m_format.min_block_size;
+            m_toplevel_blocks.push_back(std::move(new_block));
             return ptr;
         }
     }
@@ -351,16 +351,16 @@ void *BuddyPool::allocate(size_t numBytes)
 
 void BuddyPool::free(void *ptr)
 {
-    std::unique_lock<std::mutex> lock(_mutex);
+    std::unique_lock<std::mutex> lock(m_mutex);
 
     // find proper toplevel block
-    auto blockIter = _topLevelBlocks.begin();
+    auto blockIter = m_toplevel_blocks.begin();
 
-    for(; blockIter != _topLevelBlocks.end(); ++blockIter)
+    for(; blockIter != m_toplevel_blocks.end(); ++blockIter)
     {
         auto &b = *blockIter;
 
-        auto block_end = b.data.get() + _format.blockSize;
+        auto block_end = b.data.get() + m_format.blockSize;
 
         // address is inside this block
         if(ptr >= b.data.get() && ptr < block_end)
@@ -368,18 +368,19 @@ void BuddyPool::free(void *ptr)
             auto ptr_offset = static_cast<uint8_t *>(ptr) - b.data.get();
 
             // invalid address
-            if(ptr_offset % _format.minBlockSize){ return; }
+            if(ptr_offset % m_format.min_block_size){ return; }
 
             // calculate index-offset from address
-            size_t index_offset = ptr_offset / _format.minBlockSize;
+            size_t index_offset = ptr_offset / m_format.min_block_size;
 
             // recursive free / combine blocks
             buddy_free(b, index_offset);
 
             // de-allocate unused blocks above minNumBlocks
-            if(b.tree[0] == NodeState::UNUSED && _topLevelBlocks.size() > _format.minNumBlocks)
+            if(m_format.dealloc_unused_blocks && b.tree[0] == NodeState::UNUSED &&
+               m_toplevel_blocks.size() > m_format.min_num_blocks)
             {
-                _topLevelBlocks.erase(blockIter);
+                m_toplevel_blocks.erase(blockIter);
             }
             break;
         }
@@ -388,16 +389,16 @@ void BuddyPool::free(void *ptr)
 
 BuddyPool::state_t BuddyPool::state()
 {
-    std::unique_lock<std::mutex> lock(_mutex);
+    std::unique_lock<std::mutex> lock(m_mutex);
 
     BuddyPool::state_t ret = {};
-    ret.numBlocks = _topLevelBlocks.size();
-    ret.blockSize = _format.blockSize;
-    ret.maxLevel = std::log2(_format.blockSize / _format.minBlockSize);
+    ret.num_blocks = m_toplevel_blocks.size();
+    ret.block_size = m_format.blockSize;
+    ret.max_level = std::log2(m_format.blockSize / m_format.min_block_size);
 
-    for(const auto &b : _topLevelBlocks)
+    for(const auto &b : m_toplevel_blocks)
     {
-        buddy_collect_allocations(b, 0, 0, _format.minBlockSize, ret.allocations);
+        buddy_collect_allocations(b, 0, 0, m_format.min_block_size, ret.allocations);
     }
     return ret;
 }

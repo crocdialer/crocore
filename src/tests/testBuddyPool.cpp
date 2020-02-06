@@ -19,6 +19,7 @@ static inline size_t next_pow_2(size_t v)
     v |= v >> 4U;
     v |= v >> 8U;
     v |= v >> 16U;
+    v |= v >> 32U;
     v++;
     return v;
 }
@@ -35,24 +36,24 @@ BOOST_AUTO_TEST_CASE(Constructors)
 
         // 256MB - something
         createInfo.blockSize = numBytes_256Mb - 12345;
-        createInfo.minBlockSize = 512;
+        createInfo.min_block_size = 512;
 
         // check for existence of default allocator/de-allocator (malloc/free)
-        BOOST_CHECK(createInfo.allocFn);
-        BOOST_CHECK(createInfo.deallocFn);
+        BOOST_CHECK(createInfo.alloc_fn);
+        BOOST_CHECK(createInfo.dealloc_fn);
 
         auto pool = crocore::BuddyPool::create(createInfo);
 
         auto poolState = pool->state();
 
         // nothing was pre-allocated
-        BOOST_CHECK_EQUAL(poolState.numBlocks, 0);
+        BOOST_CHECK_EQUAL(poolState.num_blocks, 0);
 
         // we have passed a non pow2 -> check for correct rounding to next pow2
-        BOOST_CHECK_EQUAL(poolState.blockSize, numBytes_256Mb);
+        BOOST_CHECK_EQUAL(poolState.block_size, numBytes_256Mb);
 
         // maximum height of binary tree
-        BOOST_CHECK_EQUAL(poolState.maxLevel, 19);
+        BOOST_CHECK_EQUAL(poolState.max_level, 19);
     }
 
     // with pre-allocation
@@ -63,30 +64,29 @@ BOOST_AUTO_TEST_CASE(Constructors)
 
         // 128MB - something
         createInfo.blockSize = numBytes_128Mb - 54321;
-        createInfo.minBlockSize = 2048;
+        createInfo.min_block_size = 2048;
 
         // request a minimum of blocks to be around -> pre-allocation
-        createInfo.minNumBlocks = minNumBlocks;
+        createInfo.min_num_blocks = minNumBlocks;
 
         auto pool = crocore::BuddyPool::create(createInfo);
 
         auto poolState = pool->state();
 
         // check for pre-allocated blocks
-        BOOST_CHECK_EQUAL(poolState.numBlocks, minNumBlocks);
+        BOOST_CHECK_EQUAL(poolState.num_blocks, minNumBlocks);
 
         // we have passed a non pow2 -> check for correct rounding to next pow2
-        BOOST_CHECK_EQUAL(poolState.blockSize, numBytes_128Mb);
+        BOOST_CHECK_EQUAL(poolState.block_size, numBytes_128Mb);
 
         // maximum height of binary tree
-        BOOST_CHECK_EQUAL(poolState.maxLevel, 16);
+        BOOST_CHECK_EQUAL(poolState.max_level, 16);
     }
 }
 
 
 BOOST_AUTO_TEST_CASE(Allocations)
 {
-//    Arguments::setSystemArgs(systemArgs);
     constexpr size_t numBytes_256Mb = 1U << 28U;
     constexpr size_t numBytes_1Mb = 1U << 20U;
 
@@ -94,10 +94,10 @@ BOOST_AUTO_TEST_CASE(Allocations)
 
     // 256MB
     fmt.blockSize = numBytes_256Mb;
-    fmt.minBlockSize = 512;
+    fmt.min_block_size = 512;
 
     // no preallocation, pool will allocate on first request
-    fmt.minNumBlocks = 0;
+    fmt.min_num_blocks = 0;
 
     auto pool = crocore::BuddyPool::create(fmt);
 
@@ -129,6 +129,12 @@ BOOST_AUTO_TEST_CASE(Allocations)
     // expect an empty pool
     poolState = pool->state();
     BOOST_CHECK_EQUAL(poolState.allocations.size(), 0);
+
+    // test zero byte allocation fails
+    BOOST_CHECK_EQUAL(pool->allocate(0), nullptr);
+
+    // test too large allocation fails
+    BOOST_CHECK_EQUAL(pool->allocate(fmt.blockSize + 1), nullptr);
 
     struct allocation_test_data_t
     {
@@ -183,7 +189,7 @@ BOOST_AUTO_TEST_CASE(Allocations)
     // expect an empty pool again
     poolState = pool->state();
     BOOST_CHECK_EQUAL(poolState.allocations.size(), 0);
-    BOOST_CHECK_EQUAL(poolState.numBlocks, fmt.minNumBlocks);
+    BOOST_CHECK_EQUAL(poolState.num_blocks, fmt.min_num_blocks);
 
     // double free -> violates assert|Expects
 //    pool->free(ptr2);
