@@ -27,15 +27,14 @@ static inline size_t next_pow_2(size_t v)
 
 BOOST_AUTO_TEST_CASE(Constructors)
 {
-    constexpr size_t numBytes_256Mb = 1U << 28U;
-    constexpr size_t numBytes_128Mb = numBytes_256Mb / 2;
+    constexpr size_t numBytes_128Mb = 1U << 27U;
 
     // no pre-allocation
     {
         crocore::BuddyPool::create_info_t createInfo;
 
-        // 256MB - something
-        createInfo.block_size = numBytes_256Mb - 12345;
+        // 128MB - something
+        createInfo.block_size = numBytes_128Mb - 12345;
         createInfo.min_block_size = 512;
 
         // check for existence of default allocator/de-allocator (malloc/free)
@@ -50,10 +49,10 @@ BOOST_AUTO_TEST_CASE(Constructors)
         BOOST_CHECK_EQUAL(poolState.num_blocks, 0);
 
         // we have passed a non pow2 -> check for correct rounding to next pow2
-        BOOST_CHECK_EQUAL(poolState.block_size, numBytes_256Mb);
+        BOOST_CHECK_EQUAL(poolState.block_size, numBytes_128Mb);
 
         // maximum height of binary tree
-        BOOST_CHECK_EQUAL(poolState.max_level, 19);
+        BOOST_CHECK_EQUAL(poolState.max_level, 18);
     }
 
     // with pre-allocation
@@ -87,13 +86,13 @@ BOOST_AUTO_TEST_CASE(Constructors)
 
 BOOST_AUTO_TEST_CASE(Allocations)
 {
-    constexpr size_t numBytes_256Mb = 1U << 28U;
+    constexpr size_t numBytes_128Mb = 1U << 27U;
     constexpr size_t numBytes_1Mb = 1U << 20U;
 
     crocore::BuddyPool::create_info_t fmt;
 
-    // 256MB
-    fmt.block_size = numBytes_256Mb;
+    // 128MB
+    fmt.block_size = numBytes_128Mb;
     fmt.min_block_size = 512;
 
     // no preallocation, pool will allocate on first request
@@ -102,7 +101,7 @@ BOOST_AUTO_TEST_CASE(Allocations)
     auto pool = crocore::BuddyPool::create(fmt);
 
     // allocate entire toplevel block
-    void *ptr1 = pool->allocate(numBytes_256Mb);
+    void *ptr1 = pool->allocate(numBytes_128Mb);
     BOOST_CHECK_NE(ptr1, nullptr);
 
     // free pointer
@@ -143,15 +142,15 @@ BOOST_AUTO_TEST_CASE(Allocations)
     };
     std::unordered_map<void *, allocation_test_data_t> pointer_map;
 
-    constexpr size_t num_iterations = 100;
-    constexpr size_t num_allocations = 10;
+    constexpr size_t num_iterations = 50;
+    constexpr size_t num_allocations = 12;
 
     // loop and create more involved allocations and checks
     for(uint32_t i = 0; i < num_iterations; ++i)
     {
         for(uint32_t j = 0; j < num_allocations; ++j)
         {
-            // pow2 from 1 kB ... 1 MB
+            // pow2 from 1 kB ... 2 MB
             size_t numBytes = (1024U << j);
 
             // check for proper upscaling to pow2
