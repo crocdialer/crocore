@@ -209,7 +209,7 @@ size_t get_file_size(const fs::path &the_file_name)
 ///////////////////////////////////////////////////////////////////////////////
 
 /// read a complete file into a string
-const std::string read_file(const fs::path &theUTF8Filename)
+std::string read_file(const fs::path &theUTF8Filename)
 {
     string path = search_file(theUTF8Filename);
     std::ifstream inStream(path);
@@ -298,6 +298,20 @@ bool is_uri(const fs::path &the_str)
 bool is_directory(const fs::path &the_file_name)
 {
     return boost::filesystem::is_directory(expand_user(the_file_name));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+bool is_absolute(const path &the_file_name)
+{
+    return boost::filesystem::path(the_file_name).is_absolute();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+bool is_relative(const path &the_file_name)
+{
+    return boost::filesystem::path(the_file_name).is_relative();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

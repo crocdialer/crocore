@@ -43,13 +43,17 @@ bool is_uri(const path &the_file_name);
 
 bool is_directory(const path &the_file_name);
 
+bool is_absolute(const path &the_file_name);
+
+bool is_relative(const path &the_file_name);
+
 bool create_directory(const path &the_file_name);
 
 std::string join_paths(const path &p1, const path &p2);
 
 std::string path_as_uri(const path &p);
 
-const std::string read_file(const path &theUTF8Filename);
+std::string read_file(const path &theUTF8Filename);
 
 std::vector<uint8_t> read_binary_file(const path &theUTF8Filename);
 
