@@ -36,7 +36,6 @@ public:
 
     /**
      * @brief   Shrinks the internally allocated memory to a minimum, without affecting existing allocations.
-     *
      */
     virtual void shrink() = 0;
 };

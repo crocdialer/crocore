@@ -138,6 +138,40 @@ inline std::string to_upper(const std::string &str)
     return ret;
 }
 
+inline std::string secs_to_time_str(float the_secs)
+{
+    return format("%d:%02d:%04.1f", (int) the_secs / 3600, ((int) the_secs / 60) % 60,
+                  fmodf(the_secs, 60));
+}
+
+inline float time_str_to_secs(const std::string &the_str)
+{
+    float secs = 0.f;
+    auto splits = split(the_str, ':');
+
+    switch(splits.size())
+    {
+        case 3:
+            secs = crocore::string_to<float>(splits[2]) +
+                   60.f * crocore::string_to<float>(splits[1]) +
+                   3600.f * crocore::string_to<float>(splits[0]) ;
+            break;
+
+        case 2:
+            secs = crocore::string_to<float>(splits[1]) +
+                   60.f * crocore::string_to<float>(splits[0]);
+            break;
+
+        case 1:
+            secs = crocore::string_to<float>(splits[0]);
+            break;
+
+        default:
+            break;
+    }
+    return secs;
+}
+
 template<class T>
 inline void hash_combine(std::size_t &seed, const T &v)
 {
