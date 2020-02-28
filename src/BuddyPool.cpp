@@ -387,6 +387,25 @@ void BuddyPool::free(void *ptr)
     }
 }
 
+void BuddyPool::shrink()
+{
+    std::unique_lock<std::mutex> lock(m_mutex);
+
+    // iterate toplevel blocks
+    auto blockIter = m_toplevel_blocks.begin();
+
+    for(; blockIter != m_toplevel_blocks.end(); ++blockIter)
+    {
+        auto &b = *blockIter;
+
+        // de-allocate unused blocks above minNumBlocks
+        if(b.tree[0] == NodeState::UNUSED && m_toplevel_blocks.size() > m_format.min_num_blocks)
+        {
+            blockIter = m_toplevel_blocks.erase(blockIter);
+        }
+    }
+}
+
 BuddyPool::state_t BuddyPool::state()
 {
     std::unique_lock<std::mutex> lock(m_mutex);

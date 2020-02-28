@@ -4,6 +4,7 @@
 #include <mutex>
 
 #include "crocore/crocore.hpp"
+#include "crocore/Allocator.hpp"
 
 namespace crocore
 {
@@ -17,7 +18,7 @@ using BuddyPoolPtr = std::shared_ptr<class BuddyPool>;
  * @see     https://en.wikipedia.org/wiki/Buddy_memory_allocation
  *
  */
-class BuddyPool
+class BuddyPool : public crocore::Allocator
 {
 public:
 
@@ -81,14 +82,21 @@ public:
      * @param   num_bytes    the requested number of bytes to allocate.
      * @return  a pointer to the beginning of a memory-block or nullptr if the allocation failed.
      */
-    void* allocate(size_t num_bytes);
+    void* allocate(size_t num_bytes) override;
 
     /**
      * @brief   Free a block of memory, previously returned by this pool.
      *
      * @param   ptr a pointer to the beginning of a memory block, managed by this pool.
      */
-    void free(void* ptr);
+    void free(void* ptr) override;
+
+    /**
+     * @brief   Shrinks the internally allocated memory to a minimum, without affecting existing allocations.
+     *          In case of a BuddyPool, unused toplevel-blocks above create_info_t::min_num_blocks will be de-allocated.
+     *
+     */
+    void shrink() override;
 
     /**
      * @brief   Query the current state of the pool.
