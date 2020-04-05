@@ -7,21 +7,26 @@
 //  http://www.boost.org/LICENSE_1_0.txt
 // __ ___ ____ _____ ______ _______ ________ _______ ______ _____ ____ ___ __
 
-#include "crocore/filesystem.hpp"
-#include <fstream>
+#include <shared_mutex>
 #include <boost/filesystem.hpp>
+#include "crocore/filesystem.hpp"
 //#include <filesystem>
 
 using namespace std;
 using namespace boost::filesystem;
 
-namespace crocore {
-namespace filesystem {
+namespace crocore
+{
+namespace filesystem
+{
 
 /////////// implementation internal /////////////
 
-namespace {
-std::set<path> g_searchPaths;
+namespace
+{
+std::set<path> g_search_paths;
+
+std::shared_mutex g_mutex;
 }
 
 std::string expand_user(std::string path)
@@ -35,7 +40,8 @@ std::string expand_user(std::string path)
         if(home || ((home = getenv("USERPROFILE"))))
         {
             path.replace(0, 1, home);
-        }else
+        }
+        else
         {
             char const *hdrive = getenv("HOMEDRIVE"),
                     *hpath = getenv("HOMEPATH");
@@ -50,16 +56,17 @@ std::string expand_user(std::string path)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-const std::set<fs::path> &get_search_paths()
+std::set<fs::path> search_paths()
 {
-    return g_searchPaths;
+    std::shared_lock<std::shared_mutex> lock(g_mutex);
+    return g_search_paths;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void add_search_path(const fs::path &thePath, int the_recursion_depth)
+void add_search_path(const fs::path &path, int recursion_depth)
 {
-    boost::filesystem::path path_expanded(expand_user(thePath));
+    boost::filesystem::path path_expanded(expand_user(path));
 
     if(!boost::filesystem::exists(path_expanded))
     {
@@ -67,9 +74,11 @@ void add_search_path(const fs::path &thePath, int the_recursion_depth)
         return;
     }
 
-    if(the_recursion_depth)
+    std::unique_lock<std::shared_mutex> lock(g_mutex);
+
+    if(recursion_depth)
     {
-        g_searchPaths.insert(get_directory_part(path_expanded.string()));
+        g_search_paths.insert(get_directory_part(path_expanded.string()));
         recursive_directory_iterator it;
         try
         {
@@ -78,14 +87,14 @@ void add_search_path(const fs::path &thePath, int the_recursion_depth)
 
             while(it != end)
             {
-                if(is_directory(*it)) g_searchPaths.insert(canonical(it->path()).string());
-                try { ++it; }
+                if(is_directory(*it)) g_search_paths.insert(canonical(it->path()).string());
+                try{ ++it; }
                 catch(std::exception &e)
                 {
                     // e.g. no permission
                     LOG_ERROR << e.what();
                     it.no_push();
-                    try { ++it; }catch(...)
+                    try{ ++it; } catch(...)
                     {
                         LOG_ERROR << "Got trouble in recursive directory iteration: " << it->path();
                         return;
@@ -93,15 +102,17 @@ void add_search_path(const fs::path &thePath, int the_recursion_depth)
                 }
             }
         }
-        catch(std::exception &e) { LOG_ERROR << e.what(); }
-    }else{ g_searchPaths.insert(canonical(path_expanded).string()); }
+        catch(std::exception &e){ LOG_ERROR << e.what(); }
+    }
+    else{ g_search_paths.insert(canonical(path_expanded).string()); }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 void clear_search_paths()
 {
-    g_searchPaths.clear();
+    std::unique_lock<std::shared_mutex> lock(g_mutex);
+    g_search_paths.clear();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -134,7 +145,8 @@ vector<string> get_directory_entries(const fs::path &thePath, const std::string 
                         if(theExtension.empty())
                         {
                             ret.push_back(it->path().string());
-                        }else
+                        }
+                        else
                         {
                             string ext = it->path().extension().string();
                             if(!ext.empty()) ext = ext.substr(1);
@@ -142,7 +154,7 @@ vector<string> get_directory_entries(const fs::path &thePath, const std::string 
                         }
                     }
 
-                    try { ++it; }
+                    try{ ++it; }
                     catch(std::exception &e)
                     {
                         // e.g. no permission
@@ -151,7 +163,8 @@ vector<string> get_directory_entries(const fs::path &thePath, const std::string 
                         ++it;
                     }
                 }
-            }else
+            }
+            else
             {
                 directory_iterator it(p), end;
                 while(it != end)
@@ -161,7 +174,8 @@ vector<string> get_directory_entries(const fs::path &thePath, const std::string 
                         if(theExtension.empty())
                         {
                             ret.push_back(it->path().string());
-                        }else
+                        }
+                        else
                         {
                             string ext = it->path().extension().string();
                             if(!ext.empty()) ext = ext.substr(1);
@@ -169,14 +183,15 @@ vector<string> get_directory_entries(const fs::path &thePath, const std::string 
                         }
                     }
 
-                    try { ++it; }
+                    try{ ++it; }
                     catch(std::exception &e)
                     {
                         LOG_ERROR << e.what();
                     }
                 }
             }
-        }else{ LOG_TRACE << p << " does not exist"; }
+        }
+        else{ LOG_TRACE << p << " does not exist"; }
     }
     catch(const std::exception &e)
     {
@@ -288,7 +303,7 @@ bool is_uri(const fs::path &the_str)
 
     for(size_t i = 0; i < result; ++i)
     {
-        if(!isalpha(the_str[i])){ return false; }
+        if(!::isalpha(the_str[i])){ return false; }
     }
     return true;
 }
@@ -327,10 +342,8 @@ bool create_directory(const fs::path &the_file_name)
 {
     if(!exists(the_file_name))
     {
-        try
-        {
-            return boost::filesystem::create_directory(the_file_name);
-        }catch(std::exception &e) { LOG_ERROR << e.what(); }
+        try{ return boost::filesystem::create_directory(the_file_name); }
+        catch(std::exception &e){ LOG_ERROR << e.what(); }
     }
     return false;
 }
@@ -352,21 +365,20 @@ std::string path_as_uri(const fs::path &p)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-fs::path search_file(const fs::path &the_file_name, bool use_entire_path)
+fs::path search_file(const fs::path &file_name)
 {
-    auto trim_file_name = trim(the_file_name);
+    auto trim_file_name = trim(file_name);
 
-    std::string expanded_name = use_entire_path ? expand_user(trim_file_name) : get_filename_part(trim_file_name);
+    std::string expanded_name = expand_user(trim_file_name);
     boost::filesystem::path ret_path(expanded_name);
 
     try
     {
-        if(ret_path.is_absolute() && is_regular_file(ret_path))
-        {
-            return ret_path.string();
-        }
+        if(ret_path.is_absolute() && is_regular_file(ret_path)){ return ret_path.string(); }
 
-        for(const auto &p : get_search_paths())
+        std::shared_lock<std::shared_mutex> lock(g_mutex);
+
+        for(const auto &p : g_search_paths)
         {
             ret_path = path(p) / path(expanded_name);
 
@@ -377,11 +389,10 @@ fs::path search_file(const fs::path &the_file_name, bool use_entire_path)
             }
         }
     }
-    catch(std::exception &e) { LOG_DEBUG << e.what(); }
+    catch(std::exception &e){ LOG_DEBUG << e.what(); }
 
-
-    if(use_entire_path){ return search_file(the_file_name, false); }
-    throw FileNotFoundException(the_file_name);
+    // not found
+    throw FileNotFoundException(file_name);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
