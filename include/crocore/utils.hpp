@@ -154,7 +154,7 @@ inline float time_str_to_secs(const std::string &the_str)
         case 3:
             secs = crocore::string_to<float>(splits[2]) +
                    60.f * crocore::string_to<float>(splits[1]) +
-                   3600.f * crocore::string_to<float>(splits[0]) ;
+                   3600.f * crocore::string_to<float>(splits[0]);
             break;
 
         case 2:
@@ -233,7 +233,8 @@ inline static uint8_t crc8(const uint8_t *buff, size_t size)
             {
                 result <<= 1;
                 result ^= 0x85; // x8 + x7 + x2 + x0
-            } else{ result <<= 1; }
+            }
+            else{ result <<= 1; }
         }
     }
     return result;
@@ -395,4 +396,27 @@ inline std::string syscall(const std::string &cmd)
     while(fgets(buf, sizeof(buf), pipe.get())){ ret.append(buf); }
     return ret;
 }
+
+// wrapper functions for aligned memory allocation
+static inline void *aligned_alloc(size_t size, size_t alignment)
+{
+    void *data = nullptr;
+#if defined(_MSC_VER) || defined(__MINGW32__)
+    data = _aligned_malloc(size, alignment);
+#else
+    int res = posix_memalign(&data, alignment, size);
+    if(res != 0){ data = nullptr; }
+#endif
+    return data;
+}
+
+static inline void aligned_free(void *data)
+{
+#if    defined(_MSC_VER) || defined(__MINGW32__)
+    _aligned_free(data);
+#else
+    free(data);
+#endif
+}
+
 }
