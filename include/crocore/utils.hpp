@@ -289,20 +289,20 @@ inline std::vector<T> concat_containers(C &&... the_containers)
 }
 
 template<typename T = double, typename C>
-inline const T sum(const C &the_container)
+inline T sum(const C &the_container)
 {
     return std::accumulate(std::begin(the_container), std::end(the_container), T(0));
 }
 
 template<typename T = double, typename C>
-inline const T mean(const C &the_container)
+inline T mean(const C &the_container)
 {
     size_t size = std::end(the_container) - std::begin(the_container);
     return size ? sum<T>(the_container) / (T) (size) : T(0);
 }
 
 template<typename T = double, typename C>
-inline const T standard_deviation(const C &the_container)
+inline T standard_deviation(const C &the_container)
 {
     auto mean = crocore::mean<T>(the_container);
     std::vector<T> diff(std::begin(the_container), std::end(the_container));
@@ -314,7 +314,7 @@ inline const T standard_deviation(const C &the_container)
 }
 
 template<typename T = double, typename C>
-inline const T median(const C &the_container)
+inline T median(const C &the_container)
 {
     std::vector<T> tmp_array(std::begin(the_container), std::end(the_container));
     if(tmp_array.empty()){ return T(0); }
