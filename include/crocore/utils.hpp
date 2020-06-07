@@ -172,6 +172,25 @@ inline float time_str_to_secs(const std::string &the_str)
     return secs;
 }
 
+inline bool is_pow_2(size_t v)
+{
+    return !(v & (v - 1));
+}
+
+inline size_t next_pow_2(size_t v)
+{
+    if(is_pow_2(v)){ return v; }
+    v--;
+    v |= v >> 1U;
+    v |= v >> 2U;
+    v |= v >> 4U;
+    v |= v >> 8U;
+    v |= v >> 16U;
+    v |= v >> 32U;
+    v++;
+    return v;
+}
+
 template<class T>
 inline void hash_combine(std::size_t &seed, const T &v)
 {

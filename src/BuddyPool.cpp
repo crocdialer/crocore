@@ -4,25 +4,6 @@
 #include "crocore/BuddyPool.hpp"
 
 
-static inline bool is_pow_2(size_t v)
-{
-    return !(v & (v - 1));
-}
-
-static inline size_t next_pow_2(size_t v)
-{
-    if(is_pow_2(v)){ return v; }
-    v--;
-    v |= v >> 1U;
-    v |= v >> 2U;
-    v |= v >> 4U;
-    v |= v >> 8U;
-    v |= v >> 16U;
-    v |= v >> 32U;
-    v++;
-    return v;
-}
-
 //! internal namespace for binary-tree utils
 namespace tree
 {
