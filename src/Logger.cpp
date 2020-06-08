@@ -86,7 +86,7 @@ int ConnectionStreamBuf::sync()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-const std::string currentDateTime()
+std::string currentDateTime()
 {
     time_t now = time(nullptr);
     struct tm tstruct = {};
