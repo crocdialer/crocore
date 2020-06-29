@@ -9,8 +9,7 @@
 
 #pragma once
 
-//#include <any>
-#include <boost/any.hpp>
+#include <any>
 #include "crocore.hpp"
 
 
@@ -24,7 +23,7 @@ public:
 
     virtual ~Property() = default;
 
-    inline boost::any get_value() const { return m_value; };
+    inline std::any get_value() const { return m_value; };
 
     const std::string &name() const;
 
@@ -34,7 +33,7 @@ public:
 
     bool tweakable() const;
 
-    bool empty() const { return m_value.empty(); };
+    bool empty() const { return m_value.has_value(); };
 
     template<typename T>
     inline void set_value(const T &theValue)
@@ -50,22 +49,22 @@ public:
     template<typename T>
     inline const T &get_value() const
     {
-        try { return *boost::any_cast<T>(&m_value); }
-        catch(const boost::bad_any_cast &e) { throw WrongTypeGetException(name()); }
+        try { return *std::any_cast<T>(&m_value); }
+        catch(const std::bad_any_cast &e) { throw WrongTypeGetException(name()); }
     }
 
     template<typename T>
     inline T &get_value()
     {
-        try { return *boost::any_cast<T>(&m_value); }
-        catch(const boost::bad_any_cast &e) { throw WrongTypeGetException(name()); }
+        try { return *std::any_cast<T>(&m_value); }
+        catch(const std::bad_any_cast &e) { throw WrongTypeGetException(name()); }
     }
 
     template<typename T>
     inline T *get_value_ptr()
     {
-        try { return boost::any_cast<T>(&m_value); }
-        catch(const boost::bad_any_cast &e) { throw WrongTypeGetException(name()); }
+        try { return std::any_cast<T>(&m_value); }
+        catch(const std::bad_any_cast &e) { throw WrongTypeGetException(name()); }
     }
 
     template<typename C>
@@ -74,7 +73,7 @@ public:
         return m_value.type() == typeid(C);
     }
 
-    virtual bool check_value(const boost::any &theVal) { return theVal.type() == m_value.type(); };
+    virtual bool check_value(const std::any &theVal) { return theVal.type() == m_value.type(); };
 
     DEFINE_CLASS_PTR(Observer);
 
@@ -95,11 +94,11 @@ public:
 protected:
     Property();
 
-    Property(const std::string &theName, const boost::any &theValue);
+    Property(const std::string &theName, const std::any &theValue);
 
 private:
     std::shared_ptr<struct PropertyImpl> m_impl;
-    boost::any m_value;
+    std::any m_value;
 
 public:
     // define std::runtime_errors
@@ -267,16 +266,16 @@ public:
         return std::make_pair(m_min, m_max);
     };
 
-    bool check_value(const boost::any &theVal) override
+    bool check_value(const std::any &theVal) override
     {
         T v;
 
         try
         {
-            v = boost::any_cast<T>(theVal);
+            v = std::any_cast<T>(theVal);
             range_check(v);
         }
-        catch(const boost::bad_any_cast &e)
+        catch(const std::bad_any_cast &e)
         {
             return false;
         }
