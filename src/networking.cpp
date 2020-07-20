@@ -496,7 +496,7 @@ struct tcp_connection_impl
     explicit tcp_connection_impl(tcp::socket s, tcp_connection::tcp_receive_cb_t f = {}) :
             socket(std::move(s)),
             recv_buffer(8192),
-            m_deadline_timer(socket.get_io_service()),
+            m_deadline_timer(socket.get_executor()),
             m_timeout(duration_t(0.0)),
             tcp_receive_cb(std::move(f))
     {
