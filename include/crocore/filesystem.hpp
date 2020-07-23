@@ -10,72 +10,71 @@
 #pragma once
 
 #include "crocore/crocore.hpp"
+#include <filesystem>
 
-namespace crocore {
-namespace filesystem {
-
-using path = std::string;
+namespace crocore
+{
+namespace filesystem
+{
 
 enum class FileType
 {
     IMAGE, MODEL, AUDIO, MOVIE, DIRECTORY, FONT, OTHER, NOT_A_FILE
 };
 
-size_t get_file_size(const path &the_file_name);
+size_t get_file_size(const std::filesystem::path &the_file_name);
 
 // manage known file locations
-std::set<path> search_paths();
+std::set<std::filesystem::path> search_paths();
 
-void add_search_path(const path &path, int recursion_depth = 0);
+void add_search_path(const std::filesystem::path &path, int recursion_depth = 0);
 
 void clear_search_paths();
 
-std::vector<std::string> get_directory_entries(const path &thePath,
+std::vector<std::string> get_directory_entries(const std::filesystem::path &thePath,
                                                const std::string &theExtension = "",
                                                int the_recursion_depth = 0);
 
-std::vector<std::string> get_directory_entries(const path &thePath, FileType the_type,
+std::vector<std::string> get_directory_entries(const std::filesystem::path &thePath, FileType the_type,
                                                int the_recursion_depth = 0);
 
-bool exists(const path &the_file_name);
+bool exists(const std::filesystem::path &the_file_name);
 
-bool is_uri(const path &the_file_name);
+bool is_uri(const std::string &str);
 
-bool is_directory(const path &the_file_name);
+bool is_directory(const std::filesystem::path &the_file_name);
 
-bool is_absolute(const path &the_file_name);
+bool is_absolute(const std::filesystem::path &the_file_name);
 
-bool is_relative(const path &the_file_name);
+bool is_relative(const std::filesystem::path &the_file_name);
 
-bool create_directory(const path &the_file_name);
+bool create_directory(const std::filesystem::path &the_file_name);
 
-std::string join_paths(const path &p1, const path &p2);
+std::string join_paths(const std::filesystem::path &p1, const std::filesystem::path &p2);
 
-std::string path_as_uri(const path &p);
+std::string path_as_uri(const std::filesystem::path &p);
 
-std::string read_file(const path &theUTF8Filename);
+std::string read_file(const std::filesystem::path &theUTF8Filename);
 
-std::vector<uint8_t> read_binary_file(const path &theUTF8Filename);
+std::vector<uint8_t> read_binary_file(const std::filesystem::path &theUTF8Filename);
 
-bool write_file(const path &the_file_name, const std::string &the_data);
+bool write_file(const std::filesystem::path &the_file_name, const std::string &the_data);
 
-bool write_file(const path &the_file_name, const std::vector<uint8_t> &the_data);
+bool write_file(const std::filesystem::path &the_file_name, const std::vector<uint8_t> &the_data);
 
-bool append_to_file(const std::string &the_file_name, const std::string &the_data);
+bool append_to_file(const std::filesystem::path &the_file_name, const std::string &the_data);
 
-std::string get_filename_part(const path &the_file_name);
+std::string get_filename_part(const std::filesystem::path &the_file_name);
 
-std::string get_directory_part(const path &the_file_name);
+std::string get_directory_part(const std::filesystem::path &the_file_name);
 
-filesystem::path search_file(const path &file_name);
+std::filesystem::path search_file(const std::filesystem::path &file_name);
 
-std::string get_working_directory();
+std::string get_extension(const std::filesystem::path &thePath);
 
-std::string get_extension(const path &thePath);
+std::string remove_extension(const std::filesystem::path &the_file_name);
 
-std::string remove_extension(const path &the_file_name);
-
-FileType get_file_type(const path &file_name);
+FileType get_file_type(const std::filesystem::path &file_name);
 
 /************************ Exceptions ************************/
 
@@ -86,23 +85,23 @@ private:
 public:
     explicit FileNotFoundException(const std::string &the_file_name) :
             std::runtime_error(std::string("File not found: ") + the_file_name),
-            m_file_name(the_file_name) {}
+            m_file_name(the_file_name){}
 
-    std::string file_name() const { return m_file_name; }
+    std::string file_name() const{ return m_file_name; }
 };
 
 class OpenDirectoryFailed : public std::runtime_error
 {
 public:
     explicit OpenDirectoryFailed(const std::string &theDir) :
-            std::runtime_error(std::string("Could not open directory: ") + theDir) {}
+            std::runtime_error(std::string("Could not open directory: ") + theDir){}
 };
 
 class OpenFileFailed : public std::runtime_error
 {
 public:
     explicit OpenFileFailed(const std::string &the_file_name) :
-            std::runtime_error(std::string("Could not open file: ") + the_file_name) {}
+            std::runtime_error(std::string("Could not open file: ") + the_file_name){}
 };
 }// namespace filesystem
 

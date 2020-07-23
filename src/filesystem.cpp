@@ -8,12 +8,8 @@
 // __ ___ ____ _____ ______ _______ ________ _______ ______ _____ ____ ___ __
 
 #include <shared_mutex>
-#include <boost/filesystem.hpp>
+#include <fstream>
 #include "crocore/filesystem.hpp"
-//#include <filesystem>
-
-using namespace std;
-using namespace boost::filesystem;
 
 namespace crocore
 {
@@ -24,7 +20,7 @@ namespace filesystem
 
 namespace
 {
-std::set<path> g_search_paths;
+std::set<std::filesystem::path> g_search_paths;
 
 std::shared_mutex g_mutex;
 }
@@ -35,7 +31,7 @@ std::string expand_user(std::string path)
 
     if(!path.empty() && path[0] == '~')
     {
-        if(path.size() != 1 && path[1] != '/') return path; // or other error handling ?
+        if(path.size() != 1 && path[1] != '/'){ return path; } // or other error handling ?
         char const *home = getenv("HOME");
         if(home || ((home = getenv("USERPROFILE"))))
         {
@@ -45,7 +41,7 @@ std::string expand_user(std::string path)
         {
             char const *hdrive = getenv("HOMEDRIVE"),
                     *hpath = getenv("HOMEPATH");
-            if(!(hdrive && hpath)) return path; // or other error handling ?
+            if(!(hdrive && hpath)){ return path; } // or other error handling ?
             path.replace(0, 1, std::string(hdrive) + hpath);
         }
     }
@@ -56,7 +52,7 @@ std::string expand_user(std::string path)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::set<fs::path> search_paths()
+std::set<std::filesystem::path> search_paths()
 {
     std::shared_lock<std::shared_mutex> lock(g_mutex);
     return g_search_paths;
@@ -64,11 +60,11 @@ std::set<fs::path> search_paths()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void add_search_path(const fs::path &path, int recursion_depth)
+void add_search_path(const std::filesystem::path &path, int recursion_depth)
 {
-    boost::filesystem::path path_expanded(expand_user(path));
+    std::filesystem::path path_expanded(expand_user(path));
 
-    if(!boost::filesystem::exists(path_expanded))
+    if(!std::filesystem::exists(path_expanded))
     {
         LOG_DEBUG << "directory " << path_expanded << " not existing";
         return;
@@ -79,21 +75,21 @@ void add_search_path(const fs::path &path, int recursion_depth)
     if(recursion_depth)
     {
         g_search_paths.insert(get_directory_part(path_expanded.string()));
-        recursive_directory_iterator it;
+        std::filesystem::recursive_directory_iterator it;
         try
         {
-            it = recursive_directory_iterator(path_expanded);
-            recursive_directory_iterator end;
+            it = std::filesystem::recursive_directory_iterator(path_expanded);
+            std::filesystem::recursive_directory_iterator end;
 
             while(it != end)
             {
-                if(is_directory(*it)) g_search_paths.insert(canonical(it->path()).string());
+                if(std::filesystem::is_directory(*it)){ g_search_paths.insert(canonical(it->path()).string()); }
                 try{ ++it; }
                 catch(std::exception &e)
                 {
                     // e.g. no permission
                     LOG_ERROR << e.what();
-                    it.no_push();
+                    it.disable_recursion_pending();
                     try{ ++it; } catch(...)
                     {
                         LOG_ERROR << "Got trouble in recursive directory iteration: " << it->path();
@@ -117,27 +113,28 @@ void clear_search_paths()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-vector<string> get_directory_entries(const fs::path &thePath, const std::string &theExtension,
-                                     int the_recursion_depth)
+std::vector<std::string> get_directory_entries(const std::filesystem::path &thePath, const std::string &theExtension,
+                                               int the_recursion_depth)
 {
-    vector<string> ret;
-    path p(expand_user(thePath));
+    std::vector<std::string> ret;
+    std::filesystem::path p(expand_user(thePath));
 
-    auto check_file_status = [](const boost::filesystem::file_status &s) -> bool
+    auto check_file_status = [](const std::filesystem::file_status &s) -> bool
     {
-        return s.type() == boost::filesystem::regular_file ||
-               s.type() == boost::filesystem::symlink_file ||
-               s.type() == boost::filesystem::character_file ||
-               s.type() == boost::filesystem::block_file;
+        return std::filesystem::is_regular_file(s) ||
+               std::filesystem::is_symlink(s) ||
+               std::filesystem::is_character_file(s) ||
+               std::filesystem::is_block_file(s);
     };
 
     try
     {
-        if(exists(p))    // does p actually exist?
+        if(std::filesystem::exists(p))    // does p actually exist?
         {
             if(the_recursion_depth)
             {
-                recursive_directory_iterator it(p), end;
+                std::filesystem::recursive_directory_iterator it(p), end;
+
                 while(it != end)
                 {
                     if(check_file_status(it->status()))
@@ -148,8 +145,8 @@ vector<string> get_directory_entries(const fs::path &thePath, const std::string 
                         }
                         else
                         {
-                            string ext = it->path().extension().string();
-                            if(!ext.empty()) ext = ext.substr(1);
+                            std::string ext = it->path().extension().string();
+                            if(!ext.empty()){ ext = ext.substr(1); }
                             if(theExtension == ext){ ret.push_back(it->path().string()); }
                         }
                     }
@@ -159,14 +156,15 @@ vector<string> get_directory_entries(const fs::path &thePath, const std::string 
                     {
                         // e.g. no permission
                         LOG_ERROR << e.what();
-                        it.no_push();
+                        it.disable_recursion_pending();
                         ++it;
                     }
                 }
             }
             else
             {
-                directory_iterator it(p), end;
+                std::filesystem::directory_iterator it(p), end;
+
                 while(it != end)
                 {
                     if(check_file_status(it->status()))
@@ -177,8 +175,8 @@ vector<string> get_directory_entries(const fs::path &thePath, const std::string 
                         }
                         else
                         {
-                            string ext = it->path().extension().string();
-                            if(!ext.empty()) ext = ext.substr(1);
+                            std::string ext = it->path().extension().string();
+                            if(!ext.empty()){ ext = ext.substr(1); }
                             if(theExtension == ext){ ret.push_back(it->path().string()); }
                         }
                     }
@@ -203,8 +201,8 @@ vector<string> get_directory_entries(const fs::path &thePath, const std::string 
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::vector<string> get_directory_entries(const fs::path &thePath, FileType the_type,
-                                          int the_recursion_depth)
+std::vector<std::string> get_directory_entries(const std::filesystem::path &thePath, FileType the_type,
+                                               int the_recursion_depth)
 {
     auto ret = get_directory_entries(thePath, "", the_recursion_depth);
     ret.erase(std::remove_if(ret.begin(), ret.end(), [the_type](const std::string &f)
@@ -216,46 +214,43 @@ std::vector<string> get_directory_entries(const fs::path &thePath, FileType the_
 
 ///////////////////////////////////////////////////////////////////////////////
 
-size_t get_file_size(const fs::path &the_file_name)
+size_t get_file_size(const std::filesystem::path &the_file_name)
 {
-    return boost::filesystem::file_size(expand_user(the_file_name));
+    return std::filesystem::file_size(expand_user(the_file_name));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 /// read a complete file into a string
-std::string read_file(const fs::path &theUTF8Filename)
+std::string read_file(const std::filesystem::path &theUTF8Filename)
 {
-    string path = search_file(theUTF8Filename);
+    std::string path = search_file(theUTF8Filename);
     std::ifstream inStream(path);
 
     if(!inStream.is_open()){ throw OpenFileFailed(path); }
-    return string((istreambuf_iterator<char>(inStream)), istreambuf_iterator<char>());
+    return std::string((std::istreambuf_iterator<char>(inStream)), std::istreambuf_iterator<char>());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint8_t> read_binary_file(const fs::path &theUTF8Filename)
+std::vector<uint8_t> read_binary_file(const std::filesystem::path &theUTF8Filename)
 {
-    fs::path path = search_file(theUTF8Filename);
-    std::ifstream inStream(path, ios::in | ios::binary | ios::ate);
+    std::filesystem::path path = search_file(theUTF8Filename);
+    std::ifstream inStream(path, std::ios::in | std::ios::binary | std::ios::ate);
 
-    if(!inStream.good())
-    {
-        throw OpenFileFailed(theUTF8Filename);
-    }
+    if(!inStream.good()){ throw OpenFileFailed(theUTF8Filename); }
     std::vector<uint8_t> content;
     content.reserve(inStream.tellg());
     inStream.seekg(0);
 
-    content.insert(content.end(), (istreambuf_iterator<char>(inStream)),
-                   istreambuf_iterator<char>());
+    content.insert(content.end(), (std::istreambuf_iterator<char>(inStream)),
+                   std::istreambuf_iterator<char>());
     return content;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool write_file(const fs::path &the_file_name, const std::string &the_data)
+bool write_file(const std::filesystem::path &the_file_name, const std::string &the_data)
 {
     std::ofstream file_out(expand_user(the_file_name));
     if(!file_out){ return false; }
@@ -266,9 +261,9 @@ bool write_file(const fs::path &the_file_name, const std::string &the_data)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool write_file(const fs::path &the_file_name, const std::vector<uint8_t> &the_data)
+bool write_file(const std::filesystem::path &the_file_name, const std::vector<uint8_t> &the_data)
 {
-    std::ofstream file_out(expand_user(the_file_name), ios::out | ios::binary);
+    std::ofstream file_out(expand_user(the_file_name), std::ios::out | std::ios::binary);
     if(!file_out){ return false; }
     file_out.write(reinterpret_cast<const char *>(&the_data[0]), the_data.size());
     file_out.close();
@@ -277,9 +272,9 @@ bool write_file(const fs::path &the_file_name, const std::vector<uint8_t> &the_d
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool append_to_file(const fs::path &the_file_name, const std::string &the_data)
+bool append_to_file(const std::filesystem::path &the_file_name, const std::string &the_data)
 {
-    std::ofstream file_out(expand_user(the_file_name), ios::out | ios::app);
+    std::ofstream file_out(expand_user(the_file_name), std::ios::out | std::ios::app);
     if(!file_out){ return false; }
     file_out << the_data;
     file_out.close();
@@ -288,61 +283,61 @@ bool append_to_file(const fs::path &the_file_name, const std::string &the_data)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string get_filename_part(const fs::path &the_file_name)
+std::string get_filename_part(const std::filesystem::path &the_file_name)
 {
-    return boost::filesystem::path(expand_user(the_file_name)).filename().string();
+    return std::filesystem::path(expand_user(the_file_name)).filename().string();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool is_uri(const fs::path &the_str)
+bool is_uri(const std::string &str)
 {
-    auto result = the_str.find("://");
+    auto result = str.find("://");
 
     if(result == std::string::npos || result == 0){ return false; }
 
     for(size_t i = 0; i < result; ++i)
     {
-        if(!::isalpha(the_str[i])){ return false; }
+        if(!::isalpha(str[i])){ return false; }
     }
     return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool is_directory(const fs::path &the_file_name)
+bool is_directory(const std::filesystem::path &the_file_name)
 {
-    return boost::filesystem::is_directory(expand_user(the_file_name));
+    return std::filesystem::is_directory(expand_user(the_file_name));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool is_absolute(const path &the_file_name)
+bool is_absolute(const std::filesystem::path &the_file_name)
 {
-    return boost::filesystem::path(the_file_name).is_absolute();
+    return std::filesystem::path(the_file_name).is_absolute();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool is_relative(const path &the_file_name)
+bool is_relative(const std::filesystem::path &the_file_name)
 {
-    return boost::filesystem::path(the_file_name).is_relative();
+    return std::filesystem::path(the_file_name).is_relative();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool exists(const fs::path &the_file_name)
+bool exists(const std::filesystem::path &the_file_name)
 {
-    return boost::filesystem::exists(expand_user(the_file_name));
+    return std::filesystem::exists(expand_user(the_file_name));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool create_directory(const fs::path &the_file_name)
+bool create_directory(const std::filesystem::path &the_file_name)
 {
-    if(!exists(the_file_name))
+    if(!std::filesystem::exists(the_file_name))
     {
-        try{ return boost::filesystem::create_directory(the_file_name); }
+        try{ return std::filesystem::create_directory(the_file_name); }
         catch(std::exception &e){ LOG_ERROR << e.what(); }
     }
     return false;
@@ -350,27 +345,27 @@ bool create_directory(const fs::path &the_file_name)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string join_paths(const fs::path &p1, const fs::path &p2)
+std::string join_paths(const std::filesystem::path &p1, const std::filesystem::path &p2)
 {
-    return (path(p1) / path(p2)).string();
+    return (p1 / p2).string();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string path_as_uri(const fs::path &p)
+std::string path_as_uri(const std::filesystem::path &p)
 {
-    if(is_uri(p)) return p;
-    return "file://" + canonical(expand_user(p)).string();
+    if(is_uri(p)){ return p; }
+    return "file://" + std::filesystem::canonical(expand_user(p)).string();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-fs::path search_file(const fs::path &file_name)
+std::filesystem::path search_file(const std::filesystem::path &file_name)
 {
     auto trim_file_name = trim(file_name);
 
     std::string expanded_name = expand_user(trim_file_name);
-    boost::filesystem::path ret_path(expanded_name);
+    std::filesystem::path ret_path(expanded_name);
 
     try
     {
@@ -380,9 +375,9 @@ fs::path search_file(const fs::path &file_name)
 
         for(const auto &p : g_search_paths)
         {
-            ret_path = path(p) / path(expanded_name);
+            ret_path = p / std::filesystem::path(expanded_name);
 
-            if(boost::filesystem::exists(ret_path) && is_regular_file(ret_path))
+            if(std::filesystem::exists(ret_path) && is_regular_file(ret_path))
             {
                 LOG_TRACE_2 << "found '" << trim_file_name << "' as: " << ret_path.string();
                 return ret_path.string();
@@ -397,47 +392,45 @@ fs::path search_file(const fs::path &file_name)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-fs::path get_working_directory()
-{
-    return boost::filesystem::current_path().string();
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-fs::path get_directory_part(const std::string &the_file_name)
+std::string get_directory_part(const std::filesystem::path &the_file_name)
 {
     auto expanded_path = expand_user(the_file_name);
 
     if(is_directory(expanded_path))
-        return boost::filesystem::path(expanded_path).string();
+    {
+        return std::filesystem::path(expanded_path).string();
+    }
     else
-        return boost::filesystem::path(expanded_path).parent_path().string();
+    {
+        return std::filesystem::path(expanded_path).parent_path().string();
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string get_extension(const fs::path &the_file_name)
+std::string get_extension(const std::filesystem::path &the_file_name)
 {
-    return boost::filesystem::extension(expand_user(the_file_name));
+    std::filesystem::path p = expand_user(the_file_name);
+    return p.extension();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string remove_extension(const fs::path &the_file_name)
+std::string remove_extension(const std::filesystem::path &the_file_name)
 {
-    return boost::filesystem::path(expand_user(the_file_name)).replace_extension().string();
+    return std::filesystem::path(expand_user(the_file_name)).replace_extension().string();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-FileType get_file_type(const fs::path &file_name)
+FileType get_file_type(const std::filesystem::path &file_name)
 {
-    if(!exists(file_name)){ return FileType::NOT_A_FILE; }
-    if(is_directory(file_name)){ return FileType::DIRECTORY; }
-    string ext = get_extension(file_name);
+    if(!std::filesystem::exists(file_name)){ return FileType::NOT_A_FILE; }
+    if(std::filesystem::is_directory(file_name)){ return FileType::DIRECTORY; }
+    std::string ext = get_extension(file_name);
     ext = ext.empty() ? ext : crocore::to_lower(ext.substr(1));
 
-    const std::set<string>
+    const std::set<std::string>
             image_exts{"png", "jpg", "jpeg", "gif", "bmp", "tga", "hdr"},
             audio_exts{"wav", "m4a", "mp3"},
             model_exts{"obj", "dae", "3ds", "ply", "md5mesh", "fbx", "gltf", "glb"},
