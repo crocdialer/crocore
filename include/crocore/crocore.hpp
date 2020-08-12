@@ -31,14 +31,8 @@ using CLASS_NAME##WeakPtr = std::weak_ptr<CLASS_NAME>;\
 using CLASS_NAME##UPtr = std::unique_ptr<CLASS_NAME>;
 
 // forward declare boost io_service
-namespace boost{ namespace asio{ class io_context; } }
+namespace boost::asio{ class io_context; }
 namespace crocore{ using io_service_t = boost::asio::io_context; }
-
-namespace cc = crocore;
 
 #include "Logger.hpp"
 #include "utils.hpp"
-
-#include <nlohmann/json.hpp>
-
-namespace crocore { using nlohmann::json; }

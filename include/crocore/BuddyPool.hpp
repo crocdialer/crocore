@@ -1,6 +1,7 @@
 #pragma once
 
 #include <list>
+#include <map>
 #include <mutex>
 
 #include "crocore/crocore.hpp"

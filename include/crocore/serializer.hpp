@@ -9,8 +9,9 @@
 
 #pragma once
 
-#include "crocore.hpp"
-#include "Component.hpp"
+#include <crocore/crocore.hpp>
+#include <crocore/json.hpp>
+#include <crocore/Component.hpp>
 
 namespace crocore {
 
