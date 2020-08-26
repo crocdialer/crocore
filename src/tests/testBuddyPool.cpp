@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(Allocations)
     fmt.min_block_size = 512;
 
     // preallocate one block
-    fmt.min_num_blocks = 1;
+    fmt.min_num_blocks = 0;
 
     // no automatic deallocation
     fmt.dealloc_unused_blocks = false;
@@ -153,7 +153,7 @@ BOOST_AUTO_TEST_CASE(Allocations)
     {
         for(uint32_t j = 0; j < num_allocations; ++j)
         {
-            // pow2 from 1 kB ... 2 MB
+            // pow2 from 1 kB ... 4 MB
             size_t numBytes = (1024U << j);
 
             // check for proper upscaling to pow2
@@ -180,6 +180,13 @@ BOOST_AUTO_TEST_CASE(Allocations)
 
     poolState = pool->state();
     BOOST_CHECK_EQUAL(poolState.allocations.size(), num_allocations);
+    size_t num_blocks_before_shrink = poolState.num_blocks;
+
+    // should do nothing (all toplevel-blocks still in use)
+    pool->shrink();
+
+    poolState = pool->state();
+    BOOST_CHECK_EQUAL(poolState.num_blocks, num_blocks_before_shrink);
 
     // sanity-check for correct content, free everything again
     for(auto &pair : pointer_map)
@@ -188,7 +195,7 @@ BOOST_AUTO_TEST_CASE(Allocations)
         pool->free(pair.first);
     }
 
-    // no allocations anymore, but still 2 unused toplevel-blocks
+    // no allocations left, but still 2 unused toplevel-blocks
     poolState = pool->state();
     BOOST_CHECK_EQUAL(poolState.allocations.size(), 0);
     BOOST_CHECK_EQUAL(poolState.num_blocks, 2);
