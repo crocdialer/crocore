@@ -95,8 +95,11 @@ BOOST_AUTO_TEST_CASE(Allocations)
     fmt.block_size = numBytes_128Mb;
     fmt.min_block_size = 512;
 
-    // no preallocation, pool will allocate on first request
-    fmt.min_num_blocks = 0;
+    // preallocate one block
+    fmt.min_num_blocks = 1;
+
+    // no automatic deallocation
+    fmt.dealloc_unused_blocks = false;
 
     auto pool = crocore::BuddyPool::create(fmt);
 
@@ -184,6 +187,14 @@ BOOST_AUTO_TEST_CASE(Allocations)
         BOOST_CHECK_EQUAL(memcmp(pair.first, pair.second.data.get(), pair.second.num_bytes), 0);
         pool->free(pair.first);
     }
+
+    // no allocations anymore, but still 2 unused toplevel-blocks
+    poolState = pool->state();
+    BOOST_CHECK_EQUAL(poolState.allocations.size(), 0);
+    BOOST_CHECK_EQUAL(poolState.num_blocks, 2);
+
+    // shrink to deallocate unused blocks
+    pool->shrink();
 
     // expect an empty pool again
     poolState = pool->state();

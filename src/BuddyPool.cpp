@@ -7,18 +7,20 @@
 //! internal namespace for binary-tree utils
 namespace tree
 {
-static inline size_t parent(size_t index){ return index > 0 ? (index + 1) / 2 - 1 : 0; }
 
-static inline size_t left(size_t index){ return 2 * index + 1; }
+constexpr size_t INDEX_MAX = std::numeric_limits<size_t>::max();
 
-static inline size_t right(size_t index){ return 2 * index + 2; }
+inline size_t parent(size_t index){ return index > 0 ? (index + 1) / 2 - 1 : 0; }
 
-static inline size_t buddy(size_t index)
-{
-    return index > 0 ? index - 1 + (index & 1U) * 2 : 0;
-}
+inline size_t left(size_t index){ return 2 * index + 1; }
 
-static inline size_t index_offset(size_t index, size_t level, size_t max_level)
+inline size_t right(size_t index){ return 2 * index + 2; }
+
+inline size_t buddy(size_t index){ return index > 0 ? index - 1 + (index & 1U) * 2 : 0; }
+
+inline bool is_left(size_t index){ return index & 1U; }
+
+inline size_t index_offset(size_t index, size_t level, size_t max_level)
 {
     return ((index + 1) - (1U << level)) << (max_level - level);
 }
@@ -57,9 +59,9 @@ block_t buddy_create(size_t height);
  * @param   b       a block_t object, containing a binary tree.
  * @param   size    the desired size for the allocation (unit is a sub-block of minBlockSize)
  * @return  the internal offset for the allocation (unit is a sub-block of minBlockSize),
- *          or -1, if the allocation could not be done.
+ *          or tree::INDEX_MAX, if the allocation could not be done.
  */
-int buddy_alloc(block_t &b, size_t size);
+size_t buddy_alloc(block_t &b, size_t size);
 
 void buddy_free(block_t &b, size_t offset);
 
@@ -97,7 +99,7 @@ void buddy_mark_parent(block_t &b, size_t index)
     }
 }
 
-int buddy_alloc(block_t &b, size_t size)
+size_t buddy_alloc(block_t &b, size_t size)
 {
     if(!size){ size = 1; }
     else{ size = next_pow_2(size); }
@@ -106,7 +108,7 @@ int buddy_alloc(block_t &b, size_t size)
     size_t length = 1U << b.height;
 
     // requested size is too large
-    if(size > length){ return -1; }
+    if(size > length){ return tree::INDEX_MAX; }
 
     size_t index = 0, level = 0;
 
@@ -145,7 +147,7 @@ int buddy_alloc(block_t &b, size_t size)
                     continue;
             }
         }
-        if(index & 1U)
+        if(tree::is_left(index))
         {
             ++index;
             continue;
@@ -155,13 +157,13 @@ int buddy_alloc(block_t &b, size_t size)
         for(;;)
         {
             // arrived at root, nothing found
-            if(!index){ return -1; }
+            if(!index){ return tree::INDEX_MAX; }
 
             level--;
             length *= 2;
             index = tree::parent(index);
 
-            if(index & 1U)
+            if(tree::is_left(index))
             {
                 ++index;
                 break;
@@ -302,10 +304,10 @@ void *BuddyPool::allocate(size_t num_bytes)
     for(auto &b : m_toplevel_blocks)
     {
         // within block, try to allocate, recursively split, find proper index
-        int allocation_index = buddy_alloc(b, size);
+        size_t allocation_index = buddy_alloc(b, size);
 
         // allocation succeeded
-        if(allocation_index >= 0)
+        if(allocation_index < tree::INDEX_MAX)
         {
             return b.data.get() + allocation_index * m_format.min_block_size;
         }
@@ -316,10 +318,10 @@ void *BuddyPool::allocate(size_t num_bytes)
     {
         auto new_block = create_block();
 
-        int allocation_index = buddy_alloc(new_block, size);
+        size_t allocation_index = buddy_alloc(new_block, size);
 
         // this here should always work
-        if(allocation_index >= 0)
+        if(allocation_index < tree::INDEX_MAX)
         {
             auto ptr = new_block.data.get() + allocation_index * m_format.min_block_size;
             m_toplevel_blocks.push_back(std::move(new_block));
@@ -375,7 +377,7 @@ void BuddyPool::shrink()
     // iterate toplevel blocks
     auto blockIter = m_toplevel_blocks.begin();
 
-    for(; blockIter != m_toplevel_blocks.end(); ++blockIter)
+    while(blockIter != m_toplevel_blocks.end())
     {
         auto &b = *blockIter;
 
@@ -384,6 +386,7 @@ void BuddyPool::shrink()
         {
             blockIter = m_toplevel_blocks.erase(blockIter);
         }
+        else{ ++blockIter; }
     }
 }
 
