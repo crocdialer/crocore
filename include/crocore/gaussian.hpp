@@ -54,11 +54,11 @@ std::array<Real, Size> createGaussianKernel_1D(double sigma)
 template<std::size_t Size = 5, typename Real = float>
 std::array<Real, Size * Size> createGaussianKernel_2D(double sigma_x, double sigma_y)
 {
-    auto kernel_x = createGaussianKernel_1D<Size>(sigma_x);
-    auto kernel_y = createGaussianKernel_1D<Size>(sigma_y);
+    auto kernel_x = createGaussianKernel_1D<Size, Real>(sigma_x);
+    auto kernel_y = createGaussianKernel_1D<Size, Real>(sigma_y);
 
     // col-major quadratic matrix, containing the 2-dimensional blur-kernel
-    std::array<float, Size * Size> combinedKernel = {};
+    std::array<Real, Size * Size> combinedKernel;
 
     // perform an outer product
     for (uint32_t c = 0; c < Size; c++)
@@ -69,5 +69,6 @@ std::array<Real, Size * Size> createGaussianKernel_2D(double sigma_x, double sig
         }
     }
     return combinedKernel;
-};
 }
+
+}// namespace crocore
