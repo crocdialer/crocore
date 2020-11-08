@@ -25,9 +25,9 @@ public:
     inline void set_running(bool b) { m_running = b; }
 
     /**
-    * return current frames per second
+    * returns the current average time per loop-iteration in seconds
     */
-    float fps() const { return m_current_fps; };
+    double current_loop_time() const { return m_current_loop_time; };
 
     /**
     * the commandline arguments provided at application start
@@ -61,14 +61,14 @@ private:
 
     virtual void poll_events() = 0;
 
-    void frame_timing();
+    void update_timing();
 
     // timing
     size_t m_num_loop_iterations = 0;
     std::chrono::steady_clock::time_point m_start_time, m_last_timestamp, m_last_measure;
     double m_timingInterval = 1;
 
-    float m_current_fps;
+    double m_current_loop_time;
 
     bool m_running;
 

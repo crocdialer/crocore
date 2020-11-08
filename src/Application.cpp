@@ -25,7 +25,7 @@ Application::Application(int argc, char *argv[]) :
         m_start_time(std::chrono::steady_clock::now()),
         m_last_timestamp(std::chrono::steady_clock::now()),
         m_timingInterval(1.0),
-        m_current_fps(0.f),
+        m_current_loop_time(1.f),
         m_running(false),
         m_main_queue(0),
         m_background_queue(4)
@@ -73,7 +73,7 @@ int Application::run()
             m_last_timestamp = time_stamp;
 
             // perform fps-timing
-            frame_timing();
+            update_timing();
         }
 
         // manage teardown, save stuff etc.
@@ -93,7 +93,7 @@ double Application::application_time() const
     return double_sec_t(current_time - m_start_time).count();
 }
 
-void Application::frame_timing()
+void Application::update_timing()
 {
     m_num_loop_iterations++;
 
@@ -101,7 +101,7 @@ void Application::frame_timing()
 
     if(diff > m_timingInterval)
     {
-        m_current_fps = m_num_loop_iterations / diff;
+        m_current_loop_time = diff / m_num_loop_iterations;
         m_num_loop_iterations = 0;
         m_last_measure = m_last_timestamp;
     }
