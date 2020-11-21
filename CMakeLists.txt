@@ -25,7 +25,7 @@ include(add_test_helper)
 set(LIBS ${LIBS} atomic)
 
 ##### BOOST
-set(BOOST_COMPONENTS system filesystem)
+set(BOOST_COMPONENTS system)
 if (BUILD_TESTS)
     ENABLE_TESTING()
     set(BOOST_COMPONENTS ${BOOST_COMPONENTS} unit_test_framework)
