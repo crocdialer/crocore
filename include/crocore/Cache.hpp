@@ -68,9 +68,7 @@ public:
     inline const Value& get(const Key& key) const
     {
         std::shared_lock<std::shared_mutex> lock(m_mutex);
-        auto searchIt = _objects.find(key);
-        if (searchIt != _objects.end()) { return searchIt->second; }
-        throw std::out_of_range("cache miss");
+        return _objects.at(key);
     }
 
     /**
