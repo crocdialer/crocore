@@ -86,7 +86,7 @@ void copy_image(const typename Image_<T>::Ptr &src_mat, typename Image_<T>::Ptr 
 
     assert(src_mat->roi.width <= src_mat->width() && src_mat->roi.height <= src_mat->height());
     assert(dst_mat->roi.width <= dst_mat->width() && dst_mat->roi.height <= dst_mat->height());
-    assert(src_mat->roi.width == dst_mat->roi.width && src_mat->roi.height == dst_mat->roi.height);
+    assert(src_mat->roi.width <= dst_mat->roi.width && src_mat->roi.height <= dst_mat->roi.height);
 
     uint32_t src_row_offset = src_mat->width() - src_mat->roi.width;
     uint32_t dst_row_offset = dst_mat->width() - dst_mat->roi.width;

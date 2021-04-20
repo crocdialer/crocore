@@ -22,7 +22,7 @@ public:
 
     inline bool operator==(const Area_<T> &other) const
     {
-        return !(*this != other);
+        return *this == other;
     }
 
     inline bool operator!=(const Area_<T> &other) const
