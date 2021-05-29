@@ -22,7 +22,7 @@ endif (NOT BUILD_SHARED_LIBS)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules ${CMAKE_MODULE_PATH})
 include(add_test_helper)
 
-set(LIBS ${LIBS} atomic)
+set(LIBS ${LIBS} atomic stdc++fs)
 
 ##### BOOST
 set(BOOST_COMPONENTS system)

@@ -43,16 +43,16 @@ BOOST_AUTO_TEST_CASE(Constructors)
 
         auto pool = crocore::BuddyPool::create(createInfo);
 
-        auto poolState = pool->state();
+        auto pool_state = pool->pool_state();
 
         // nothing was pre-allocated
-        BOOST_CHECK_EQUAL(poolState.num_blocks, 0);
+        BOOST_CHECK_EQUAL(pool_state.num_blocks, 0);
 
         // we have passed a non pow2 -> check for correct rounding to next pow2
-        BOOST_CHECK_EQUAL(poolState.block_size, numBytes_128Mb);
+        BOOST_CHECK_EQUAL(pool_state.block_size, numBytes_128Mb);
 
         // maximum height of binary tree
-        BOOST_CHECK_EQUAL(poolState.max_level, 18);
+        BOOST_CHECK_EQUAL(pool_state.max_level, 18);
     }
 
     // with pre-allocation
@@ -70,16 +70,16 @@ BOOST_AUTO_TEST_CASE(Constructors)
 
         auto pool = crocore::BuddyPool::create(createInfo);
 
-        auto poolState = pool->state();
+        auto pool_state = pool->pool_state();
 
         // check for pre-allocated blocks
-        BOOST_CHECK_EQUAL(poolState.num_blocks, minNumBlocks);
+        BOOST_CHECK_EQUAL(pool_state.num_blocks, minNumBlocks);
 
         // we have passed a non pow2 -> check for correct rounding to next pow2
-        BOOST_CHECK_EQUAL(poolState.block_size, numBytes_128Mb);
+        BOOST_CHECK_EQUAL(pool_state.block_size, numBytes_128Mb);
 
         // maximum height of binary tree
-        BOOST_CHECK_EQUAL(poolState.max_level, 16);
+        BOOST_CHECK_EQUAL(pool_state.max_level, 16);
     }
 }
 
@@ -119,18 +119,18 @@ BOOST_AUTO_TEST_CASE(Allocations)
     // should have been assigned the same offset like before
     BOOST_CHECK_EQUAL(ptr1, ptr2);
 
-    auto poolState = pool->state();
+    auto pool_state = pool->pool_state();
 
     // expect exactly one 1MB-block here
-    BOOST_CHECK_EQUAL(poolState.allocations.size(), 1);
-    BOOST_CHECK_EQUAL(poolState.allocations[numBytes_1Mb], 1);
+    BOOST_CHECK_EQUAL(pool_state.allocations.size(), 1);
+    BOOST_CHECK_EQUAL(pool_state.allocations[numBytes_1Mb], 1);
 
     // free pointer
     pool->free(ptr2);
 
     // expect an empty pool
-    poolState = pool->state();
-    BOOST_CHECK_EQUAL(poolState.allocations.size(), 0);
+    pool_state = pool->pool_state();
+    BOOST_CHECK_EQUAL(pool_state.allocations.size(), 0);
 
     // test zero byte allocation fails
     BOOST_CHECK_EQUAL(pool->allocate(0), nullptr);
@@ -173,20 +173,20 @@ BOOST_AUTO_TEST_CASE(Allocations)
             for(uint32_t k = 0; k < numBytes; ++k){ ptr[k] = data[k] = static_cast<uint8_t>(rand() % 256); }
             pointer_map[ptr] = {numBytes, std::move(data)};
 
-            poolState = pool->state();
-            BOOST_CHECK_EQUAL(poolState.allocations[allocatedBytes], i + 1);
+            pool_state = pool->pool_state();
+            BOOST_CHECK_EQUAL(pool_state.allocations[allocatedBytes], i + 1);
         }
     }
 
-    poolState = pool->state();
-    BOOST_CHECK_EQUAL(poolState.allocations.size(), num_allocations);
-    size_t num_blocks_before_shrink = poolState.num_blocks;
+    pool_state = pool->pool_state();
+    BOOST_CHECK_EQUAL(pool_state.allocations.size(), num_allocations);
+    size_t num_blocks_before_shrink = pool_state.num_blocks;
 
     // should do nothing (all toplevel-blocks still in use)
     pool->shrink();
 
-    poolState = pool->state();
-    BOOST_CHECK_EQUAL(poolState.num_blocks, num_blocks_before_shrink);
+    pool_state = pool->pool_state();
+    BOOST_CHECK_EQUAL(pool_state.num_blocks, num_blocks_before_shrink);
 
     // sanity-check for correct content, free everything again
     for(auto &pair : pointer_map)
@@ -196,17 +196,17 @@ BOOST_AUTO_TEST_CASE(Allocations)
     }
 
     // no allocations left, but still 2 unused toplevel-blocks
-    poolState = pool->state();
-    BOOST_CHECK_EQUAL(poolState.allocations.size(), 0);
-    BOOST_CHECK_EQUAL(poolState.num_blocks, 2);
+    pool_state = pool->pool_state();
+    BOOST_CHECK_EQUAL(pool_state.allocations.size(), 0);
+    BOOST_CHECK_EQUAL(pool_state.num_blocks, 2);
 
     // shrink to deallocate unused blocks
     pool->shrink();
 
     // expect an empty pool again
-    poolState = pool->state();
-    BOOST_CHECK_EQUAL(poolState.allocations.size(), 0);
-    BOOST_CHECK_EQUAL(poolState.num_blocks, fmt.min_num_blocks);
+    pool_state = pool->pool_state();
+    BOOST_CHECK_EQUAL(pool_state.allocations.size(), 0);
+    BOOST_CHECK_EQUAL(pool_state.num_blocks, fmt.min_num_blocks);
 
     // double free -> violates assert|Expects
 //    pool->free(ptr2);

@@ -275,7 +275,7 @@ BuddyPool::BuddyPool(create_info_t fmt) :
     }
 }
 
-block_t BuddyPool::create_block()
+block_t BuddyPool::create_block() const
 {
     size_t max_level = std::log2(m_format.block_size / m_format.min_block_size);
     block_t new_block = buddy_create(max_level);
@@ -295,7 +295,7 @@ void *BuddyPool::allocate(size_t num_bytes)
     // requested numBytes is zero or too large
     if(!num_bytes || num_bytes > m_format.block_size){ return nullptr; }
 
-    std::unique_lock<std::mutex> lock(m_mutex);
+    std::unique_lock lock(m_mutex);
 
     // derive number of minimum blocks required
     size_t size = std::ceil(num_bytes / (float) m_format.min_block_size);
@@ -334,7 +334,7 @@ void *BuddyPool::allocate(size_t num_bytes)
 
 void BuddyPool::free(void *ptr)
 {
-    std::unique_lock<std::mutex> lock(m_mutex);
+    std::unique_lock lock(m_mutex);
 
     // find proper toplevel block
     auto blockIter = m_toplevel_blocks.begin();
@@ -372,7 +372,7 @@ void BuddyPool::free(void *ptr)
 
 void BuddyPool::shrink()
 {
-    std::unique_lock<std::mutex> lock(m_mutex);
+    std::unique_lock lock(m_mutex);
 
     // iterate toplevel blocks
     auto blockIter = m_toplevel_blocks.begin();
@@ -390,11 +390,29 @@ void BuddyPool::shrink()
     }
 }
 
-BuddyPool::state_t BuddyPool::state()
+Allocator::state_t BuddyPool::state() const
 {
-    std::unique_lock<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
 
-    BuddyPool::state_t ret = {};
+    auto pool = pool_state();
+
+    Allocator::state_t ret = {};
+
+    ret.num_allocations = pool.num_blocks;
+    ret.num_bytes_allocated = m_format.block_size * m_toplevel_blocks.size();
+
+    for (const auto &[block_size, numAllocations] : pool.allocations)
+    {
+        ret.num_bytes_used += block_size * numAllocations;
+    }
+    return ret;
+}
+
+BuddyPool::pool_state_t BuddyPool::pool_state() const
+{
+    std::shared_lock lock(m_mutex);
+
+    BuddyPool::pool_state_t ret = {};
     ret.num_blocks = m_toplevel_blocks.size();
     ret.block_size = m_format.block_size;
     ret.max_level = std::log2(m_format.block_size / m_format.min_block_size);

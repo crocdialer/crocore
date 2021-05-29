@@ -3,6 +3,7 @@
 #include <list>
 #include <map>
 #include <mutex>
+#include <shared_mutex>
 
 #include "crocore/crocore.hpp"
 #include "crocore/Allocator.hpp"
@@ -19,7 +20,7 @@ using BuddyPoolPtr = std::shared_ptr<class BuddyPool>;
  * @see     https://en.wikipedia.org/wiki/Buddy_memory_allocation
  *
  */
-class BuddyPool : public crocore::Allocator
+class BuddyPool final : public crocore::Allocator
 {
 public:
 
@@ -42,14 +43,14 @@ public:
         bool dealloc_unused_blocks = true;
 
         //! function object to perform allocations with
-        std::function<void*(size_t)> alloc_fn = ::malloc;
+        std::function<void *(size_t)> alloc_fn = ::malloc;
 
         //! function object to perform de-allocations with
-        std::function<void(void*)> dealloc_fn = ::free;
+        std::function<void(void *)> dealloc_fn = ::free;
     };
 
     //! helper struct to group relevant information about a BuddyPool's state.
-    struct state_t
+    struct pool_state_t
     {
         //! count of toplevel blocks currently allocated
         size_t num_blocks;
@@ -83,14 +84,14 @@ public:
      * @param   num_bytes    the requested number of bytes to allocate.
      * @return  a pointer to the beginning of a memory-block or nullptr if the allocation failed.
      */
-    void* allocate(size_t num_bytes) override;
+    void *allocate(size_t num_bytes) override;
 
     /**
      * @brief   Free a block of memory, previously returned by this pool.
      *
      * @param   ptr a pointer to the beginning of a memory block, managed by this pool.
      */
-    void free(void* ptr) override;
+    void free(void *ptr) override;
 
     /**
      * @brief   Shrinks the internally allocated memory to a minimum, without affecting existing allocations.
@@ -99,24 +100,30 @@ public:
      */
     void shrink() override;
 
+
+    /**
+     * @brief   Return a summary of the allocator's internal state.
+     */
+    [[nodiscard]] Allocator::state_t state() const override;
+
     /**
      * @brief   Query the current state of the pool.
      *
      * @return  a state_t object, grouping relevant state information.
      */
-    state_t state();
+    [[nodiscard]] pool_state_t pool_state() const;
 
 private:
 
     explicit BuddyPool(create_info_t fmt);
 
-    struct block_t create_block();
+    struct block_t create_block() const;
 
     create_info_t m_format;
 
     std::list<struct block_t> m_toplevel_blocks;
 
-    std::mutex m_mutex;
+    mutable std::shared_mutex m_mutex;
 };
 
 }// namespace crocore
