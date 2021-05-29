@@ -11,8 +11,8 @@
 namespace crocore
 {
 
-//! forward declare a shared handle for a memory-pool
-using BuddyPoolPtr = std::shared_ptr<class BuddyPool>;
+//! forward declare smart-pointers for a memory-pool
+DEFINE_CLASS_PTR(BuddyPool)
 
 /**
  * @brief   BuddyPool can be used to manage blocks of arbitrary memory using Buddy-allocations.
@@ -71,7 +71,9 @@ public:
      * @param   create_info  a create_info_t struct.
      * @return  a newly created, shared BuddyPool.
      */
-    static BuddyPoolPtr create(create_info_t create_info);
+    static BuddyPoolUPtr create(create_info_t create_info);
+
+    virtual ~BuddyPool();
 
     /**
      * @brief   Allocate memory from the pool.

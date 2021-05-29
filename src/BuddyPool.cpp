@@ -256,9 +256,13 @@ void buddy_collect_allocations(const block_t &b, size_t index, size_t level,
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-BuddyPoolPtr BuddyPool::create(create_info_t create_info)
+// reason to place the default-implementation here:
+// satisfy unique_ptr's destructor (internal block_t was forward-declared)
+BuddyPool::~BuddyPool() = default;
+
+BuddyPoolUPtr BuddyPool::create(create_info_t create_info)
 {
-    return BuddyPoolPtr(new BuddyPool(std::move(create_info)));
+    return BuddyPoolUPtr(new BuddyPool(std::move(create_info)));
 }
 
 BuddyPool::BuddyPool(create_info_t fmt) :

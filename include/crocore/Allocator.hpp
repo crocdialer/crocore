@@ -11,7 +11,7 @@
 namespace crocore
 {
 
-//! forward declare a smart-pointers for an Allocator
+//! forward declare smart-pointers for an Allocator
 DEFINE_CLASS_PTR(Allocator)
 
 class Allocator
