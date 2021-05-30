@@ -4,8 +4,7 @@
 
 #pragma once
 
-#include <cstring>
-#include <memory>
+#include <crocore/define_class_ptr.hpp>
 
 
 namespace crocore

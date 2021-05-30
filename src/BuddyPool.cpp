@@ -1,6 +1,8 @@
 #include <cassert>
 #include <cstring>
 #include <cmath>
+
+#include "crocore/utils.hpp"
 #include "crocore/BuddyPool.hpp"
 
 

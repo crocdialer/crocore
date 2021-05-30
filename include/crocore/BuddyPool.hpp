@@ -4,8 +4,8 @@
 #include <map>
 #include <mutex>
 #include <shared_mutex>
+#include <functional>
 
-#include "crocore/crocore.hpp"
 #include "crocore/Allocator.hpp"
 
 namespace crocore
