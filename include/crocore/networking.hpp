@@ -16,7 +16,8 @@
 #include "crocore.hpp"
 #include "Connection.hpp"
 
-namespace crocore::net {
+namespace crocore::net
+{
 
 extern char const *const UNKNOWN_IP;
 
@@ -86,7 +87,7 @@ public:
 
     void set_receive_buffer_size(size_t sz);
 
-    uint16_t listening_port() const;
+    [[nodiscard]] uint16_t listening_port() const;
 
 private:
     std::shared_ptr<struct udp_server_impl> m_impl;
@@ -116,13 +117,13 @@ public:
 
     void set_connection_callback(tcp_connection_callback ccb);
 
-    uint16_t listening_port() const;
+    [[nodiscard]] uint16_t listening_port() const;
 
 private:
     std::unique_ptr<struct tcp_server_impl> m_impl;
 };
 
-class tcp_connection : public Connection, public std::enable_shared_from_this<tcp_connection>
+class tcp_connection final : public Connection, public std::enable_shared_from_this<tcp_connection>
 {
 public:
 

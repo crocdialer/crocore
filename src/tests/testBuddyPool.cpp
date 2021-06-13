@@ -211,3 +211,25 @@ BOOST_AUTO_TEST_CASE(Allocations)
     // double free -> violates assert|Expects
 //    pool->free(ptr2);
 }
+
+BOOST_AUTO_TEST_CASE(BaseclassInterface)
+{
+    constexpr size_t numBytes_128Mb = 1U << 27U;
+
+    crocore::BuddyPool::create_info_t fmt;
+
+    // 128MB
+    fmt.block_size = numBytes_128Mb;
+    fmt.min_block_size = 512;
+
+    crocore::AllocatorPtr allocator = crocore::BuddyPool::create(fmt);
+
+    struct poo_dackel_t
+    {
+        int foo[512] = {};
+    };
+
+    auto* dackel = new (allocator) poo_dackel_t();
+    dackel->~poo_dackel_t();
+    allocator->free(dackel);
+}
