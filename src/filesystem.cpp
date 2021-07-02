@@ -11,9 +11,7 @@
 #include <fstream>
 #include "crocore/filesystem.hpp"
 
-namespace crocore
-{
-namespace filesystem
+namespace crocore::filesystem
 {
 
 /////////// implementation internal /////////////
@@ -448,5 +446,4 @@ FileType get_file_type(const std::filesystem::path &file_name)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-}
-}// namespaces kinski / fs
+}// namespace crocore::filesystem
