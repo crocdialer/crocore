@@ -152,5 +152,5 @@ std::vector<uint8_t> encode_png(const ImagePtr &the_img);
 
 std::vector<uint8_t> encode_jpg(const ImagePtr &the_img);
 
-ImagePtr compute_distance_field(ImagePtr the_img, float spread);
+ImagePtr compute_distance_field(const ImagePtr& the_img, float spread);
 }

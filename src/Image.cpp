@@ -397,7 +397,7 @@ public:
         memcpy(m_data, the_other.m_data, m_width * m_height * sizeof(T));
     }
 
-    Grid_(Grid_ &&the_other) :
+    Grid_(Grid_ &&the_other)  noexcept :
             m_width(the_other.m_width),
             m_height(the_other.m_height),
             m_data(the_other.m_data)
@@ -415,7 +415,7 @@ public:
 
     ~Grid_() { delete[] m_data; }
 
-    inline const T at(uint32_t x, uint32_t y) const
+    [[nodiscard]] inline T at(uint32_t x, uint32_t y) const
     {
         if(x >= 0 && y >= 0 && x < m_width && y < m_height)
             return *(m_data + x + m_width * y);
@@ -493,7 +493,7 @@ private:
 
 typedef Grid_<Point> Grid;
 
-ImagePtr compute_distance_field(ImagePtr the_img, float spread)
+ImagePtr compute_distance_field(const ImagePtr& the_img, float spread)
 {
     auto img = std::dynamic_pointer_cast<Image_<uint8_t >>(the_img);
 
