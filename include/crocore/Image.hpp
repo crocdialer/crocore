@@ -40,7 +40,7 @@ public:
 
     virtual void offsets(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a = nullptr) const = 0;
 
-    virtual ImagePtr resize(uint32_t the_width, uint32_t the_height) = 0;
+    virtual ImagePtr resize(uint32_t the_width, uint32_t the_height) const = 0;
 
     //! kernel is interpreted col-major
     virtual ImagePtr convolve(const std::vector<float> &the_kernel) = 0;
@@ -60,6 +60,7 @@ class Image_ : public Image
 public:
 
     using Ptr = std::shared_ptr<Image_<T>>;
+    using ConstPtr = std::shared_ptr<const Image_<T>>;
 
     static Ptr create(T *theData, uint32_t the_width, uint32_t the_height,
                       uint32_t the_num_components = 0, bool not_dispose = false)
@@ -81,7 +82,7 @@ public:
 
     inline size_t num_bytes() const override { return m_height * m_width * m_num_components * sizeof(T); }
 
-    ImagePtr resize(uint32_t the_width, uint32_t the_height) override;
+    ImagePtr resize(uint32_t the_width, uint32_t the_height) const override;
 
     //! kernel is interpreted col-major
     ImagePtr convolve(const std::vector<float> &the_kernel) override;

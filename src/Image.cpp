@@ -236,7 +236,7 @@ ImagePtr Image_<T>::blur()
 }
 
 template<>
-ImagePtr Image_<uint8_t>::resize(uint32_t the_width, uint32_t the_height)
+ImagePtr Image_<uint8_t>::resize(uint32_t the_width, uint32_t the_height) const
 {
     auto ret = Image_<uint8_t>::create(the_width, the_height, m_num_components);
     stbir_resize_uint8(m_data, m_width, m_height, 0, ret->m_data, ret->m_width, ret->m_height, 0, m_num_components);
@@ -244,7 +244,7 @@ ImagePtr Image_<uint8_t>::resize(uint32_t the_width, uint32_t the_height)
 }
 
 template<>
-ImagePtr Image_<float>::resize(uint32_t the_width, uint32_t the_height)
+ImagePtr Image_<float>::resize(uint32_t the_width, uint32_t the_height) const
 {
     auto ret = Image_<float>::create(the_width, the_height, m_num_components);
     stbir_resize_float(m_data, m_width, m_height, 0, ret->m_data, ret->m_width, ret->m_height, 0, m_num_components);

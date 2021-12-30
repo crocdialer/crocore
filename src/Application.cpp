@@ -28,7 +28,7 @@ Application::Application(int argc, char *argv[]) :
         m_current_loop_time(1.f),
         m_running(false),
         m_main_queue(0),
-        m_background_queue(4)
+        m_background_queue(std::max(1U, std::thread::hardware_concurrency()))
 {
     shutdown_handler = [app = this](int){ app->set_running(false); };
     signal(SIGINT, signal_handler);
