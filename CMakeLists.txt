@@ -44,6 +44,11 @@ include_directories(${CURL_INCLUDE_DIR})
 set(LIBS ${LIBS} ${CURL_LIBRARY})
 #####
 
+##### nlohmann/json
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+add_subdirectory(submodules/json)
+set(LIBS ${LIBS} nlohmann_json::nlohmann_json)
+
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 add_subdirectory("src")
