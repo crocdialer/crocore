@@ -10,11 +10,10 @@
 namespace crocore
 {
 /**
- * @brief   A Least-Recently-Used set container
+ * @brief   SetLRU is a Least-Recently-Used set container.
  * @tparam  Key     Type of the Key
  *
- * LRU is a cache that can store key-value pairs.
- * Keys can be retrieved in the least-recently-used order.
+ * SetLRU is a set-like container offering both constant-time lookup and iteration in order of insertion.
  */
 template<typename Key>
 class SetLRU
@@ -22,6 +21,18 @@ class SetLRU
 public:
 
     SetLRU() = default;
+
+    template<typename InputIterator,
+            typename = std::_RequireInputIter<InputIterator>>
+    SetLRU(InputIterator first, InputIterator last)
+    {
+        for(auto it = first; it < last; ++it){ push_back(*it); }
+    }
+
+    SetLRU(std::initializer_list<Key> items)
+    {
+        for(const auto &item : items){ push_back(item); }
+    }
 
     /**
      * @brief   Checks if a provided key is already present in the set.
@@ -34,7 +45,7 @@ public:
         return _objects.find(key) != _objects.end();
     }
 
-    inline void put(const Key &key)
+    inline void push_back(const Key &key)
     {
         auto mapIt = _objects.find(key);
 
@@ -45,6 +56,15 @@ public:
         }
         auto it = _list.insert(_list.end(), key);
         _objects.emplace(key, it).first;
+    }
+
+    inline void pop_front()
+    {
+        if(!empty())
+        {
+            _objects.erase(_list.front());
+            _list.pop_front();
+        }
     }
 
     void remove(Key k)
@@ -66,15 +86,6 @@ public:
     {
         _objects.clear();
         _list.clear();
-    }
-
-    inline void pop_front()
-    {
-        if(!empty())
-        {
-            _objects.erase(_list.front());
-            _list.pop_front();
-        }
     }
 
     inline typename std::list<Key>::iterator begin() noexcept{ return _list.begin(); }
