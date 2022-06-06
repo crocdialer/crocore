@@ -34,7 +34,7 @@ private:
 
     void update(double time_delta) override
     {
-        if(++num_updates >= num_runs){ set_running(false); }
+        if(++num_updates >= num_runs){ running = false; }
     }
 
     void teardown() override

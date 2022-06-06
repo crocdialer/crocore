@@ -118,11 +118,9 @@ void Application::update_timing()
             uint32_t sleep_us = desired_frametime_us - frame_us;
             std::this_thread::sleep_for(std::chrono::microseconds(sleep_us));
         }
-
 //    spdlog::trace("frame: {} us -- target-fps: {} Hz -- sleeping: {} us", frame_us, fps, sleep_us);
     }
     m_last_timestamp = std::chrono::steady_clock::now();
-
 }
 
 void Application::update_property(const crocore::PropertyConstPtr &theProperty)
