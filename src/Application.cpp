@@ -24,13 +24,12 @@ Application::Application(int argc, char *argv[]) :
         Component(argc ? crocore::fs::get_filename_part(argv[0]) : "vierkant_app"),
         m_start_time(std::chrono::steady_clock::now()),
         m_last_timestamp(std::chrono::steady_clock::now()),
-        m_timingInterval(1.0),
-        m_current_loop_time(1.f),
-        m_running(false),
+        m_timing_interval(1.0),
+        m_avg_loop_time(1.f),
         m_main_queue(0),
         m_background_queue(std::max(1U, std::thread::hardware_concurrency()))
 {
-    shutdown_handler = [app = this](int){ app->set_running(false); };
+    shutdown_handler = [app = this](int){ app->running = false; };
     signal(SIGINT, signal_handler);
 
     srand(time(nullptr));
@@ -42,8 +41,8 @@ Application::Application(int argc, char *argv[]) :
 
 int Application::run()
 {
-    if(m_running){ return -1; }
-    m_running = true;
+    if(running){ return -1; }
+    running = true;
 
     // user setup-hook
     setup();
@@ -53,7 +52,7 @@ int Application::run()
     try
     {
         // main loop
-        while(m_running)
+        while(running)
         {
             // get current time
             time_stamp = std::chrono::steady_clock::now();
@@ -69,8 +68,6 @@ int Application::run()
 
             // call update callback
             update(time_delta);
-
-            m_last_timestamp = time_stamp;
 
             // perform fps-timing
             update_timing();
@@ -95,16 +92,37 @@ double Application::application_time() const
 
 void Application::update_timing()
 {
+    auto now = std::chrono::steady_clock::now();
+    uint32_t frame_us = std::chrono::duration_cast<std::chrono::microseconds>(
+            now - m_last_timestamp).count();
+
     m_num_loop_iterations++;
+    double diff = double_sec_t(now - m_last_measure).count();
 
-    double diff = double_sec_t(m_last_timestamp - m_last_measure).count();
-
-    if(diff > m_timingInterval)
+    if(diff > m_timing_interval)
     {
-        m_current_loop_time = diff / m_num_loop_iterations;
+        m_avg_loop_time = diff / static_cast<double>(m_num_loop_iterations);
         m_num_loop_iterations = 0;
-        m_last_measure = m_last_timestamp;
+        m_last_measure = now;
     }
+
+    // fps throttling
+    double fps = target_fps;
+
+    if(fps > 0)
+    {
+        const uint32_t desired_frametime_us = std::ceil(1.0e6 / fps);
+
+        if (frame_us < desired_frametime_us)
+        {
+            uint32_t sleep_us = desired_frametime_us - frame_us;
+            std::this_thread::sleep_for(std::chrono::microseconds(sleep_us));
+        }
+
+//    spdlog::trace("frame: {} us -- target-fps: {} Hz -- sleeping: {} us", frame_us, fps, sleep_us);
+    }
+    m_last_timestamp = std::chrono::steady_clock::now();
+
 }
 
 void Application::update_property(const crocore::PropertyConstPtr &theProperty)
