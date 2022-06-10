@@ -66,7 +66,7 @@ private:
 
     // timing
     size_t m_num_loop_iterations = 0;
-    std::chrono::steady_clock::time_point m_start_time, m_last_timestamp, m_last_measure;
+    std::chrono::steady_clock::time_point m_start_time, m_last_timestamp, m_last_avg, m_fps_timestamp;
     double m_timing_interval = 1;
 
     double m_avg_loop_time;

@@ -69,6 +69,8 @@ int Application::run()
             // call update callback
             update(time_delta);
 
+            m_last_timestamp = time_stamp;
+
             // perform fps-timing
             update_timing();
         }
@@ -92,22 +94,23 @@ double Application::application_time() const
 
 void Application::update_timing()
 {
-    auto now = std::chrono::steady_clock::now();
-    uint32_t frame_us = std::chrono::duration_cast<std::chrono::microseconds>(
-            now - m_last_timestamp).count();
-
     m_num_loop_iterations++;
-    double diff = double_sec_t(now - m_last_measure).count();
+
+    double diff = double_sec_t(m_last_timestamp - m_last_avg).count();
 
     if(diff > m_timing_interval)
     {
-        m_avg_loop_time = diff / static_cast<double>(m_num_loop_iterations);
+        m_avg_loop_time = diff / m_num_loop_iterations;
         m_num_loop_iterations = 0;
-        m_last_measure = now;
+        m_last_avg = m_last_timestamp;
     }
 
     // fps throttling
     double fps = target_fps;
+
+    auto now = std::chrono::steady_clock::now();
+    uint32_t frame_us = std::chrono::duration_cast<std::chrono::microseconds>(
+            now - m_fps_timestamp).count();
 
     if(fps > 0)
     {
@@ -120,7 +123,8 @@ void Application::update_timing()
         }
 //    spdlog::trace("frame: {} us -- target-fps: {} Hz -- sleeping: {} us", frame_us, fps, sleep_us);
     }
-    m_last_timestamp = std::chrono::steady_clock::now();
+
+    m_fps_timestamp = std::chrono::steady_clock::now();
 }
 
 void Application::update_property(const crocore::PropertyConstPtr &theProperty)
