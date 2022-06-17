@@ -20,20 +20,21 @@ std::function<void(int)> shutdown_handler;
 void signal_handler(int signal){ if(shutdown_handler){ shutdown_handler(signal); }}
 } // namespace
 
-Application::Application(int argc, char *argv[]) :
-        Component(argc ? crocore::fs::get_filename_part(argv[0]) : "vierkant_app"),
+Application::Application(const create_info_t &create_info) :
+        Component(create_info.arguments.empty() ? "vierkant_app" : crocore::fs::get_filename_part(create_info.arguments[0])),
+        target_fps(create_info.target_fps),
         m_start_time(std::chrono::steady_clock::now()),
         m_last_timestamp(std::chrono::steady_clock::now()),
         m_timing_interval(1.0),
         m_avg_loop_time(1.f),
         m_main_queue(0),
-        m_background_queue(std::max(1U, std::thread::hardware_concurrency()))
+        m_background_queue(std::max(1U, create_info.num_background_threads))
 {
     shutdown_handler = [app = this](int){ app->running = false; };
     signal(SIGINT, signal_handler);
 
     srand(time(nullptr));
-    for(int i = 0; i < argc; i++){ m_args.emplace_back(argv[i]); }
+    m_args = create_info.arguments;
 
     // properties
     register_property(m_log_level);

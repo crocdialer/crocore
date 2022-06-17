@@ -15,11 +15,18 @@ class Application : public crocore::Component
 {
 public:
 
+    struct create_info_t
+    {
+        float target_fps = 0.f;
+        std::vector<std::string> arguments;
+        uint32_t num_background_threads = std::max(1U, std::thread::hardware_concurrency());
+    };
+
     std::atomic<bool> running = false;
 
     std::atomic<double> target_fps = 0.f;
 
-    explicit Application(int argc = 0, char *argv[] = nullptr);
+    explicit Application(const create_info_t &create_info);
 
     int run();
 

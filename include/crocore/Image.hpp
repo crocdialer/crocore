@@ -80,9 +80,9 @@ public:
         return m_data + (roi.y * m_width + roi.x) * m_num_components * sizeof(T);
     }
 
-    inline size_t num_bytes() const override { return m_height * m_width * m_num_components * sizeof(T); }
+    [[nodiscard]] inline size_t num_bytes() const override { return m_height * m_width * m_num_components * sizeof(T); }
 
-    ImagePtr resize(uint32_t the_width, uint32_t the_height) const override;
+    [[nodiscard]] ImagePtr resize(uint32_t the_width, uint32_t the_height) const override;
 
     //! kernel is interpreted col-major
     ImagePtr convolve(const std::vector<float> &the_kernel) override;
@@ -91,15 +91,15 @@ public:
 
     void flip(bool horizontal) override;
 
-    void offsets(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a = nullptr) const override;
+    void offsets(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a) const override;
 
-    inline uint32_t width() const override { return m_width; };
+    [[nodiscard]] inline uint32_t width() const override { return m_width; };
 
-    inline uint32_t height() const override { return m_height; };
+    [[nodiscard]] inline uint32_t height() const override { return m_height; };
 
     inline void *data() override { return (void *)m_data; };
 
-    inline uint32_t num_components() const override { return m_num_components; };
+    [[nodiscard]] inline uint32_t num_components() const override { return m_num_components; };
 
     Image_(const Image_ &the_other) = delete;
 
