@@ -16,7 +16,7 @@ class TestApplication : public crocore::Application
 
 public:
 
-    explicit TestApplication(int argc = 0, char *argv[] = nullptr) : crocore::Application(argc, argv) {};
+    explicit TestApplication(const crocore::Application::create_info_t &create_info) : crocore::Application(create_info) {};
 
     bool setup_complete = false;
 
@@ -49,7 +49,9 @@ private:
 
 BOOST_AUTO_TEST_CASE(testApplication)
 {
-    auto app = std::make_shared<TestApplication>();
+    crocore::Application::create_info_t create_info = {};
+    auto app = std::make_shared<TestApplication>(create_info);
+
     BOOST_CHECK_EQUAL(app->run(), EXIT_SUCCESS);
     BOOST_CHECK(app->setup_complete);
     BOOST_CHECK(app->teardown_complete);
