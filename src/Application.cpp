@@ -21,7 +21,8 @@ void signal_handler(int signal){ if(shutdown_handler){ shutdown_handler(signal);
 } // namespace
 
 Application::Application(const create_info_t &create_info) :
-        Component(create_info.arguments.empty() ? "vierkant_app" : crocore::fs::get_filename_part(create_info.arguments[0])),
+        Component(create_info.arguments.empty() ? "vierkant_app" : crocore::fs::get_filename_part(
+                create_info.arguments[0])),
         target_fps(create_info.target_fps),
         m_start_time(std::chrono::steady_clock::now()),
         m_last_timestamp(std::chrono::steady_clock::now()),
@@ -50,40 +51,33 @@ int Application::run()
 
     std::chrono::steady_clock::time_point time_stamp;
 
-    try
+    // main loop
+    while(running)
     {
-        // main loop
-        while(running)
-        {
-            // get current time
-            time_stamp = std::chrono::steady_clock::now();
+        // get current time
+        time_stamp = std::chrono::steady_clock::now();
 
-            // poll io_service if no separate worker-threads exist
-            if(!m_main_queue.num_threads()) m_main_queue.poll();
+        // poll io_service if no separate worker-threads exist
+        if(!m_main_queue.num_threads()){ m_main_queue.poll(); }
 
-            // poll input events
-            poll_events();
+        // poll input events
+        poll_events();
 
-            // time elapsed since last frame
-            double time_delta = double_sec_t(time_stamp - m_last_timestamp).count();
+        // time elapsed since last frame
+        double time_delta = double_sec_t(time_stamp - m_last_timestamp).count();
 
-            // call update callback
-            update(time_delta);
+        // call update callback
+        update(time_delta);
 
-            m_last_timestamp = time_stamp;
+        m_last_timestamp = time_stamp;
 
-            // perform fps-timing
-            update_timing();
-        }
-
-        // manage teardown, save stuff etc.
-        teardown();
-
-    } catch(std::exception &e)
-    {
-        LOG_ERROR << e.what();
-        return EXIT_FAILURE;
+        // perform fps-timing
+        update_timing();
     }
+
+    // manage teardown, save stuff etc.
+    teardown();
+
     return EXIT_SUCCESS;
 }
 
@@ -117,7 +111,7 @@ void Application::update_timing()
     {
         const uint32_t desired_frametime_us = std::ceil(1.0e6 / fps);
 
-        if (frame_us < desired_frametime_us)
+        if(frame_us < desired_frametime_us)
         {
             uint32_t sleep_us = desired_frametime_us - frame_us;
             std::this_thread::sleep_for(std::chrono::microseconds(sleep_us));
