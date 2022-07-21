@@ -228,8 +228,6 @@ public:
 
     typedef std::shared_ptr<RangedProperty<T>> Ptr;
 
-    ~RangedProperty<T>() override = default;
-
     inline RangedProperty<T> &operator=(const T &theVal) override
     {
         this->set(theVal);

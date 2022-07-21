@@ -9,6 +9,7 @@
 
 #include <shared_mutex>
 #include <fstream>
+#include <mutex>
 #include "crocore/filesystem.hpp"
 
 namespace crocore::filesystem

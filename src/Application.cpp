@@ -2,7 +2,8 @@
 // Created by crocdialer on 4/13/19.
 //
 
-#include <signal.h>
+#include <csignal>
+#include <thread>
 
 #include "crocore/filesystem.hpp"
 #include "crocore/Application.hpp"

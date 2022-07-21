@@ -6,6 +6,7 @@
 //
 //
 
+#include <boost/bind/placeholders.hpp>
 #include <boost/signals2.hpp>
 #include "crocore/Property.hpp"
 
@@ -53,12 +54,12 @@ bool Property::tweakable() const
 void Property::add_observer(const ObserverPtr &theObs)
 {
     m_impl->m_signal.connect(signal_t::slot_type(&Observer::update_property,
-                                                 theObs, _1).track_foreign(theObs));
+                                                 theObs, boost::placeholders::_1).track_foreign(theObs));
 }
 
 void Property::remove_observer(const ObserverPtr &theObs)
 {
-    m_impl->m_signal.disconnect(boost::bind(&Observer::update_property, theObs, _1));
+    m_impl->m_signal.disconnect(boost::bind(&Observer::update_property, theObs, boost::placeholders::_1));
 }
 
 void Property::clear_observers()
