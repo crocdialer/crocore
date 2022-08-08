@@ -24,7 +24,7 @@ void signal_handler(int signal){ if(shutdown_handler){ shutdown_handler(signal);
 Application::Application(const create_info_t &create_info) :
         Component(create_info.arguments.empty() ? "vierkant_app" : crocore::fs::get_filename_part(
                 create_info.arguments[0])),
-        target_fps(create_info.target_fps),
+      loop_throttling(create_info.loop_throttling), target_loop_frequency(create_info.target_loop_frequency),
         m_start_time(std::chrono::steady_clock::now()),
         m_last_timestamp(std::chrono::steady_clock::now()),
         m_timing_interval(1.0),
@@ -102,13 +102,13 @@ void Application::update_timing()
     }
 
     // fps throttling
-    double fps = target_fps;
+    double fps = target_loop_frequency;
 
     auto now = std::chrono::steady_clock::now();
     uint32_t frame_us = std::chrono::duration_cast<std::chrono::microseconds>(
             now - m_fps_timestamp).count();
 
-    if(fps > 0)
+    if(loop_throttling && fps > 0)
     {
         const uint32_t desired_frametime_us = std::ceil(1.0e6 / fps);
 

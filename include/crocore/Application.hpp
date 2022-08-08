@@ -17,14 +17,17 @@ public:
 
     struct create_info_t
     {
-        float target_fps = 0.f;
+        bool loop_throttling = false;
+        float target_loop_frequency = 0.f;
         std::vector<std::string> arguments;
         uint32_t num_background_threads = std::max(1U, std::thread::hardware_concurrency());
     };
 
     std::atomic<bool> running = false;
 
-    std::atomic<double> target_fps = 0.f;
+    std::atomic<bool> loop_throttling = false;
+
+    std::atomic<double> target_loop_frequency = 0.f;
 
     explicit Application(const create_info_t &create_info);
 
