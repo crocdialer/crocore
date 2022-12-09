@@ -75,8 +75,7 @@ std::string local_ip(bool ipV6)
     if(!ip_set.empty()){ ret = *ip_set.begin(); }
     return ret;
 }
-#else if defined(_WIN32)
-
+#elif defined(_WIN32)
 std::string local_ip(bool ipV6)
 {
     std::string ret = "unknown_ip";
@@ -102,7 +101,6 @@ std::string local_ip(bool ipV6)
     if(!ip_set.empty()) { ret = *ip_set.begin(); }
     return ret;
 }
-
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

@@ -10,7 +10,7 @@ option(BUILD_TESTS "Build Tests" ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
 set(LIB_TYPE SHARED)
 if (NOT BUILD_SHARED_LIBS)
@@ -22,7 +22,7 @@ endif (NOT BUILD_SHARED_LIBS)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules ${CMAKE_MODULE_PATH})
 include(add_test_helper)
 
-set(LIBS ${LIBS} atomic stdc++fs)
+set(LIBS ${LIBS})
 
 ##### BOOST
 set(BOOST_COMPONENTS system)
