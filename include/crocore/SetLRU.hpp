@@ -22,8 +22,7 @@ public:
 
     SetLRU() = default;
 
-    template<typename InputIterator,
-            typename = std::_RequireInputIter<InputIterator>>
+    template<typename InputIterator>
     SetLRU(InputIterator first, InputIterator last)
     {
         for(auto it = first; it < last; ++it){ push_back(*it); }
@@ -89,12 +88,16 @@ public:
     }
 
     inline typename std::list<Key>::iterator begin() noexcept{ return _list.begin(); }
+    inline typename std::list<Key>::iterator rbegin() noexcept{ return _list.rbegin(); }
 
     inline typename std::list<Key>::const_iterator cbegin() const noexcept{ return _list.cbegin(); }
+    inline typename std::list<Key>::const_iterator rcbegin() const noexcept{ return _list.rcbegin(); }
 
     inline typename std::list<Key>::iterator end() noexcept{ return _list.end(); }
+    inline typename std::list<Key>::iterator rend() noexcept{ return _list.rend(); }
 
     inline typename std::list<Key>::const_iterator cend() const noexcept{ return _list.cend(); }
+    inline typename std::list<Key>::const_iterator rcend() const noexcept{ return _list.rcend(); }
 
 private:
 

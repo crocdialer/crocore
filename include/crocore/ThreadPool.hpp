@@ -129,9 +129,9 @@ public:
      * @return  a std::future holding the return value.
      */
     template<typename Func, typename... Args>
-    std::future<std::result_of_t<Func(Args...)>> post(Func &&f, Args&&... args)
+    std::future<typename std::invoke_result<Func, Args...>::type> post(Func &&f, Args&&... args)
     {
-        using result_t = std::result_of_t<Func(Args...)>;
+        using result_t = typename std::invoke_result<Func, Args...>::type;
         using task_t = std::packaged_task<result_t()>;
         auto packed_task = std::make_shared<task_t>(std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
         auto future = packed_task->get_future();

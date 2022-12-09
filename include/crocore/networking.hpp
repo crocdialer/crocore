@@ -177,7 +177,7 @@ public:
 
 private:
 
-    friend tcp_server_impl;
+    friend struct tcp_server_impl;
     std::shared_ptr<struct tcp_connection_impl> m_impl;
 
     tcp_connection(io_service_t &io_service, const std::string &ip, uint16_t port, tcp_receive_cb_t f);

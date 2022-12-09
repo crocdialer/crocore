@@ -9,8 +9,10 @@
 
 #pragma once
 
-#include "crocore/crocore.hpp"
 #include <filesystem>
+#include <set>
+
+#include "crocore/crocore.hpp"
 
 namespace crocore
 {

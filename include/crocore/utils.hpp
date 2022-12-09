@@ -15,6 +15,7 @@
 
 #include <iomanip>
 #include <random>
+#include <memory>
 #include "crocore.hpp"
 
 namespace crocore
