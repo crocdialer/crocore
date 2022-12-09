@@ -2,6 +2,7 @@
 #include <boost/asio.hpp>
 #include <mutex>
 #include <chrono>
+#include <map>
 #include "crocore/http.hpp"
 
 using duration_t = std::chrono::duration<double>;

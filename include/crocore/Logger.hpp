@@ -22,7 +22,7 @@ enum class Severity
     DISABLED = 0,
     PRINT = 1,
     FATAL = 2,
-    ERROR = 3,
+    ERROR_ = 3,
     WARNING = 4,
     INFO = 5,
     DEBUG = 6,
@@ -139,7 +139,7 @@ void log(Severity the_severity, const std::string &the_format_text, Args ... arg
 #define LOG_TRACE_3 CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::TRACE_3, __FILE__, __LINE__)
 #define LOG_DEBUG CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::DEBUG, __FILE__, __LINE__)
 #define LOG_PRINT CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::PRINT, __FILE__, __LINE__)
-#define LOG_ERROR CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::ERROR, __FILE__, __LINE__)
+#define LOG_ERROR CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::ERROR_, __FILE__, __LINE__)
 #define LOG_WARNING CROCORE_LOG_CHECK(crocore::g_logger, crocore::Severity::WARNING, __FILE__, __LINE__)
 
 #define LOG_INFO_IF(b) b && LOG_INFO

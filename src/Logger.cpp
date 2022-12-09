@@ -200,7 +200,7 @@ void Logger::log(Severity theSeverity, const char *theModule, int theId,
         case Severity::PRINT:
             stream << postfix.str();
             break;
-        case Severity::ERROR:
+        case Severity::ERROR_:
             stream << " ERROR: " << postfix.str();
             break;
         default:

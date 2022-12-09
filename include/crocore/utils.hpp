@@ -16,6 +16,7 @@
 #include <iomanip>
 #include <random>
 #include <memory>
+#include <numeric>
 #include "crocore.hpp"
 
 namespace crocore
@@ -109,7 +110,7 @@ inline std::string remove_whitespace(const std::string &input)
 {
     std::string ret(input);
     ret.erase(std::remove_if(ret.begin(), ret.end(),
-                             [](char c){ return std::isspace<char>(c, std::locale::classic()); }),
+                             [](char c){ return std::isspace(c); }),
               ret.end());
     return ret;
 }
@@ -421,6 +422,7 @@ inline T random_int(const T &min, const T &max)
     return uniform_dist(e1);
 }
 
+#if defined(unix) || defined(__unix__) || defined(__unix)
 inline std::string syscall(const std::string &cmd)
 {
     std::string ret;
@@ -429,6 +431,7 @@ inline std::string syscall(const std::string &cmd)
     while(fgets(buf, sizeof(buf), pipe.get())){ ret.append(buf); }
     return ret;
 }
+#endif
 
 // wrapper functions for aligned memory allocation
 static inline void *aligned_alloc(size_t size, size_t alignment)
