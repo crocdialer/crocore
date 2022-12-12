@@ -17,6 +17,7 @@
 #include <random>
 #include <memory>
 #include <numeric>
+#include <sstream>
 #include "crocore.hpp"
 
 namespace crocore
