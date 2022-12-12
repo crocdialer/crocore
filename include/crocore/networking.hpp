@@ -111,7 +111,7 @@ public:
 
     tcp_server &operator=(tcp_server other);
 
-    void start_listen(uint16_t port);
+    bool start_listen(uint16_t port);
 
     void stop_listen();
 

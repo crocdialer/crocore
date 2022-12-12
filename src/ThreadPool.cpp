@@ -15,34 +15,18 @@
 #include <thread>
 #include "crocore/ThreadPool.hpp"
 
-namespace crocore {
+namespace crocore
+{
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::atomic<uint64_t> Task::s_id_counter(0);
-std::mutex Task::s_mutex;
-std::map<uint64_t, TaskWeakPtr> Task::s_tasks;
+
 
 using std::chrono::duration_cast;
 using std::chrono::steady_clock;
 
 // 1 double per second
 using duration_t = std::chrono::duration<double>;
-
-double Task::duration() const
-{
-    return duration_cast<duration_t>(steady_clock::now() - m_start_time).count();
-}
-
-std::vector<TaskPtr> Task::current_tasks()
-{
-    std::vector<TaskPtr> ret(s_tasks.size());
-    std::unique_lock<std::mutex> scoped_lock(s_mutex);
-    size_t i = 0;
-
-    for(const auto &p : s_tasks){ ret[i++] = p.second.lock(); }
-    return ret;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -102,13 +86,13 @@ void ThreadPool::join_all()
 {
     m_impl->io_work.reset();
 
-    for(auto &thread : m_impl->threads)
+    for(auto &thread: m_impl->threads)
     {
         try
         {
             if(thread.joinable()){ thread.join(); }
         }
-        catch(std::exception &e) { LOG_ERROR << e.what(); }
+        catch(std::exception &e){}
     }
     m_impl->threads.clear();
 }
@@ -123,9 +107,9 @@ void ThreadPool::set_num_threads(size_t num)
 
         for(size_t i = 0; i < num; ++i)
         {
-            m_impl->threads.emplace_back([this]() { m_impl->io_service.run(); });
+            m_impl->threads.emplace_back([this](){ m_impl->io_service.run(); });
         }
     }
-    catch(std::exception &e) { LOG_ERROR << e.what(); }
+    catch(std::exception &e){}
 }
 }

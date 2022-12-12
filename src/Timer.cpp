@@ -107,7 +107,7 @@ struct timer_impl
     ~timer_impl()
     {
         try { m_timer.cancel(); }
-        catch(boost::system::system_error &e) { LOG_WARNING << e.what(); }
+        catch(boost::system::system_error &e) { }
     }
 };
 

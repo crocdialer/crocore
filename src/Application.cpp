@@ -22,9 +22,10 @@ void signal_handler(int signal){ if(shutdown_handler){ shutdown_handler(signal);
 } // namespace
 
 Application::Application(const create_info_t &create_info) :
-        Component(create_info.arguments.empty() ? "vierkant_app" : crocore::fs::get_filename_part(
+        loop_throttling(create_info.loop_throttling),
+        target_loop_frequency(create_info.target_loop_frequency),
+        m_name(create_info.arguments.empty() ? "vierkant_app" : crocore::fs::get_filename_part(
                 create_info.arguments[0])),
-      loop_throttling(create_info.loop_throttling), target_loop_frequency(create_info.target_loop_frequency),
         m_start_time(std::chrono::steady_clock::now()),
         m_last_timestamp(std::chrono::steady_clock::now()),
         m_timing_interval(1.0),
@@ -37,9 +38,6 @@ Application::Application(const create_info_t &create_info) :
 
     srand(time(nullptr));
     m_args = create_info.arguments;
-
-    // properties
-    register_property(m_log_level);
 }
 
 int Application::run()
@@ -121,11 +119,6 @@ void Application::update_timing()
     }
 
     m_fps_timestamp = std::chrono::steady_clock::now();
-}
-
-void Application::update_property(const crocore::PropertyConstPtr &theProperty)
-{
-    if(theProperty == m_log_level){ crocore::g_logger.set_severity(crocore::Severity(m_log_level->value())); }
 }
 
 }

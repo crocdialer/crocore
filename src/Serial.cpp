@@ -1,6 +1,7 @@
 #include <mutex>
 #include <boost/asio.hpp>
 #include <boost/asio/serial_port.hpp>
+#include <utility>
 #include "crocore/filesystem.hpp"
 #include "crocore/CircularBuffer.hpp"
 #include "crocore/Serial.hpp"
@@ -25,7 +26,7 @@ namespace crocore
 
         SerialImpl(boost::asio::io_service &io, Serial::receive_cb_t rec_cb):
         m_serial_port(io),
-        m_receive_cb(rec_cb){}
+        m_receive_cb(std::move(rec_cb)){}
     };
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -33,10 +34,6 @@ namespace crocore
     SerialPtr Serial::create(io_service_t &io, receive_cb_t cb)
     {
         auto ret = SerialPtr(new Serial(io, std::move(cb)));
-        ret->set_connect_cb([](ConnectionPtr the_uart)
-        {
-            LOG_TRACE_1 << "connected: " << the_uart->description();
-        });
         return ret;
     }
 
@@ -129,11 +126,7 @@ namespace crocore
             if(m_impl->m_connect_cb){ m_impl->m_connect_cb(shared_from_this()); }
             return true;
         }
-        catch(boost::system::system_error &e)
-        {
-            LOG_WARNING << e.what() << " (" << the_name << ")";
-        }
-        return false;
+        catch(boost::system::system_error &e)        {            return false;        }
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -143,7 +136,7 @@ namespace crocore
         if(is_open())
         {
             try{ m_impl->m_serial_port.close(); }
-            catch(boost::system::system_error &e){ LOG_WARNING << e.what(); }
+            catch(boost::system::system_error &e){}
         }
     }
 
@@ -195,8 +188,6 @@ namespace crocore
             {
                 if(bytes_transferred)
                 {
-                    LOG_TRACE_3 << "received " << bytes_transferred << " bytes";
-
                     if(self && impl_cp->m_receive_cb)
                     {
                         std::vector<uint8_t> datavec(impl_cp->m_rec_buffer.begin(),
@@ -222,8 +213,7 @@ namespace crocore
                     case boost::system::errc::no_such_device_or_address:
                     case boost::asio::error::operation_aborted:
                     {
-                        LOG_TRACE_1 << "disconnected: " << impl_cp->m_device_name;
-
+//                        LOG_TRACE_1 << "disconnected: " << impl_cp->m_device_name;
                         if(self && impl_cp->m_disconnect_cb)
                         {
                             auto diconnect_cb = std::move(impl_cp->m_disconnect_cb);
@@ -235,7 +225,7 @@ namespace crocore
                         break;
 
                     default:
-                        LOG_TRACE_2 << error.message() << " (" << error.value() << ")";
+//                        LOG_TRACE_2 << error.message() << " (" << error.value() << ")";
                         break;
                 }
             }
@@ -252,11 +242,14 @@ namespace crocore
                                  [bytes](const boost::system::error_code& error,
                                          std::size_t bytes_transferred)
         {
-            if(error){ LOG_ERROR << error.message(); }
-            else if(bytes_transferred < bytes.size())
-            {
-                LOG_WARNING << "not all bytes written";
-            }
+//            if(error)
+//            {
+////                LOG_ERROR << error.message();
+//            }
+//            else if(bytes_transferred < bytes.size())
+//            {
+////                LOG_WARNING << "not all bytes written";
+//            }
         });
     }
 

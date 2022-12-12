@@ -26,13 +26,6 @@ enum class FileType
 
 size_t get_file_size(const std::filesystem::path &the_file_name);
 
-// manage known file locations
-std::set<std::filesystem::path> search_paths();
-
-void add_search_path(const std::filesystem::path &path, int recursion_depth = 0);
-
-void clear_search_paths();
-
 std::vector<std::string> get_directory_entries(const std::filesystem::path &thePath,
                                                const std::string &theExtension = "",
                                                int the_recursion_depth = 0);
@@ -69,8 +62,6 @@ bool append_to_file(const std::filesystem::path &the_file_name, const std::strin
 std::string get_filename_part(const std::filesystem::path &the_file_name);
 
 std::string get_directory_part(const std::filesystem::path &the_file_name);
-
-std::filesystem::path search_file(const std::filesystem::path &file_name);
 
 std::string get_extension(const std::filesystem::path &thePath);
 

@@ -27,12 +27,13 @@
 #include "crocore/filesystem.hpp"
 #include "crocore/Image.hpp"
 
-namespace crocore {
+namespace crocore
+{
 
 void stbi_write_func(void *context, void *data, int size)
 {
     std::vector<uint8_t> &out = *reinterpret_cast<std::vector<uint8_t> *>(context);
-    out.insert(out.end(), (uint8_t *)data, (uint8_t *)data + size);
+    out.insert(out.end(), (uint8_t *) data, (uint8_t *) data + size);
 }
 
 ImagePtr create_image_from_file(const std::string &the_path, int num_channels)
@@ -45,7 +46,10 @@ ImagePtr create_image_from_file(const std::string &the_path, int num_channels)
         dataVec = fs::read_binary_file(the_path);
         ret = create_image_from_data(dataVec, num_channels);
     }
-    catch(std::runtime_error &e) { LOG_WARNING << e.what(); }
+    catch(std::runtime_error &e)
+    {
+//        LOG_WARNING << e.what();
+    }
     return ret;
 }
 
@@ -63,17 +67,18 @@ ImagePtr create_image_from_data(const uint8_t *the_data, size_t the_num_bytes, i
     if(is_hdr)
     {
         float *data = stbi_loadf_from_memory(the_data, the_num_bytes, &width, &height, &num_components, num_channels);
-        if(!data) throw ImageLoadException();
+        if(!data){ throw ImageLoadException(); }
         ret = Image_<float>::create(data, width, height, num_channels ? num_channels : num_components);
         STBI_FREE(data);
-    }else
+    }
+    else
     {
         uint8_t *data = stbi_load_from_memory(the_data, the_num_bytes, &width, &height, &num_components, num_channels);
-        if(!data) throw ImageLoadException();
+        if(!data){ throw ImageLoadException(); }
         ret = Image_<uint8_t>::create(data, width, height, num_channels ? num_channels : num_components);
         STBI_FREE(data);
     }
-    LOG_TRACE << "decoded image: " << width << " x " << height << " (" << num_components << " ch)";
+//    LOG_TRACE << "decoded image: " << width << " x " << height << " (" << num_components << " ch)";
     return ret;
 }
 
@@ -92,9 +97,9 @@ void copy_image(const typename Image_<T>::Ptr &src_mat, typename Image_<T>::Ptr 
     uint32_t dst_row_offset = dst_mat->width() - dst_mat->roi.width;
 
     const T *src_area_start =
-            (uint8_t *)src_mat->data() + (src_mat->roi.y * src_mat->width() + src_mat->roi.x) * bytes_per_pixel;
+            (uint8_t *) src_mat->data() + (src_mat->roi.y * src_mat->width() + src_mat->roi.x) * bytes_per_pixel;
     T *dst_area_start =
-            (uint8_t *)dst_mat->data() + (dst_mat->roi.y * dst_mat->width() + dst_mat->roi.x) * bytes_per_pixel;
+            (uint8_t *) dst_mat->data() + (dst_mat->roi.y * dst_mat->width() + dst_mat->roi.x) * bytes_per_pixel;
 
     for(uint32_t r = 0; r < src_mat->roi.height; r++)
     {
@@ -209,7 +214,8 @@ void Image_<T>::flip(bool horizontal)
                 std::swap_ranges(lhs, lhs + m_num_components, rhs);
             }
         }
-    }else
+    }
+    else
     {
         // swap lines
         for(uint32_t i = 0; i < m_height / 2; i++)
@@ -257,16 +263,12 @@ ImagePtr Image_<T>::convolve(const std::vector<float> &the_kernel)
     Image_<T>::Ptr ret;
     auto norm_kernel = the_kernel;
     float kernel_sum = sum(the_kernel);
-    for(auto &e : norm_kernel){ e /= kernel_sum; }
+    for(auto &e: norm_kernel){ e /= kernel_sum; }
 
     int kernel_dim = sqrt(the_kernel.size());
     int kernel_dim_2 = kernel_dim / 2;
 
-    if(kernel_dim * kernel_dim != (int)the_kernel.size())
-    {
-        LOG_WARNING << "only quadratic kernels accepted";
-        return ret;
-    }
+    if(kernel_dim * kernel_dim != (int) the_kernel.size()){ return nullptr; }
     ret = Image_<T>::create(m_width, m_height, m_num_components);
 
     for(uint32_t y = 0; y < m_height; ++y)
@@ -284,10 +286,11 @@ ImagePtr Image_<T>::convolve(const std::vector<float> &the_kernel)
                     for(int l = -kernel_dim_2; l <= kernel_dim_2; ++l, ++k_idx)
                     {
                         int pos_x = x + k, pos_y = y + l;
-                        if(pos_x < 0 || pos_x >= (int)m_width || pos_y < 0 || pos_y >= (int)m_height)
+                        if(pos_x < 0 || pos_x >= (int) m_width || pos_y < 0 || pos_y >= (int) m_height)
                         {
-                            sum += at(x, y)[c] / (float)norm_kernel.size();
-                        }else{ sum += at(pos_x, pos_y)[c] * norm_kernel[k_idx]; }
+                            sum += at(x, y)[c] / (float) norm_kernel.size();
+                        }
+                        else{ sum += at(pos_x, pos_y)[c] * norm_kernel[k_idx]; }
                     }
                 }
                 dst_ptr[c] = clamp<float>(roundf(sum), 0, 255);
@@ -302,29 +305,25 @@ void Image_<T>::offsets(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a) const
 {
     switch(type)
     {
-        case Type::BGR:
-            *r = 2 * sizeof(T);
+        case Type::BGR:*r = 2 * sizeof(T);
             *g = 1 * sizeof(T);
             *b = 0;
             if(a){ *a = 0; }
             break;
 
-        case Type::RGB:
-            *r = 0;
+        case Type::RGB:*r = 0;
             *g = 1 * sizeof(T);
             *b = 2 * sizeof(T);
             if(a){ *a = 0; }
             break;
 
-        case Type::RGBA:
-            *r = 0;
+        case Type::RGBA:*r = 0;
             *g = 1 * sizeof(T);
             *b = 2 * sizeof(T);
             if(a){ *a = 3 * sizeof(T); }
             break;
 
-        case Type::BGRA:
-            *r = 2 * sizeof(T);
+        case Type::BGRA:*r = 2 * sizeof(T);
             *g = 1 * sizeof(T);
             *b = 0;
             if(a){ *a = 3 * sizeof(T); }
@@ -332,8 +331,7 @@ void Image_<T>::offsets(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a) const
 
         case Type::GRAY:
         case Type::UNKNOWN:
-        default:
-            *r = *g = *b = 0;
+        default:*r = *g = *b = 0;
             if(a){ *a = 0; }
             break;
     }
@@ -354,11 +352,11 @@ struct Point_
 {
     T x, y;
 
-    Point_() : x(0), y(0) {}
+    Point_() : x(0), y(0){}
 
-    Point_(const T &lhs, const T &rhs) : x(lhs), y(rhs) {}
+    Point_(const T &lhs, const T &rhs) : x(lhs), y(rhs){}
 
-    Point_(const T &lhs) : x(lhs), y(lhs) {}
+    Point_(const T &lhs) : x(lhs), y(lhs){}
 };
 
 typedef Point_<float> Point;
@@ -380,14 +378,14 @@ class Grid_
 {
 public:
 
-    static inline constexpr T zero() { return T(0); }
+    static inline constexpr T zero(){ return T(0); }
 
-    static inline constexpr T inf() { return T(1 << 16); }
+    static inline constexpr T inf(){ return T(1 << 16); }
 
     Grid_(uint32_t the_width, uint32_t the_height) :
             m_width(the_width),
             m_height(the_height),
-            m_data(new T[the_width * the_height]()) {}
+            m_data(new T[the_width * the_height]()){}
 
     Grid_(const Grid_ &the_other) :
             m_width(the_other.m_width),
@@ -397,7 +395,7 @@ public:
         memcpy(m_data, the_other.m_data, m_width * m_height * sizeof(T));
     }
 
-    Grid_(Grid_ &&the_other)  noexcept :
+    Grid_(Grid_ &&the_other) noexcept:
             m_width(the_other.m_width),
             m_height(the_other.m_height),
             m_data(the_other.m_data)
@@ -413,14 +411,18 @@ public:
         return *this;
     }
 
-    ~Grid_() { delete[] m_data; }
+    ~Grid_(){ delete[] m_data; }
 
     [[nodiscard]] inline T at(uint32_t x, uint32_t y) const
     {
         if(x >= 0 && y >= 0 && x < m_width && y < m_height)
+        {
             return *(m_data + x + m_width * y);
+        }
         else
+        {
             return inf();
+        }
     }
 
     inline void set(uint32_t x, uint32_t y, const T &the_value)
@@ -482,9 +484,9 @@ public:
         }
     }
 
-    T *data() { return m_data; }
+    T *data(){ return m_data; }
 
-    size_t size() { return m_width * m_height; }
+    size_t size(){ return m_width * m_height; }
 
 private:
     uint32_t m_width, m_height;
@@ -493,7 +495,7 @@ private:
 
 typedef Grid_<Point> Grid;
 
-ImagePtr compute_distance_field(const ImagePtr& the_img, float spread)
+ImagePtr compute_distance_field(const ImagePtr &the_img, float spread)
 {
     auto img = std::dynamic_pointer_cast<Image_<uint8_t >>(the_img);
 

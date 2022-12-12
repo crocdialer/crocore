@@ -11,7 +11,7 @@ namespace crocore
 
 DEFINE_CLASS_PTR(Application);
 
-class Application : public crocore::Component
+class Application : public std::enable_shared_from_this<Application>
 {
 public:
 
@@ -33,33 +33,33 @@ public:
 
     int run();
 
-    double application_time() const;
+    const std::string &name() const{ return m_name; };
+
+    [[nodiscard]] double application_time() const;
 
     /**
     * returns the current average time per loop-iteration in seconds
     */
-    double current_loop_time() const{ return m_avg_loop_time; };
+    [[nodiscard]] double current_loop_time() const{ return m_avg_loop_time; };
 
     /**
     * the commandline arguments provided at application start
     */
-    const std::vector<std::string> &args() const{ return m_args; };
+    [[nodiscard]] const std::vector<std::string> &args() const{ return m_args; };
 
     /*!
      * this queue is processed by the main thread
      */
     crocore::ThreadPool &main_queue(){ return m_main_queue; }
 
-    const crocore::ThreadPool &main_queue() const{ return m_main_queue; }
+    [[nodiscard]] const crocore::ThreadPool &main_queue() const{ return m_main_queue; }
 
     /*!
     * the background queue is processed by a background threadpool
     */
     crocore::ThreadPool &background_queue(){ return m_background_queue; }
 
-    const crocore::ThreadPool &background_queue() const{ return m_background_queue; }
-
-    void update_property(const crocore::PropertyConstPtr &theProperty) override;
+    [[nodiscard]] const crocore::ThreadPool &background_queue() const{ return m_background_queue; }
 
 private:
 
@@ -74,6 +74,8 @@ private:
 
     void update_timing();
 
+    std::string m_name;
+
     // timing
     size_t m_num_loop_iterations = 0;
     std::chrono::steady_clock::time_point m_start_time, m_last_timestamp, m_last_avg, m_fps_timestamp;
@@ -84,10 +86,6 @@ private:
     std::vector<std::string> m_args;
 
     crocore::ThreadPool m_main_queue, m_background_queue;
-
-    // basic application properties
-    crocore::Property_<uint32_t>::Ptr
-            m_log_level = crocore::Property_<uint32_t>::create("log_level", (uint32_t) crocore::Severity::INFO);
 };
 
 }

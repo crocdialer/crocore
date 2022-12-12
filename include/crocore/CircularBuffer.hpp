@@ -10,7 +10,8 @@
 
 #include "crocore/crocore.hpp"
 
-namespace crocore {
+namespace crocore
+{
 
 template<typename T, typename Allocator = std::allocator<T>>
 class CircularBuffer
@@ -91,18 +92,18 @@ public:
 
     inline const T &back() const { return m_data[(m_last - 1) % m_array_size]; }
 
-    inline uint32_t capacity() const { return std::max(0, m_array_size - 1); };
+    [[nodiscard]] inline uint32_t capacity() const { return std::max(0, m_array_size - 1); };
 
     inline void set_capacity(uint32_t the_cap) { *this = CircularBuffer(the_cap); }
 
-    inline size_t size() const
+    [[nodiscard]] inline size_t size() const
     {
         int ret = m_last - m_first;
         if(ret < 0){ ret += m_array_size; }
         return ret;
     };
 
-    inline bool empty() const { return m_first == m_last; }
+    [[nodiscard]] inline bool empty() const { return m_first == m_last; }
 
     inline T &operator[](uint32_t the_index)
     {
@@ -224,7 +225,6 @@ public:
     }
 
 private:
-
     int32_t m_array_size = 0, m_first = 0, m_last = 0;
     T *m_data = nullptr;
 };

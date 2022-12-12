@@ -1,25 +1,21 @@
 #include <curl/curl.h>
-#include <boost/asio.hpp>
 #include <mutex>
-#include <chrono>
+#include <cstring>
 #include <map>
 #include "crocore/http.hpp"
 
 using duration_t = std::chrono::duration<double>;
 
-namespace crocore::net::http {
+namespace crocore::net::http
+{
 
 using ActionPtr = std::shared_ptr<class CurlAction>;
 using handle_map_t = std::map<CURL *, ActionPtr>;
-
-// Timeout interval for http requests
-static const long DEFAULT_TIMEOUT = 0;
 
 ///////////////////////////////////////////////////////////////////////////////
 
 struct ClientImpl
 {
-    boost::asio::io_service *m_io_service;
     std::shared_ptr<CURLM> m_curl_multi_handle;
 
     // map containing current handles
@@ -34,10 +30,9 @@ struct ClientImpl
     // number of running transfers
     int m_num_connections;
 
-    explicit ClientImpl(boost::asio::io_service *io) :
-            m_io_service(io),
+    explicit ClientImpl() :
             m_curl_multi_handle(curl_multi_init(), curl_multi_cleanup),
-            m_timeout(DEFAULT_TIMEOUT),
+            m_timeout(Client::DEFAULT_TIMEOUT),
             m_num_connections(0) {};
 
     void poll();
@@ -50,7 +45,7 @@ struct ClientImpl
 class CurlAction
 {
 private:
-    std::shared_ptr<CURL> m_curl_handle;
+    std::unique_ptr<CURL, std::function<void(CURL*)>> m_curl_handle;
     std::chrono::steady_clock::time_point m_start_time;
     completion_cb_t m_completion_handler;
     progress_cb_t m_progress_handler;
@@ -101,8 +96,6 @@ private:
         con.dl_now = dlnow;
         con.ul_total = ult;
         con.ul_now = uln;
-        LOG_TRACE_2 << con.url << " : " << con.dl_now << " / " << con.dl_total;
-
         if(self->m_progress_handler){ self->m_progress_handler(con); }
         return 0;
     }
@@ -140,22 +133,15 @@ public:
 
     ///////////////////////////////////////////////////////////////////////////////
 
-    CURL *handle() const { return m_curl_handle.get(); }
+    [[nodiscard]] CURL *handle() const { return m_curl_handle.get(); }
 
     ///////////////////////////////////////////////////////////////////////////////
 
-    connection_info_t connection_info() const { return m_response.connection; }
+    [[nodiscard]] connection_info_t connection_info() const { return m_response.connection; }
 
     ///////////////////////////////////////////////////////////////////////////////
 
-    void set_handle(CURL *handle)
-    {
-        m_curl_handle = std::shared_ptr<CURL>(handle, curl_easy_cleanup);
-    }
-
-    ///////////////////////////////////////////////////////////////////////////////
-
-    completion_cb_t completion_handler() const { return m_completion_handler; }
+    [[nodiscard]] completion_cb_t completion_handler() const { return m_completion_handler; }
 
     void set_completion_handler(completion_cb_t ch) { m_completion_handler = std::move(ch); }
 
@@ -171,7 +157,7 @@ public:
 
     ///////////////////////////////////////////////////////////////////////////////
 
-    double duration() const
+    [[nodiscard]] double duration() const
     {
         return duration_t(std::chrono::steady_clock::now() - m_start_time).count();
     }
@@ -179,7 +165,7 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////
 
-typedef CurlAction Action_GET;
+using Action_GET = CurlAction;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -254,10 +240,9 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////
 
-response_t head(const std::string &the_url)
+response_t head(const std::string &url)
 {
-    LOG_DEBUG << "head: '" << the_url << "'";
-    ActionPtr url_action = std::make_shared<Action_GET>(the_url);
+    ActionPtr url_action = std::make_unique<Action_GET>(url);
     curl_easy_setopt(url_action->handle(), CURLOPT_NOBODY, 1L);
     url_action->perform();
     return url_action->response();
@@ -265,67 +250,51 @@ response_t head(const std::string &the_url)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-response_t get(const std::string &the_url)
+response_t get(const std::string &url)
 {
-    LOG_DEBUG << "get: '" << the_url << "'";
-    ActionPtr url_action = std::make_shared<Action_GET>(the_url);
+    ActionPtr url_action = std::make_unique<Action_GET>(url);
     url_action->perform();
     return url_action->response();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-response_t post(const std::string &the_url,
-                const std::vector<uint8_t> &the_data,
-                const std::string &the_mime_type)
+response_t post(const std::string &url,
+                const std::vector<uint8_t> &data,
+                const std::string &mime_type)
 {
-    LOG_DEBUG << "post: '" << the_url << "'";
-    ActionPtr url_action = std::make_shared<Action_POST>(the_url, the_data, the_mime_type);
+    ActionPtr url_action = std::make_shared<Action_POST>(url, data, mime_type);
     url_action->perform();
     return url_action->response();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-response_t put(const std::string &the_url,
-               const std::vector<uint8_t> &the_data,
-               const std::string &the_mime_type)
+response_t put(const std::string &url,
+               const std::vector<uint8_t> &data,
+               const std::string &mime_type)
 {
-    LOG_DEBUG << "put: '" << the_url << "'";
-    ActionPtr url_action = std::make_shared<Action_PUT>(the_url, the_data, the_mime_type);
+    ActionPtr url_action = std::make_shared<Action_PUT>(url, data, mime_type);
     url_action->perform();
     return url_action->response();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-response_t del(const std::string &the_url)
+response_t del(const std::string &url)
 {
-    LOG_DEBUG << "delete: '" << the_url << "'";
-    ActionPtr url_action = std::make_shared<Action_DELETE>(the_url);
+    ActionPtr url_action = std::make_shared<Action_DELETE>(url);
     url_action->perform();
     return url_action->response();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Client::Client(io_service_t &io) :
-        m_impl(std::make_unique<ClientImpl>(&io))
+Client::Client() :
+        m_impl(std::make_unique<ClientImpl>())
 {
 
 }
-
-///////////////////////////////////////////////////////////////////////////////
-
-Client::Client(Client &&the_client) noexcept:
-        m_impl(std::move(the_client.m_impl))
-{
-
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-Client::~Client() = default;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -362,27 +331,21 @@ void ClientImpl::poll()
                 {
                     // http response code
                     curl_easy_getinfo(easy, CURLINFO_RESPONSE_CODE, &itr->second->response().status_code);
-
                     auto ci = itr->second->connection_info();
-                    auto num_kb = static_cast<uint32_t >(ci.dl_total / 1024);
-
-                    LOG_TRACE_1 << crocore::format("%d: '%s' completed successfully (%d kB, %d ms)",
-                                                   response.status_code,
-                                                   ci.url.c_str(),
-                                                   num_kb,
-                                                   (uint32_t)(response.duration * 1000));
-
                     if(itr->second->completion_handler()){ itr->second->completion_handler()(response); }
-                }else{ LOG_DEBUG << "could not retrieve '" << itr->second->connection_info().url << "'"; }
+                }else
+                {
+                    // TODO: error callback!?
+                }
                 m_handle_map.erase(itr);
             }
-        }else{ LOG_DEBUG << msg->msg; }
+        }
     }
 
-    if(m_num_connections && m_io_service)
-    {
-        m_io_service->post(std::bind(&ClientImpl::poll, this));
-    }
+//    if(m_num_connections && m_io_service)
+//    {
+//        m_io_service->post([this] { poll(); });
+//    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -400,70 +363,64 @@ void ClientImpl::add_action(const ActionPtr &action, completion_cb_t ch, progres
     // add handle to multi
     curl_multi_add_handle(m_curl_multi_handle.get(), action->handle());
 
-    if(m_io_service && !m_num_connections)
-    {
-        m_io_service->post(std::bind(&ClientImpl::poll, this));
-    }
+//    if(m_io_service && !m_num_connections)
+//    {
+//        m_io_service->post([this] { poll(); });
+//    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Client::async_head(const std::string &the_url,
+void Client::async_head(const std::string &url,
                         completion_cb_t ch,
                         progress_cb_t ph)
 {
-    LOG_DEBUG << "async_head: '" << the_url << "'";
-    ActionPtr url_action = std::make_shared<Action_GET>(the_url);
+    ActionPtr url_action = std::make_shared<Action_GET>(url);
     curl_easy_setopt(url_action->handle(), CURLOPT_NOBODY, 1L);
     m_impl->add_action(url_action, std::move(ch), std::move(ph));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Client::async_get(const std::string &the_url,
-                       completion_cb_t ch,
+void Client::async_get(const std::string &url,
+                       completion_cb_t completion_cb,
                        progress_cb_t ph)
 {
-    LOG_DEBUG << "async_get: '" << the_url << "'";
-
     // create an action which holds an easy handle
-    ActionPtr url_action = std::make_shared<Action_GET>(the_url);
-    m_impl->add_action(url_action, std::move(ch), std::move(ph));
+    ActionPtr url_action = std::make_shared<Action_GET>(url);
+    m_impl->add_action(url_action, std::move(completion_cb), std::move(ph));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Client::async_post(const std::string &the_url,
-                        const std::vector<uint8_t> &the_data,
-                        completion_cb_t ch,
-                        const std::string &the_mime_type,
-                        progress_cb_t ph)
+void Client::async_post(const std::string &url,
+                        const std::vector<uint8_t> &data,
+                        completion_cb_t completion_cb,
+                        const std::string &mime_type,
+                        progress_cb_t progress_cb)
 {
-    LOG_DEBUG << "async_post: '" << the_url << "'";
-    ActionPtr url_action = std::make_shared<Action_POST>(the_url, the_data, the_mime_type);
-    m_impl->add_action(url_action, std::move(ch), std::move(ph));
+    ActionPtr url_action = std::make_shared<Action_POST>(url, data, mime_type);
+    m_impl->add_action(url_action, std::move(completion_cb), std::move(progress_cb));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Client::async_put(const std::string &the_url,
-                       const std::vector<uint8_t> &the_data,
-                       completion_cb_t ch,
-                       const std::string &the_mime_type,
-                       progress_cb_t ph)
+void Client::async_put(const std::string &url,
+                       const std::vector<uint8_t> &data,
+                       completion_cb_t completion_cb,
+                       const std::string &mime_type,
+                       progress_cb_t progress_cb)
 {
-    LOG_DEBUG << "async_put: '" << the_url << "'";
-    ActionPtr url_action = std::make_shared<Action_PUT>(the_url, the_data, the_mime_type);
-    m_impl->add_action(url_action, std::move(ch), std::move(ph));
+    ActionPtr url_action = std::make_shared<Action_PUT>(url, data, mime_type);
+    m_impl->add_action(url_action, std::move(completion_cb), std::move(progress_cb));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Client::async_del(const std::string &the_url, completion_cb_t ch)
+void Client::async_del(const std::string &url, completion_cb_t completion_cb)
 {
-    LOG_DEBUG << "async_del: '" << the_url << "'";
-    ActionPtr url_action = std::make_shared<Action_DELETE>(the_url);
-    m_impl->add_action(url_action, std::move(ch));
+    ActionPtr url_action = std::make_shared<Action_DELETE>(url);
+    m_impl->add_action(url_action, std::move(completion_cb));
 }
 
 ///////////////////////////////////////////////////////////////////////////////

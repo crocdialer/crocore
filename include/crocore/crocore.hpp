@@ -25,6 +25,5 @@
 namespace boost::asio{ class io_context; }
 namespace crocore{ using io_service_t = boost::asio::io_context; }
 
-#include "Logger.hpp"
 #include "utils.hpp"
 #include "define_class_ptr.hpp"

@@ -17,13 +17,6 @@ namespace crocore::filesystem
 
 /////////// implementation internal /////////////
 
-namespace
-{
-std::set<std::filesystem::path> g_search_paths;
-
-std::shared_mutex g_mutex;
-}
-
 std::string expand_user(std::string path)
 {
     path = trim(path);
@@ -48,67 +41,6 @@ std::string expand_user(std::string path)
 }
 
 /////////// end implemantation internal /////////////
-
-///////////////////////////////////////////////////////////////////////////////
-
-std::set<std::filesystem::path> search_paths()
-{
-    std::shared_lock<std::shared_mutex> lock(g_mutex);
-    return g_search_paths;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-void add_search_path(const std::filesystem::path &path, int recursion_depth)
-{
-    std::filesystem::path path_expanded(expand_user(path.string()));
-
-    if(!std::filesystem::exists(path_expanded))
-    {
-        LOG_DEBUG << "directory " << path_expanded << " not existing";
-        return;
-    }
-
-    std::unique_lock<std::shared_mutex> lock(g_mutex);
-
-    if(recursion_depth)
-    {
-        g_search_paths.insert(get_directory_part(path_expanded.string()));
-        std::filesystem::recursive_directory_iterator it;
-        try
-        {
-            it = std::filesystem::recursive_directory_iterator(path_expanded);
-            std::filesystem::recursive_directory_iterator end;
-
-            while(it != end)
-            {
-                if(std::filesystem::is_directory(*it)){ g_search_paths.insert(canonical(it->path()).string()); }
-                try{ ++it; }
-                catch(std::exception &e)
-                {
-                    // e.g. no permission
-                    LOG_ERROR << e.what();
-                    it.disable_recursion_pending();
-                    try{ ++it; } catch(...)
-                    {
-                        LOG_ERROR << "Got trouble in recursive directory iteration: " << it->path();
-                        return;
-                    }
-                }
-            }
-        }
-        catch(std::exception &e){ LOG_ERROR << e.what(); }
-    }
-    else{ g_search_paths.insert(canonical(path_expanded).string()); }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-void clear_search_paths()
-{
-    std::unique_lock<std::shared_mutex> lock(g_mutex);
-    g_search_paths.clear();
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -154,7 +86,6 @@ std::vector<std::string> get_directory_entries(const std::filesystem::path &theP
                     catch(std::exception &e)
                     {
                         // e.g. no permission
-                        LOG_ERROR << e.what();
                         it.disable_recursion_pending();
                         ++it;
                     }
@@ -183,16 +114,19 @@ std::vector<std::string> get_directory_entries(const std::filesystem::path &theP
                     try{ ++it; }
                     catch(std::exception &e)
                     {
-                        LOG_ERROR << e.what();
+//                        LOG_ERROR << e.what();
                     }
                 }
             }
         }
-        else{ LOG_TRACE << p << " does not exist"; }
+        else
+        {
+//            LOG_TRACE << p << " does not exist";
+        }
     }
     catch(const std::exception &e)
     {
-        LOG_ERROR << e.what();
+//        LOG_ERROR << e.what();
     }
     std::sort(ret.begin(), ret.end());
     return ret;
@@ -223,21 +157,21 @@ size_t get_file_size(const std::filesystem::path &the_file_name)
 /// read a complete file into a string
 std::string read_file(const std::filesystem::path &theUTF8Filename)
 {
-    auto path = search_file(theUTF8Filename.string());
+    auto path = expand_user(theUTF8Filename.string());
     std::ifstream inStream(path);
 
-    if(!inStream.is_open()) { throw OpenFileFailed(path.string()); }
-    return std::string((std::istreambuf_iterator<char>(inStream)), std::istreambuf_iterator<char>());
+    if(!inStream.is_open()){ throw OpenFileFailed(path); }
+    return {std::istreambuf_iterator<char>(inStream), std::istreambuf_iterator<char>()};
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 std::vector<uint8_t> read_binary_file(const std::filesystem::path &theUTF8Filename)
 {
-    std::filesystem::path path = search_file(theUTF8Filename);
+    std::filesystem::path path = expand_user(theUTF8Filename);
     std::ifstream inStream(path, std::ios::in | std::ios::binary | std::ios::ate);
 
-    if(!inStream.good()) { throw OpenFileFailed(theUTF8Filename.string()); }
+    if(!inStream.good()){ throw OpenFileFailed(theUTF8Filename.string()); }
     std::vector<uint8_t> content;
     content.reserve(inStream.tellg());
     inStream.seekg(0);
@@ -337,7 +271,7 @@ bool create_directory(const std::filesystem::path &the_file_name)
     if(!std::filesystem::exists(the_file_name))
     {
         try{ return std::filesystem::create_directory(the_file_name); }
-        catch(std::exception &e){ LOG_ERROR << e.what(); }
+        catch(std::exception &e){ return false; }
     }
     return false;
 }
@@ -353,40 +287,8 @@ std::string join_paths(const std::filesystem::path &p1, const std::filesystem::p
 
 std::string path_as_uri(const std::filesystem::path &p)
 {
-    if(is_uri(p.string())) { return p.string(); }
+    if(is_uri(p.string())){ return p.string(); }
     return "file://" + std::filesystem::canonical(expand_user(p.string())).string();
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-std::filesystem::path search_file(const std::filesystem::path &file_name)
-{
-    auto trim_file_name = trim(file_name.string());
-
-    std::string expanded_name = expand_user(trim_file_name);
-    std::filesystem::path ret_path(expanded_name);
-
-    try
-    {
-        if(ret_path.is_absolute() && is_regular_file(ret_path)){ return ret_path.string(); }
-
-        std::shared_lock<std::shared_mutex> lock(g_mutex);
-
-        for(const auto &p : g_search_paths)
-        {
-            ret_path = p / std::filesystem::path(expanded_name);
-
-            if(std::filesystem::exists(ret_path) && is_regular_file(ret_path))
-            {
-                LOG_TRACE_2 << "found '" << trim_file_name << "' as: " << ret_path.string();
-                return ret_path.string();
-            }
-        }
-    }
-    catch(std::exception &e){ LOG_DEBUG << e.what(); }
-
-    // not found
-    throw FileNotFoundException(file_name.string());
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -13,14 +13,19 @@
 //  Created by Fabian on 18/01/14.
 
 #include <chrono>
+#include <set>
 #include <boost/asio.hpp>
+#include <utility>
 #include "crocore/networking.hpp"
 
 #if defined(unix) || defined(__unix__) || defined(__unix)
+
 #include <ifaddrs.h>
+
 #endif
 
-namespace crocore::net {
+namespace crocore::net
+{
 
 using namespace boost::asio::ip;
 using namespace std::chrono;
@@ -52,7 +57,7 @@ std::string local_ip(bool ipV6)
         if(!ipV6 && ifa->ifa_addr->sa_family == AF_INET)
         {
             // is a valid IP4 Address
-            tmpAddrPtr = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+            tmpAddrPtr = &((struct sockaddr_in *) ifa->ifa_addr)->sin_addr;
             char addressBuffer[INET_ADDRSTRLEN];
             inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
 //            LOG_INFO << format("%s IP Address %s\n", ifa->ifa_name, addressBuffer);
@@ -62,7 +67,7 @@ std::string local_ip(bool ipV6)
         else if(ipV6 && ifa->ifa_addr->sa_family == AF_INET6)
         {
             // is a valid IP6 Address
-            tmpAddrPtr = &((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_addr;
+            tmpAddrPtr = &((struct sockaddr_in6 *) ifa->ifa_addr)->sin6_addr;
             char addressBuffer[INET6_ADDRSTRLEN];
             inet_ntop(AF_INET6, tmpAddrPtr, addressBuffer, INET6_ADDRSTRLEN);
 //            LOG_INFO << format("%s IP Address %s\n", ifa->ifa_name, addressBuffer);
@@ -75,6 +80,7 @@ std::string local_ip(bool ipV6)
     if(!ip_set.empty()){ ret = *ip_set.begin(); }
     return ret;
 }
+
 #elif defined(_WIN32)
 std::string local_ip(bool ipV6)
 {
@@ -123,7 +129,7 @@ void send_tcp(const std::vector<uint8_t> &bytes,
         boost::asio::connect(s, resolver.resolve({ip_string, crocore::to_string(port)}));
         boost::asio::write(s, boost::asio::buffer(bytes));
     }
-    catch(std::exception &e) { LOG_ERROR << e.what(); }
+    catch(std::exception &e){}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -167,7 +173,7 @@ void send_udp(const std::vector<uint8_t> &bytes,
         udp::socket socket(io_service, udp::v4());
         socket.send_to(boost::asio::buffer(bytes), receiver_endpoint);
     }
-    catch(std::exception &e) { LOG_ERROR << e.what(); }
+    catch(std::exception &e){}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -201,12 +207,22 @@ void async_send_udp(boost::asio::io_service &io_service, const std::vector<uint8
                                           [socket_ptr, bytes](const boost::system::error_code &error,
                                                               std::size_t bytes_transferred)
                                           {
-                                              if(error){ LOG_ERROR << error.message(); }
+                                              if(error)
+                                              {
+//                                                  LOG_ERROR << error.message();
+                                              }
                                           });
-            }else{ LOG_WARNING << ip_string << ": " << ec.message(); }
+            }
+            else
+            {
+//                LOG_WARNING << ip_string << ": " << ec.message();
+            }
         });
     }
-    catch(std::exception &e) { LOG_ERROR << ip_string << ": " << e.what(); }
+    catch(std::exception &e)
+    {
+//        LOG_ERROR << ip_string << ": " << e.what();
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -237,10 +253,16 @@ void async_send_udp_broadcast(boost::asio::io_service &io_service,
                              [bytes](const boost::system::error_code &error,
                                      std::size_t bytes_transferred)
                              {
-                                 if(error){ LOG_ERROR << error.message(); }
+                                 if(error)
+                                 {
+//                                     LOG_ERROR << error.message();
+                                 }
                              });
     }
-    catch(std::exception &e) { LOG_ERROR << e.what(); }
+    catch(std::exception &e)
+    {
+//        LOG_ERROR << e.what();
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -251,12 +273,15 @@ public:
     udp_server_impl(boost::asio::io_service &io_service, udp_server::receive_cb_t f) :
             socket(io_service),
             recv_buffer(1 << 20),
-            receive_function(std::move(f)) {}
+            receive_function(std::move(f)){}
 
     ~udp_server_impl()
     {
-        try { socket.close(); }
-        catch(std::exception &e) { LOG_WARNING << e.what(); }
+        try{ socket.close(); }
+        catch(std::exception &e)
+        {
+//            LOG_WARNING << e.what();
+        }
     }
 
     udp::socket socket;
@@ -302,7 +327,7 @@ void udp_server::set_receive_buffer_size(size_t sz)
 
 void udp_server::start_listen(uint16_t port)
 {
-    if(!m_impl) return;
+    if(!m_impl){ return; }
     std::weak_ptr<udp_server_impl> weak_impl = m_impl;
 
     try
@@ -314,11 +339,7 @@ void udp_server::start_listen(uint16_t port)
         }
 
     }
-    catch(std::exception &e)
-    {
-        LOG_WARNING << e.what();
-        return;
-    }
+    catch(std::exception &e){ return; }
 
     if(port != m_impl->socket.local_endpoint().port())
     {
@@ -343,15 +364,19 @@ void udp_server::start_listen(uint16_t port)
                                            impl->remote_endpoint.address().to_string(),
                                            impl->remote_endpoint.port());
                 }
-                catch(std::exception &e) { LOG_WARNING << e.what(); }
+                catch(std::exception &e)
+                {
+//                    LOG_WARNING << e.what();
+                }
             }
             if(impl && impl->socket.is_open())
             {
                 start_listen(impl->socket.local_endpoint().port());
             }
-        }else
+        }
+        else
         {
-            LOG_WARNING << error.message();
+//            LOG_WARNING << error.message();
         }
     };
     m_impl->socket.async_receive_from(boost::asio::buffer(m_impl->recv_buffer), m_impl->remote_endpoint, receive_fn);
@@ -384,7 +409,7 @@ struct tcp_server_impl
                     tcp_server::tcp_connection_callback ccb) :
             acceptor(io_service),
             socket(io_service),
-            connection_callback(std::move(ccb)) {}
+            connection_callback(std::move(ccb)){}
 
     ~tcp_server_impl()
     {
@@ -405,7 +430,7 @@ struct tcp_server_impl
 
                 con->set_tcp_receive_cb([](tcp_connection_ptr, std::vector<uint8_t> data)
                                         {
-                                            LOG_DEBUG << std::string(data.begin(), data.end());
+//                                            LOG_DEBUG << std::string(data.begin(), data.end());
                                         });
                 con->start_receive();
                 if(connection_callback){ connection_callback(con); }
@@ -418,7 +443,7 @@ struct tcp_server_impl
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 tcp_server::tcp_server(boost::asio::io_service &io_service, tcp_connection_callback ccb) :
-        m_impl(std::make_unique<tcp_server_impl>(io_service, std::move(ccb))) {}
+        m_impl(std::make_unique<tcp_server_impl>(io_service, std::move(ccb))){}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -452,13 +477,9 @@ void tcp_server::set_connection_callback(tcp_connection_callback ccb)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-void tcp_server::start_listen(uint16_t port)
+bool tcp_server::start_listen(uint16_t port)
 {
-    if(!m_impl)
-    {
-        LOG_ERROR << "could not start listen, server not initiated";
-        return;
-    }
+    if(!m_impl){ return false; }
 
     if(!m_impl->acceptor.is_open() ||
        port != m_impl->acceptor.local_endpoint().port())
@@ -472,14 +493,10 @@ void tcp_server::start_listen(uint16_t port)
             m_impl->acceptor.bind(tcp::endpoint(tcp::v4(), port));
             m_impl->acceptor.listen();
         }
-        catch(std::exception &e)
-        {
-            LOG_ERROR << "could not start listening on port: " << port << " (" << e.what()
-                      << ")";
-            return;
-        }
+        catch(std::exception &e){ return false; }
     }
     m_impl->accept();
+    return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -516,10 +533,12 @@ struct tcp_connection_impl
 
     ~tcp_connection_impl()
     {
-        try { socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both); }
-        catch(std::exception &e) { LOG_TRACE_2 << e.what(); }
-        try { socket.close(); }
-        catch(std::exception &e) { LOG_TRACE_2 << e.what(); }
+        try
+        {
+            socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
+            socket.close();
+        }
+        catch(std::exception &e){}
     }
 
     tcp::socket socket;
@@ -543,11 +562,6 @@ tcp_connection_ptr tcp_connection::create(boost::asio::io_service &io_service,
                                           tcp_receive_cb_t f)
 {
     auto ret = tcp_connection_ptr(new tcp_connection(io_service, ip, port, std::move(f)));
-    auto connect_cb = [](ConnectionPtr the_con)
-    {
-        LOG_TRACE_1 << "connected: " << the_con->description();
-    };
-    ret->set_connect_cb(connect_cb);
 
     auto resolver_ptr = std::make_shared<tcp::resolver>(io_service);
 
@@ -559,21 +573,26 @@ tcp_connection_ptr tcp_connection::create(boost::asio::io_service &io_service,
         {
             try
             {
-                boost::asio::async_connect(ret->m_impl->socket, end_point_it, [ret](const boost::system::error_code &ec,
-                                                                                    tcp::resolver::iterator end_point_it)
-                {
-                    if(!ec)
-                    {
-                        if(ret->m_impl->m_connect_cb)
-                        {
-                            ret->m_impl->m_connect_cb(ret);
-                        }
-                        ret->start_receive();
-                    }
-                });
+                boost::asio::async_connect(ret->m_impl->socket, std::move(end_point_it),
+                                           [ret](const boost::system::error_code &ec,
+                                                 const tcp::resolver::iterator &end_point_it)
+                                           {
+                                               if(!ec)
+                                               {
+                                                   if(ret->m_impl->m_connect_cb)
+                                                   {
+                                                       ret->m_impl->m_connect_cb(ret);
+                                                   }
+                                                   ret->start_receive();
+                                               }
+                                           });
             }
-            catch(std::exception &e) { LOG_WARNING << ip << ": " << e.what(); }
-        }else{ LOG_WARNING << ip << ": " << ec.message(); }
+            catch(std::exception &e)
+            {
+//                LOG_WARNING << ip << ": " << e.what();
+            }
+        }
+//        else{ LOG_WARNING << ip << ": " << ec.message(); }
     });
     return ret;
 }
@@ -594,8 +613,8 @@ tcp_connection::tcp_connection(boost::asio::io_service &io_service,
 
 tcp_connection::~tcp_connection()
 {
-    try { m_impl->socket.shutdown(boost::asio::ip::tcp::socket::shutdown_receive); }
-    catch(std::exception &e) { LOG_TRACE_3 << e.what(); }
+    try{ m_impl->socket.shutdown(boost::asio::ip::tcp::socket::shutdown_receive); }
+    catch(std::exception &e){}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -609,7 +628,7 @@ bool tcp_connection::open()
 
 size_t tcp_connection::write_bytes(const void *data, size_t num_bytes)
 {
-    auto bytes = std::vector<uint8_t>((uint8_t *)data, (uint8_t *)data + num_bytes);
+    auto bytes = std::vector<uint8_t>((uint8_t *) data, (uint8_t *) data + num_bytes);
     auto buffer = boost::asio::buffer(bytes.data(), bytes.size());
     auto impl_cp = m_impl;
 
@@ -626,15 +645,15 @@ size_t tcp_connection::write_bytes(const void *data, size_t num_bytes)
         {
             if(bytes_transferred < bytes.size())
             {
-                LOG_WARNING << "not all bytes written";
+//                LOG_WARNING << "not all bytes written";
             }
-        }else
+        }
+        else
         {
             switch(error.value())
             {
                 case boost::asio::error::bad_descriptor:
-                default:
-                    LOG_TRACE_2 << error.message() << " (" << error.value() << ")";
+//                default:LOG_TRACE_2 << error.message() << " (" << error.value() << ")";
                     break;
             }
         }
@@ -692,24 +711,24 @@ void tcp_connection::start_receive()
                                                  bytes_transferred);
                     impl_cp->m_receive_cb(self, std::move(datavec));
                 }
-                LOG_TRACE_2 << "tcp: received " << bytes_transferred << " bytes";
+//                LOG_TRACE_2 << "tcp: received " << bytes_transferred << " bytes";
             }
 
             // only keep receiving if there are any refs on this instance left
             if(self){ self->start_receive(); }
-        }else
+        }
+        else
         {
             switch(error.value())
             {
                 case boost::asio::error::eof:
-                case boost::asio::error::connection_reset:
-                    impl_cp->socket.close();
+                case boost::asio::error::connection_reset:impl_cp->socket.close();
                 case boost::asio::error::operation_aborted:
                 case boost::asio::error::bad_descriptor:
                 {
                     std::string str = "tcp_connection";
                     if(self){ str = self->description(); }
-                    LOG_TRACE_1 << "disconnected: " << str;
+//                    LOG_TRACE_1 << "disconnected: " << str;
                 }
 
                     if(self && impl_cp->m_disconnect_cb)
@@ -718,8 +737,7 @@ void tcp_connection::start_receive()
                         disconnect_cb(self);
                     }
 
-                default:
-                    LOG_TRACE_2 << error.message() << " (" << error.value() << ")";
+//                default:LOG_TRACE_2 << error.message() << " (" << error.value() << ")";
                     break;
             }
         }
@@ -735,7 +753,7 @@ void tcp_connection::check_deadline()
     // deadline before this actor had a chance to run.
     if(m_impl->m_deadline_timer.expires_at() <= steady_clock::now())
     {
-        LOG_TRACE_2 << "connection timeout (" << to_string(m_impl->m_timeout.count(), 2) << ")";
+//        LOG_TRACE_2 << "connection timeout (" << to_string(m_impl->m_timeout.count(), 2) << ")";
 
         // The deadline has passed. The socket is closed so that any outstanding
         // asynchronous operations are cancelled. This allows the blocked
@@ -769,7 +787,7 @@ void tcp_connection::close()
         m_impl->socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
         m_impl->socket.close();
     }
-    catch(std::exception &e) { LOG_TRACE_3 << e.what(); }
+    catch(std::exception &e){}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -783,8 +801,8 @@ bool tcp_connection::is_open() const
 
 uint16_t tcp_connection::port() const
 {
-    try { return m_impl->socket.local_endpoint().port(); }
-    catch(std::exception &e) {}
+    try{ return m_impl->socket.local_endpoint().port(); }
+    catch(std::exception &e){}
     return 0;
 }
 
@@ -792,8 +810,8 @@ uint16_t tcp_connection::port() const
 
 std::string tcp_connection::remote_ip() const
 {
-    try { return m_impl->socket.remote_endpoint().address().to_string(); }
-    catch(std::exception &e) {}
+    try{ return m_impl->socket.remote_endpoint().address().to_string(); }
+    catch(std::exception &e){}
     return UNKNOWN_IP;
 }
 
@@ -801,8 +819,8 @@ std::string tcp_connection::remote_ip() const
 
 uint16_t tcp_connection::remote_port() const
 {
-    try { return m_impl->socket.remote_endpoint().port(); }
-    catch(std::exception &e) {}
+    try{ return m_impl->socket.remote_endpoint().port(); }
+    catch(std::exception &e){}
     return 0;
 }
 
