@@ -12,11 +12,12 @@
 #include <map>
 #include "Connection.hpp"
 
-namespace crocore {
+namespace crocore::net
+{
 
 DEFINE_CLASS_PTR(Serial);
 
-class Serial : public Connection, public std::enable_shared_from_this<Serial>
+class Serial : public crocore::net::Connection, public std::enable_shared_from_this<Serial>
 {
 
 public:

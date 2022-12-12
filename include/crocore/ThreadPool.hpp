@@ -21,9 +21,8 @@
 #include <chrono>
 #include "crocore.hpp"
 
-namespace crocore {
-
-DEFINE_CLASS_PTR(Task)
+namespace crocore
+{
 
 /**
  * @brief   wait for completion of all tasks, represented by their futures

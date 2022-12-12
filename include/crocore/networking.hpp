@@ -123,7 +123,7 @@ private:
     std::unique_ptr<struct tcp_server_impl> m_impl;
 };
 
-class tcp_connection final : public Connection, public std::enable_shared_from_this<tcp_connection>
+class tcp_connection final : public crocore::net::Connection, public std::enable_shared_from_this<tcp_connection>
 {
 public:
 

@@ -2,7 +2,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <crocore/BuddyPool.hpp>
+#include "crocore/BuddyPool.hpp"
 #include <unordered_map>
 
 static inline bool is_pow_2(size_t v)

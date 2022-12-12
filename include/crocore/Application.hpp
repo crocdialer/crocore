@@ -3,7 +3,6 @@
 #include <unordered_map>
 #include <chrono>
 
-#include <crocore/Component.hpp>
 #include "crocore/ThreadPool.hpp"
 
 namespace crocore

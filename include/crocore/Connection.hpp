@@ -16,7 +16,8 @@
 
 #include "crocore/crocore.hpp"
 
-namespace crocore {
+namespace crocore::net
+{
 
 DEFINE_CLASS_PTR(Connection);
 

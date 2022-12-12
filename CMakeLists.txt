@@ -20,7 +20,6 @@ endif (NOT BUILD_SHARED_LIBS)
 
 ## cmake modules
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules ${CMAKE_MODULE_PATH})
-include(add_test_helper)
 
 set(LIBS ${LIBS})
 
@@ -52,6 +51,11 @@ set(LIBS ${LIBS} nlohmann_json::nlohmann_json)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 add_subdirectory("src")
+
+if (BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif (BUILD_TESTS)
 
 # Expose public includes (including Boost transitively) to other
 # subprojects through cache variable.

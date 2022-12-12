@@ -37,17 +37,17 @@ public:
     /*!
      * return true if the timer is currently running.
      */
-    bool running() const;
+    [[nodiscard]] bool running() const;
 
     /*!
      * return the total time (in seconds) measured, including all previous laps.
      */
-    double time_elapsed() const;
+    [[nodiscard]] double time_elapsed() const;
 
     /*!
      * return the time (in seconds) measured for the current lap.
      */
-    double time_elapsed_for_lap() const;
+    [[nodiscard]] double time_elapsed_for_lap() const;
 
     /*!
      * reset the timer. this stops time measurement, if it was running before, and clears all
@@ -63,7 +63,7 @@ public:
     /*!
      * return the values for all previously measured laps.
      */
-    const std::vector<double> &laps() const;
+    [[nodiscard]] const std::vector<double> &laps() const;
 
 private:
     bool m_running = false;
@@ -96,12 +96,12 @@ public:
     /*!
      * get expiration date from now in seconds
      */
-    double expires_from_now() const;
+    [[nodiscard]] double expires_from_now() const;
 
     /*!
      * returns true if the timer has expired
      */
-    bool has_expired() const;
+    [[nodiscard]] bool has_expired() const;
 
     /*!
      * cancel a currently running timer
@@ -111,7 +111,7 @@ public:
     /*!
      * returns true if the timer is set to fire periodically
      */
-    bool periodic() const;
+    [[nodiscard]] bool periodic() const;
 
     /*!
      * sets if the timer should fire periodically

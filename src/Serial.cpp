@@ -6,7 +6,7 @@
 #include "crocore/CircularBuffer.hpp"
 #include "crocore/Serial.hpp"
 
-namespace crocore
+namespace crocore::net
 {
     namespace
     {
