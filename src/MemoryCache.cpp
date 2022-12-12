@@ -40,12 +40,12 @@ void *MemoryCache::allocate(size_t num_bytes)
     std::unique_lock lock(_mutex);
 
     // upper bound for the accepted size of a recycled chunk
-    size_t maxNumBytes = num_bytes * std::max(_format.size_tolerance, 1.f);
+    auto max_num_bytes = static_cast<size_t>(static_cast<float>(num_bytes) * std::max(_format.size_tolerance, 1.f));
 
     // search for a lower bound (equal or greater)
     auto it = _freeChunks.lower_bound(num_bytes);
 
-    if(it != _freeChunks.end() && it->first <= maxNumBytes)
+    if(it != _freeChunks.end() && it->first <= max_num_bytes)
     {
         void *ptr = it->second;
         _usedChunks[ptr] = it->first;
