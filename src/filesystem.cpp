@@ -168,7 +168,7 @@ std::string read_file(const std::filesystem::path &theUTF8Filename)
 
 std::vector<uint8_t> read_binary_file(const std::filesystem::path &theUTF8Filename)
 {
-    std::filesystem::path path = expand_user(theUTF8Filename);
+    std::filesystem::path path = expand_user(theUTF8Filename.string());
     std::ifstream inStream(path, std::ios::in | std::ios::binary | std::ios::ate);
 
     if(!inStream.good()){ throw OpenFileFailed(theUTF8Filename.string()); }
