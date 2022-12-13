@@ -9,21 +9,16 @@
 
 #pragma once
 
-#ifdef WIN32
-#define CROC_API __declspec(dllexport)
-#else
-#define CROC_API
-#endif
-
 #include <cstring>
 #include <string>
 #include <vector>
 #include <functional>
 #include <algorithm>
 
-// forward declare boost io_service
-namespace boost::asio{ class io_context; }
-namespace crocore{ using io_service_t = boost::asio::io_context; }
+#include <spdlog/spdlog.h>
+#include <spdlog/fmt/ranges.h>
+#include <spdlog/fmt/chrono.h>
+#include <spdlog/stopwatch.h>
 
 #include "utils.hpp"
 #include "define_class_ptr.hpp"

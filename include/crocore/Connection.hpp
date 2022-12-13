@@ -68,20 +68,20 @@ public:
     inline size_t write(const char *cstring)
     {
         return write_bytes(cstring, strlen(cstring));
-    };
+    }
 
     //! std-strings
     inline size_t write(const std::string &string)
     {
         return write_bytes(string.data(), string.size());
-    };
+    }
 
     //! template to transfer the content of generic containers
     template<typename T>
     inline size_t write(const T &container)
     {
         return write(std::vector<uint8_t>(std::begin(container), std::end(container)));
-    };
+    }
 
     //! template to transfer the content of std::vector
     template<typename T>

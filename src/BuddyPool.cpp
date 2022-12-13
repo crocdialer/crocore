@@ -141,7 +141,7 @@ size_t buddy_alloc(block_t &b, size_t size)
                     b.tree[index] = NodeState::SPLIT;
                     b.tree[tree::left(index)] = NodeState::UNUSED;
                     b.tree[tree::right(index)] = NodeState::UNUSED;
-
+                    [[fallthrough]];
                 case NodeState::SPLIT:
                     index = tree::left(index);
                     length /= 2;

@@ -12,6 +12,10 @@
 #include <map>
 #include "Connection.hpp"
 
+// forward declare boost io_service
+namespace boost::asio{ class io_context; }
+namespace crocore{ using io_service_t = boost::asio::io_context; }
+
 namespace crocore::net
 {
 

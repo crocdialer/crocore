@@ -415,14 +415,8 @@ public:
 
     [[nodiscard]] inline T at(uint32_t x, uint32_t y) const
     {
-        if(x >= 0 && y >= 0 && x < m_width && y < m_height)
-        {
-            return *(m_data + x + m_width * y);
-        }
-        else
-        {
-            return inf();
-        }
+        if(x < m_width && y < m_height){ return *(m_data + x + m_width * y); }
+        else{ return inf(); }
     }
 
     inline void set(uint32_t x, uint32_t y, const T &the_value)

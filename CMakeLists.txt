@@ -9,8 +9,7 @@ option(BUILD_TESTS "Build Tests" ON)
 ## request C++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+SET(LIB_NAME ${PROJECT_NAME})
 
 set(LIB_TYPE SHARED)
 if (NOT BUILD_SHARED_LIBS)
@@ -53,7 +52,14 @@ set(LIBS ${LIBS} ${CURL_LIBRARY})
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
+# add library-target
 add_subdirectory("src")
+
+if(MSVC)
+    target_compile_options(${LIB_NAME} PRIVATE /W4 /WX)
+else()
+    target_compile_options(${LIB_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()
 
 if (BUILD_TESTS)
     enable_testing()

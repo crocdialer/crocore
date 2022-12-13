@@ -48,7 +48,7 @@ public:
         {
             *value_ptr = crocore::mix(from_value, to_value, progress);
         });
-    };
+    }
 
     Animation() = default;
 

@@ -202,24 +202,15 @@ void async_send_udp(boost::asio::io_service &io_service, const std::vector<uint8
             {
                 socket_ptr->async_send_to(boost::asio::buffer(bytes), *end_point_it,
                                           [socket_ptr, bytes](const boost::system::error_code &error,
-                                                              std::size_t bytes_transferred)
+                                                              std::size_t /*bytes_transferred*/)
                                           {
-                                              if(error)
-                                              {
-//                                                  LOG_ERROR << error.message();
-                                              }
+                                              if(error){ spdlog::error(error.message()); }
                                           });
             }
-            else
-            {
-//                LOG_WARNING << ip_string << ": " << ec.message();
-            }
+            else{ spdlog::warn("{}: {}", ip_string, ec.message()); }
         });
     }
-    catch(std::exception &e)
-    {
-//        LOG_ERROR << ip_string << ": " << e.what();
-    }
+    catch(std::exception &e){ spdlog::error("{}: {}", ip_string, e.what()); }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -248,7 +239,7 @@ void async_send_udp_broadcast(boost::asio::io_service &io_service,
 
         socket.async_send_to(boost::asio::buffer(bytes), receiver_endpoint,
                              [bytes](const boost::system::error_code &error,
-                                     std::size_t bytes_transferred)
+                                     std::size_t /*bytes_transferred*/)
                              {
                                  if(error)
                                  {
@@ -425,12 +416,12 @@ struct tcp_server_impl
                 // Start the persistent actor that checks for deadline expiry.
                 con->check_deadline();
 
-                con->set_tcp_receive_cb([](tcp_connection_ptr, std::vector<uint8_t> data)
-                                        {
-//                                            LOG_DEBUG << std::string(data.begin(), data.end());
-                                        });
-                con->start_receive();
+//                con->set_tcp_receive_cb([](tcp_connection_ptr, std::vector<uint8_t> data)
+//                                        {
+////                                            LOG_DEBUG << std::string(data.begin(), data.end());
+//                                        });
                 if(connection_callback){ connection_callback(con); }
+                con->start_receive();
                 accept();
             }
         });
@@ -558,7 +549,7 @@ tcp_connection_ptr tcp_connection::create(boost::asio::io_service &io_service,
                                           uint16_t port,
                                           tcp_receive_cb_t f)
 {
-    auto ret = tcp_connection_ptr(new tcp_connection(io_service, ip, port, std::move(f)));
+    auto ret = tcp_connection_ptr(new tcp_connection(io_service, std::move(f)));
 
     auto resolver_ptr = std::make_shared<tcp::resolver>(io_service);
 
@@ -572,7 +563,7 @@ tcp_connection_ptr tcp_connection::create(boost::asio::io_service &io_service,
             {
                 boost::asio::async_connect(ret->m_impl->socket, std::move(end_point_it),
                                            [ret](const boost::system::error_code &ec,
-                                                 const tcp::resolver::iterator &end_point_it)
+                                                 const tcp::resolver::iterator &/*end_point_it*/)
                                            {
                                                if(!ec)
                                                {
@@ -597,8 +588,6 @@ tcp_connection_ptr tcp_connection::create(boost::asio::io_service &io_service,
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 tcp_connection::tcp_connection(boost::asio::io_service &io_service,
-                               const std::string &ip,
-                               uint16_t port,
                                tcp_receive_cb_t f) :
         m_impl(new tcp_connection_impl(tcp::socket(io_service), std::move(f)))
 {
@@ -660,7 +649,7 @@ size_t tcp_connection::write_bytes(const void *data, size_t num_bytes)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-size_t tcp_connection::read_bytes(void *buffer, size_t sz)
+size_t tcp_connection::read_bytes(void */*buffer*/, size_t /*num_bytes*/)
 {
     return 0;
 }
@@ -719,7 +708,9 @@ void tcp_connection::start_receive()
             switch(error.value())
             {
                 case boost::asio::error::eof:
-                case boost::asio::error::connection_reset:impl_cp->socket.close();
+                case boost::asio::error::connection_reset:
+                    impl_cp->socket.close();
+                    [[fallthrough]];
                 case boost::asio::error::operation_aborted:
                 case boost::asio::error::bad_descriptor:
                 {
@@ -767,10 +758,9 @@ void tcp_connection::check_deadline()
 
     // Put the actor back to sleep.
     m_impl->m_deadline_timer.async_wait([this, weak_impl]
-                                                (const boost::system::error_code &ec)
+                                                (const boost::system::error_code &/*ec*/)
                                         {
                                             auto impl = weak_impl.lock();
-
                                             if(impl){ check_deadline(); }
                                         });
 }

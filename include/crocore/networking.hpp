@@ -16,6 +16,10 @@
 #include "crocore.hpp"
 #include "Connection.hpp"
 
+// forward declare boost io_service
+namespace boost::asio{ class io_context; }
+namespace crocore{ using io_service_t = boost::asio::io_context; }
+
 namespace crocore::net
 {
 
@@ -180,7 +184,7 @@ private:
     friend struct tcp_server_impl;
     std::shared_ptr<struct tcp_connection_impl> m_impl;
 
-    tcp_connection(io_service_t &io_service, const std::string &ip, uint16_t port, tcp_receive_cb_t f);
+    tcp_connection(io_service_t &io_service, tcp_receive_cb_t f);
 
     tcp_connection() = default;
 

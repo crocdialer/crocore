@@ -239,8 +239,8 @@ namespace crocore::net
         std::vector<uint8_t> bytes((uint8_t*)buffer, (uint8_t*)buffer + sz);
 
         boost::asio::async_write(m_impl->m_serial_port, boost::asio::buffer(bytes),
-                                 [bytes](const boost::system::error_code& error,
-                                         std::size_t bytes_transferred)
+                                 [bytes](const boost::system::error_code& /*error*/,
+                                         std::size_t /*bytes_transferred*/)
         {
 //            if(error)
 //            {
