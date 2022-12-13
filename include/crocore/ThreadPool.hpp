@@ -74,7 +74,7 @@ public:
     /**
      * @return  the number of worker-threads
      */
-    size_t num_threads() const{ return m_threads.size(); }
+    [[nodiscard]] size_t num_threads() const{ return m_threads.size(); }
 
     /**
      * @brief   post work to be processed by the ThreadPool
@@ -103,10 +103,10 @@ public:
     }
 
     /**
-     * @brief   Manually poll the contained io_service.
-     *          Necessary when this ThreadPool has no threads (is synchronous)
+     * @brief   Manually poll all queued tasks.
+     *          useful when this ThreadPool has no threads
      *
-     * @return  The number of handlers that were executed
+     * @return  number of tasks processed.
      */
     std::size_t poll()
     {
@@ -162,6 +162,8 @@ public:
 
 private:
 
+    using task_t = std::function<void()>;
+
     void start(size_t num_threads)
     {
         if(!num_threads){ return; }
@@ -175,24 +177,23 @@ private:
 
             for(;;)
             {
-                // Retrieve task
                 {
                     std::unique_lock<std::mutex> lock(m_mutex);
 
-                    // Wait for next task
+                    // wait for next task
                     m_condition.wait(lock, [this]
                     {
                         return !m_running || !m_queue.empty();
                     });
 
-                    // Finish if done and no more work
+                    // exit worker if requested and nothing is left in queue
                     if(!m_running && m_queue.empty()){ return; }
 
                     task = std::move(m_queue.front());
                     m_queue.pop_front();
                 }
 
-                // Run task
+                // run task
                 if(task){ task(); }
             }
         };
@@ -202,11 +203,8 @@ private:
     bool m_running = false;
     std::vector<std::thread> m_threads;
 
-    /// Members protected by mutex
-    mutable std::mutex m_mutex;
-    mutable std::condition_variable m_condition;
-
-    using task_t = std::function<void()>;
-    mutable std::deque<task_t> m_queue;
+    std::mutex m_mutex;
+    std::condition_variable m_condition;
+    std::deque<task_t> m_queue;
 };
 }//namespace

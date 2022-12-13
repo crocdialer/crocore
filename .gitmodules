@@ -1,3 +1,7 @@
+[submodule "submodules/spdlog"]
+	path = submodules/spdlog
+	url = git@github.com:gabime/spdlog.git
+	shallow = true
 [submodule "submodules/json"]
 	path = submodules/json
 	url = https://github.com/nlohmann/json

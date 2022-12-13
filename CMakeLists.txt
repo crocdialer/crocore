@@ -37,16 +37,19 @@ include_directories(${Boost_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${Boost_LIBRARIES})
 #####
 
-##### CURL
-find_package(CURL REQUIRED)
-include_directories(${CURL_INCLUDE_DIR})
-set(LIBS ${LIBS} ${CURL_LIBRARY})
-#####
+add_subdirectory(submodules/spdlog EXCLUDE_FROM_ALL)
+set(LIBS ${LIBS} spdlog)
 
 ##### nlohmann/json
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory(submodules/json)
 set(LIBS ${LIBS} nlohmann_json::nlohmann_json)
+
+##### TODO: source out CURL
+find_package(CURL REQUIRED)
+include_directories(${CURL_INCLUDE_DIR})
+set(LIBS ${LIBS} ${CURL_LIBRARY})
+#####
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
