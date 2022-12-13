@@ -56,7 +56,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 add_subdirectory("src")
 
 if(MSVC)
-    target_compile_options(${LIB_NAME} PRIVATE /W4 /WX)
+    target_compile_options(${LIB_NAME} PRIVATE /W4) #TODO /WX (warnings as errors)
 else()
     target_compile_options(${LIB_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endif()
