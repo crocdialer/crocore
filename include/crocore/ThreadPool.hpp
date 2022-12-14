@@ -140,11 +140,7 @@ public:
 
         for(auto &thread: m_threads)
         {
-            try
-            {
-                if(thread.joinable()){ thread.join(); }
-            }
-            catch(std::exception &e){}
+            if(thread.joinable()){ thread.join(); }
         }
         m_threads.clear();
     }
@@ -181,10 +177,7 @@ private:
                     std::unique_lock<std::mutex> lock(m_mutex);
 
                     // wait for next task
-                    m_condition.wait(lock, [this]
-                    {
-                        return !m_running || !m_queue.empty();
-                    });
+                    m_condition.wait(lock, [this]{ return !m_running || !m_queue.empty(); });
 
                     // exit worker if requested and nothing is left in queue
                     if(!m_running && m_queue.empty()){ return; }
