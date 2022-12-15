@@ -126,7 +126,7 @@ void send_tcp(const std::vector<uint8_t> &bytes,
         boost::asio::connect(s, resolver.resolve({ip_string, crocore::to_string(port)}));
         boost::asio::write(s, boost::asio::buffer(bytes));
     }
-    catch(std::exception &e){}
+    catch(std::exception&){}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -170,7 +170,7 @@ void send_udp(const std::vector<uint8_t> &bytes,
         udp::socket socket(io_service, udp::v4());
         socket.send_to(boost::asio::buffer(bytes), receiver_endpoint);
     }
-    catch(std::exception &e){}
+    catch(std::exception&){}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -247,7 +247,7 @@ void async_send_udp_broadcast(boost::asio::io_service &io_service,
                                  }
                              });
     }
-    catch(std::exception &e)
+    catch(std::exception&)
     {
 //        LOG_ERROR << e.what();
     }
@@ -266,10 +266,7 @@ public:
     ~udp_server_impl()
     {
         try{ socket.close(); }
-        catch(std::exception &e)
-        {
-//            LOG_WARNING << e.what();
-        }
+        catch(std::exception&){ /*e.what();*/ }
     }
 
     udp::socket socket;
@@ -327,7 +324,7 @@ void udp_server::start_listen(uint16_t port)
         }
 
     }
-    catch(std::exception &e){ return; }
+    catch(std::exception &){ return; }
 
     if(port != m_impl->socket.local_endpoint().port())
     {
@@ -352,7 +349,7 @@ void udp_server::start_listen(uint16_t port)
                                            impl->remote_endpoint.address().to_string(),
                                            impl->remote_endpoint.port());
                 }
-                catch(std::exception &e)
+                catch(std::exception &)
                 {
 //                    LOG_WARNING << e.what();
                 }
@@ -481,7 +478,7 @@ bool tcp_server::start_listen(uint16_t port)
             m_impl->acceptor.bind(tcp::endpoint(tcp::v4(), port));
             m_impl->acceptor.listen();
         }
-        catch(std::exception &e){ return false; }
+        catch(std::exception &){ return false; }
     }
     m_impl->accept();
     return true;
@@ -526,7 +523,7 @@ struct tcp_connection_impl
             socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
             socket.close();
         }
-        catch(std::exception &e){}
+        catch(std::exception &){}
     }
 
     tcp::socket socket;
@@ -575,7 +572,7 @@ tcp_connection_ptr tcp_connection::create(boost::asio::io_service &io_service,
                                                }
                                            });
             }
-            catch(std::exception &e)
+            catch(std::exception &)
             {
 //                LOG_WARNING << ip << ": " << e.what();
             }
@@ -600,7 +597,7 @@ tcp_connection::tcp_connection(boost::asio::io_service &io_service,
 tcp_connection::~tcp_connection()
 {
     try{ m_impl->socket.shutdown(boost::asio::ip::tcp::socket::shutdown_receive); }
-    catch(std::exception &e){}
+    catch(std::exception &){}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -774,7 +771,7 @@ void tcp_connection::close()
         m_impl->socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
         m_impl->socket.close();
     }
-    catch(std::exception &e){}
+    catch(std::exception &){}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -789,7 +786,7 @@ bool tcp_connection::is_open() const
 uint16_t tcp_connection::port() const
 {
     try{ return m_impl->socket.local_endpoint().port(); }
-    catch(std::exception &e){}
+    catch(std::exception &){}
     return 0;
 }
 
@@ -798,7 +795,7 @@ uint16_t tcp_connection::port() const
 std::string tcp_connection::remote_ip() const
 {
     try{ return m_impl->socket.remote_endpoint().address().to_string(); }
-    catch(std::exception &e){}
+    catch(std::exception &){}
     return UNKNOWN_IP;
 }
 
@@ -807,7 +804,7 @@ std::string tcp_connection::remote_ip() const
 uint16_t tcp_connection::remote_port() const
 {
     try{ return m_impl->socket.remote_endpoint().port(); }
-    catch(std::exception &e){}
+    catch(std::exception &){}
     return 0;
 }
 
