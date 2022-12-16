@@ -30,6 +30,8 @@ public:
 
     explicit Application(const create_info_t &create_info);
 
+    virtual ~Application() = default;
+
     int run();
 
     const std::string &name() const{ return m_name; };

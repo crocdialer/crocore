@@ -35,8 +35,6 @@ Application::Application(const create_info_t &create_info) :
 {
     shutdown_handler = [app = this](int){ app->running = false; };
     signal(SIGINT, signal_handler);
-
-    srand(time(nullptr));
     m_args = create_info.arguments;
 }
 
@@ -94,7 +92,7 @@ void Application::update_timing()
 
     if(diff > m_timing_interval)
     {
-        m_avg_loop_time = diff / m_num_loop_iterations;
+        m_avg_loop_time = diff / static_cast<double>(m_num_loop_iterations);
         m_num_loop_iterations = 0;
         m_last_avg = m_last_timestamp;
     }
