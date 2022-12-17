@@ -365,6 +365,22 @@ inline T median(const C &the_container)
     }
 }
 
+template<typename T = float>
+inline T halton(uint32_t index, uint32_t base)
+{
+    T f = 1;
+    T r = 0;
+    uint32_t current = index;
+
+    while(current)
+    {
+        f = f / static_cast<float>(base);
+        r = r + f * static_cast<float>(current % base);
+        current /= base;
+    }
+    return r;
+}
+
 template<typename T>
 inline int sgn(T val)
 {
