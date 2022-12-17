@@ -28,19 +28,19 @@ public:
         UNKNOWN = 0, GRAY, RGB, BGR, RGBA, BGRA
     };
 
-    virtual uint32_t width() const = 0;
+    [[nodiscard]] virtual uint32_t width() const = 0;
 
-    virtual uint32_t height() const = 0;
+    [[nodiscard]] virtual uint32_t height() const = 0;
 
-    virtual uint32_t num_components() const = 0;
+    [[nodiscard]] virtual uint32_t num_components() const = 0;
 
     virtual void *data() = 0;
 
-    virtual size_t num_bytes() const = 0;
+    [[nodiscard]] virtual size_t num_bytes() const = 0;
 
-    virtual void offsets(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a = nullptr) const = 0;
+    virtual void offsets(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a) const = 0;
 
-    virtual ImagePtr resize(uint32_t the_width, uint32_t the_height) const = 0;
+    [[nodiscard]] virtual ImagePtr resize(uint32_t the_width, uint32_t the_height) const = 0;
 
     //! kernel is interpreted col-major
     virtual ImagePtr convolve(const std::vector<float> &the_kernel) = 0;
@@ -142,16 +142,16 @@ ImagePtr create_image_from_file(const std::string &the_path, int num_channels = 
 
 ImagePtr create_image_from_data(const std::vector<uint8_t> &the_data, int num_channels = 0);
 
-ImagePtr create_image_from_data(const uint8_t *the_data, size_t the_num_bytes, int num_channels = 0);
+ImagePtr create_image_from_data(const uint8_t *the_data, size_t num_bytes, int num_channels = 0);
 
 template<class T>
 void copy_image(const typename Image_<T>::Ptr &src_img, typename Image_<T>::Ptr &dst_img);
 
 bool save_image_to_file(const ImagePtr &the_img, const std::string &the_path);
 
-std::vector<uint8_t> encode_png(const ImagePtr &the_img);
+std::vector<uint8_t> encode_png(const ImagePtr &img);
 
-std::vector<uint8_t> encode_jpg(const ImagePtr &the_img);
+std::vector<uint8_t> encode_jpg(const ImagePtr &img);
 
 ImagePtr compute_distance_field(const ImagePtr& the_img, float spread);
 }

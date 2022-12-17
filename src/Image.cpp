@@ -58,22 +58,24 @@ ImagePtr create_image_from_data(const std::vector<uint8_t> &the_data, int num_ch
     return create_image_from_data(the_data.data(), the_data.size(), num_channels);
 }
 
-ImagePtr create_image_from_data(const uint8_t *the_data, size_t the_num_bytes, int num_channels)
+ImagePtr create_image_from_data(const uint8_t *the_data, size_t num_bytes, int num_channels)
 {
     ImagePtr ret;
     int width, height, num_components;
-    bool is_hdr = stbi_is_hdr_from_memory(the_data, the_num_bytes);
+    bool is_hdr = stbi_is_hdr_from_memory(the_data, static_cast<int>(num_bytes));
 
     if(is_hdr)
     {
-        float *data = stbi_loadf_from_memory(the_data, the_num_bytes, &width, &height, &num_components, num_channels);
+        float *data = stbi_loadf_from_memory(the_data, static_cast<int>(num_bytes), &width, &height, &num_components,
+                                             num_channels);
         if(!data){ throw ImageLoadException(); }
         ret = Image_<float>::create(data, width, height, num_channels ? num_channels : num_components);
         STBI_FREE(data);
     }
     else
     {
-        uint8_t *data = stbi_load_from_memory(the_data, the_num_bytes, &width, &height, &num_components, num_channels);
+        uint8_t *data = stbi_load_from_memory(the_data, static_cast<int>(num_bytes), &width, &height, &num_components,
+                                              num_channels);
         if(!data){ throw ImageLoadException(); }
         ret = Image_<uint8_t>::create(data, width, height, num_channels ? num_channels : num_components);
         STBI_FREE(data);
@@ -119,19 +121,19 @@ bool save_image_to_file(const ImagePtr &the_img, const std::string &the_path)
     return fs::write_file(the_path, encode_png(the_img));
 }
 
-std::vector<uint8_t> encode_png(const ImagePtr &the_img)
+std::vector<uint8_t> encode_png(const ImagePtr &img)
 {
     auto ret = std::vector<uint8_t>();
-    stbi_write_png_to_func(&stbi_write_func, &ret, the_img->width(), the_img->height(),
-                           the_img->num_components(), the_img->data(), 0);
+    stbi_write_png_to_func(&stbi_write_func, &ret, static_cast<int>(img->width()), static_cast<int>(img->height()),
+                           static_cast<int>(img->num_components()), img->data(), 0);
     return ret;
 }
 
-std::vector<uint8_t> encode_jpg(const ImagePtr &the_img)
+std::vector<uint8_t> encode_jpg(const ImagePtr &img)
 {
     auto ret = std::vector<uint8_t>();
-    stbi_write_jpg_to_func(&stbi_write_func, &ret, the_img->width(), the_img->height(),
-                           the_img->num_components(), the_img->data(), 83);
+    stbi_write_jpg_to_func(&stbi_write_func, &ret, static_cast<int>(img->width()), static_cast<int>(img->height()),
+                           static_cast<int>(img->num_components()), img->data(), 83);
     return ret;
 }
 
@@ -151,7 +153,7 @@ Image_<T>::Image_(T *data, uint32_t width, uint32_t height,
         memcpy(m_data, data, num_bytes);
     }
     roi = {0, 0, width, height};
-};
+}
 
 template<class T>
 Image_<T>::Image_(uint32_t width, uint32_t height, uint32_t num_components):
@@ -245,7 +247,9 @@ template<>
 ImagePtr Image_<uint8_t>::resize(uint32_t the_width, uint32_t the_height) const
 {
     auto ret = Image_<uint8_t>::create(the_width, the_height, m_num_components);
-    stbir_resize_uint8(m_data, m_width, m_height, 0, ret->m_data, ret->m_width, ret->m_height, 0, m_num_components);
+    stbir_resize_uint8(m_data, static_cast<int>(m_width), static_cast<int>(m_height), 0, ret->m_data,
+                       static_cast<int>(ret->m_width), static_cast<int>(ret->m_height), 0,
+                       static_cast<int>(m_num_components));
     return ret;
 }
 
@@ -253,7 +257,9 @@ template<>
 ImagePtr Image_<float>::resize(uint32_t the_width, uint32_t the_height) const
 {
     auto ret = Image_<float>::create(the_width, the_height, m_num_components);
-    stbir_resize_float(m_data, m_width, m_height, 0, ret->m_data, ret->m_width, ret->m_height, 0, m_num_components);
+    stbir_resize_float(m_data, static_cast<int>(m_width), static_cast<int>(m_height), 0, ret->m_data,
+                       static_cast<int>(ret->m_width), static_cast<int>(ret->m_height), 0,
+                       static_cast<int>(m_num_components));
     return ret;
 }
 
@@ -262,10 +268,10 @@ ImagePtr Image_<T>::convolve(const std::vector<float> &the_kernel)
 {
     Image_<T>::Ptr ret;
     auto norm_kernel = the_kernel;
-    float kernel_sum = sum(the_kernel);
+    auto kernel_sum = sum<float>(the_kernel);
     for(auto &e: norm_kernel){ e /= kernel_sum; }
 
-    int kernel_dim = sqrt(the_kernel.size());
+    int kernel_dim = static_cast<int>(sqrt(the_kernel.size()));
     int kernel_dim_2 = kernel_dim / 2;
 
     if(kernel_dim * kernel_dim != (int) the_kernel.size()){ return nullptr; }
@@ -285,7 +291,7 @@ ImagePtr Image_<T>::convolve(const std::vector<float> &the_kernel)
                 {
                     for(int l = -kernel_dim_2; l <= kernel_dim_2; ++l, ++k_idx)
                     {
-                        int pos_x = x + k, pos_y = y + l;
+                        int pos_x = static_cast<int>(x) + k, pos_y = static_cast<int>(y) + l;
                         if(pos_x < 0 || pos_x >= (int) m_width || pos_y < 0 || pos_y >= (int) m_height)
                         {
                             sum += at(x, y)[c] / (float) norm_kernel.size();
@@ -356,7 +362,7 @@ struct Point_
 
     Point_(const T &lhs, const T &rhs) : x(lhs), y(rhs){}
 
-    Point_(const T &lhs) : x(lhs), y(lhs){}
+    explicit Point_(const T &lhs) : x(lhs), y(lhs){}
 };
 
 typedef Point_<float> Point;
@@ -365,13 +371,13 @@ template<typename T>
 float length(const Point_<T> &the_point)
 {
     return sqrtf(the_point.x * the_point.x + the_point.y * the_point.y);
-};
+}
 
 template<typename T>
 float length2(const Point_<T> &the_point)
 {
     return the_point.x * the_point.x + the_point.y * the_point.y;
-};
+}
 
 template<typename T>
 class Grid_
@@ -523,7 +529,7 @@ ImagePtr compute_distance_field(const ImagePtr &the_img, float spread)
             float dist = dist2 - dist1;
 
             // quantize distance
-            *ret->at(x, y) = roundf(map_value<float>(dist, 3 * spread, -spread, 0, 255));
+            *ret->at(x, y) = static_cast<uint8_t>(roundf(map_value<float>(dist, 3 * spread, -spread, 0, 255)));
         }
     return ret;
 }
