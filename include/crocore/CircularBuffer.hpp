@@ -117,15 +117,15 @@ public:
         return m_data[(m_first + the_index) % m_array_size];
     };
 
-    class iterator : public std::iterator<std::random_access_iterator_tag, T>
+    class iterator
     {
-        friend CircularBuffer<T>;
-
-        const CircularBuffer<T> *m_buf;
-        T *m_array, *m_ptr;
-        uint32_t m_size;
-
     public:
+
+        using iterator_category = std::random_access_iterator_tag;
+        using value_type = T;
+        using difference_type = std::ptrdiff_t;
+        using pointer = T*;
+        using reference = T&;
 
         iterator() :
                 m_buf(nullptr),
@@ -204,17 +204,17 @@ public:
             other_index += index < 0 ? m_size : 0;
             return index - other_index;
         }
+    private:
+        friend CircularBuffer<T>;
+
+        const CircularBuffer<T> *m_buf;
+        T *m_array, *m_ptr;
+        uint32_t m_size;
     };
 
-    typedef const iterator const_iterator;
+    iterator begin() const { return iterator(this, m_first); }
 
-    iterator begin() { return iterator(this, m_first); }
-
-    const_iterator begin() const { return iterator(this, m_first); }
-
-    iterator end() { return iterator(this, m_last); }
-
-    const_iterator end() const { return iterator(this, m_last); }
+    iterator end() const { return iterator(this, m_last); }
 
     friend void swap(CircularBuffer<T> &lhs, CircularBuffer<T> &rhs)
     {

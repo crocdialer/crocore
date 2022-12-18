@@ -25,6 +25,7 @@
 #include "stb_image_resize.h"
 
 #include "crocore/filesystem.hpp"
+#include "crocore/crocore.hpp"
 #include "crocore/Image.hpp"
 
 namespace crocore
@@ -46,10 +47,7 @@ ImagePtr create_image_from_file(const std::string &the_path, int num_channels)
         dataVec = fs::read_binary_file(the_path);
         ret = create_image_from_data(dataVec, num_channels);
     }
-    catch(std::runtime_error &e)
-    {
-//        LOG_WARNING << e.what();
-    }
+    catch(std::runtime_error &e){ spdlog::warn(e.what()); }
     return ret;
 }
 
@@ -80,7 +78,7 @@ ImagePtr create_image_from_data(const uint8_t *the_data, size_t num_bytes, int n
         ret = Image_<uint8_t>::create(data, width, height, num_channels ? num_channels : num_components);
         STBI_FREE(data);
     }
-//    LOG_TRACE << "decoded image: " << width << " x " << height << " (" << num_components << " ch)";
+    spdlog::trace("decoded image: {} x {} ({})", width, height, num_components);
     return ret;
 }
 
@@ -299,7 +297,7 @@ ImagePtr Image_<T>::convolve(const std::vector<float> &the_kernel)
                         else{ sum += at(pos_x, pos_y)[c] * norm_kernel[k_idx]; }
                     }
                 }
-                dst_ptr[c] = clamp<float>(roundf(sum), 0, 255);
+                dst_ptr[c] = static_cast<T>(clamp<float>(roundf(sum), 0, 255));
             }
         }
     }
@@ -311,25 +309,29 @@ void Image_<T>::offsets(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a) const
 {
     switch(type)
     {
-        case Type::BGR:*r = 2 * sizeof(T);
+        case Type::BGR:
+            *r = 2 * sizeof(T);
             *g = 1 * sizeof(T);
             *b = 0;
             if(a){ *a = 0; }
             break;
 
-        case Type::RGB:*r = 0;
+        case Type::RGB:
+            *r = 0;
             *g = 1 * sizeof(T);
             *b = 2 * sizeof(T);
             if(a){ *a = 0; }
             break;
 
-        case Type::RGBA:*r = 0;
+        case Type::RGBA:
+            *r = 0;
             *g = 1 * sizeof(T);
             *b = 2 * sizeof(T);
             if(a){ *a = 3 * sizeof(T); }
             break;
 
-        case Type::BGRA:*r = 2 * sizeof(T);
+        case Type::BGRA:
+            *r = 2 * sizeof(T);
             *g = 1 * sizeof(T);
             *b = 0;
             if(a){ *a = 3 * sizeof(T); }
@@ -337,7 +339,8 @@ void Image_<T>::offsets(uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a) const
 
         case Type::GRAY:
         case Type::UNKNOWN:
-        default:*r = *g = *b = 0;
+        default:
+            *r = *g = *b = 0;
             if(a){ *a = 0; }
             break;
     }

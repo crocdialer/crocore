@@ -82,7 +82,7 @@ double Animation::progress(bool eased) const
                      0., 1.);
 
     // optionally apply easing
-    if(eased && m_ease_fn){ val = m_ease_fn(val); }
+    if(eased && m_ease_fn){ val = m_ease_fn(static_cast<float>(val)); }
 
     // eventually revert it
     if(m_playback_type == PLAYBACK_BACKWARD){ val = 1. - val; }
@@ -127,7 +127,7 @@ void Animation::update()
     double val = progress(true);
 
     // pass the value to an interpolation function
-    if(m_interpolate_fn){ m_interpolate_fn(val); }
+    if(m_interpolate_fn){ m_interpolate_fn(static_cast<float>(val)); }
 }
 
 /*!

@@ -88,8 +88,8 @@ BOOST_AUTO_TEST_CASE( testCircularBuffer )
     BOOST_CHECK(circ_buf.size() == 7);
     BOOST_CHECK(crocore::median(circ_buf) == 4);
     
-    int i = 0;
-    for(const auto &v : circ_buf){ printf("val[%d]: %.2f\n", i, v); i++; }
+    int k = 0;
+    for(const auto &v : circ_buf){ printf("val[%d]: %.2f\n", k, v); k++; }
     
     printf("median: %.2f\n", crocore::median<float>(circ_buf));
     

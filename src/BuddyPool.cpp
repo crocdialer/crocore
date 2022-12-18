@@ -18,13 +18,13 @@ inline size_t left(size_t index){ return 2 * index + 1; }
 
 inline size_t right(size_t index){ return 2 * index + 2; }
 
-inline size_t buddy(size_t index){ return index > 0 ? index - 1 + (index & 1U) * 2 : 0; }
+inline size_t buddy(size_t index){ return index > 0 ? index - 1 + (index & 1UL) * 2 : 0; }
 
-inline bool is_left(size_t index){ return index & 1U; }
+inline bool is_left(size_t index){ return index & 1UL; }
 
 inline size_t index_offset(size_t index, size_t level, size_t max_level)
 {
-    return ((index + 1) - (1U << level)) << (max_level - level);
+    return ((index + 1) - (1UL << level)) << (max_level - level);
 }
 
 }// namespace tree
@@ -107,7 +107,7 @@ size_t buddy_alloc(block_t &b, size_t size)
     else{ size = next_pow_2(size); }
 
     // start with maximum number of leaves in tree
-    size_t length = 1U << b.height;
+    size_t length = 1UL << b.height;
 
     // requested size is too large
     if(size > length){ return tree::INDEX_MAX; }
@@ -199,10 +199,10 @@ void buddy_combine(block_t &b, size_t index)
 
 void buddy_free(block_t &b, size_t offset)
 {
-    assert(offset < (1U << b.height));
+    assert(offset < (1UL << b.height));
 
     size_t left = 0;
-    size_t length = 1U << b.height;
+    size_t length = 1UL << b.height;
     size_t index = 0;
 
     for(;;)
@@ -283,7 +283,7 @@ BuddyPool::BuddyPool(create_info_t fmt) :
 
 block_t BuddyPool::create_block() const
 {
-    size_t max_level = std::log2(m_format.block_size / m_format.min_block_size);
+    auto max_level = static_cast<size_t>(std::log2(m_format.block_size / m_format.min_block_size));
     block_t new_block = buddy_create(max_level);
 
     // allocate the actual memory to be managed
@@ -304,7 +304,7 @@ void *BuddyPool::allocate(size_t num_bytes)
     std::unique_lock lock(m_mutex);
 
     // derive number of minimum blocks required
-    size_t size = std::ceil(num_bytes / (float) m_format.min_block_size);
+    size_t size = std::ceil(static_cast<float>(num_bytes) / static_cast<float>(m_format.min_block_size));
 
     // iterate toplevel blocks
     for(auto &b : m_toplevel_blocks)
@@ -421,7 +421,7 @@ BuddyPool::pool_state_t BuddyPool::pool_state() const
     BuddyPool::pool_state_t ret = {};
     ret.num_blocks = m_toplevel_blocks.size();
     ret.block_size = m_format.block_size;
-    ret.max_level = std::log2(m_format.block_size / m_format.min_block_size);
+    ret.max_level = static_cast<size_t>(std::log2(m_format.block_size / m_format.min_block_size));
 
     for(const auto &b : m_toplevel_blocks)
     {

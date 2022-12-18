@@ -101,7 +101,7 @@ void Application::update_timing()
     double fps = target_loop_frequency;
 
     auto now = std::chrono::steady_clock::now();
-    uint32_t frame_us = std::chrono::duration_cast<std::chrono::microseconds>(
+    auto frame_us = std::chrono::duration_cast<std::chrono::microseconds>(
             now - m_fps_timestamp).count();
 
     if(loop_throttling && fps > 0)
