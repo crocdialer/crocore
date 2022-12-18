@@ -92,7 +92,7 @@ public:
 
     inline const T &back() const { return m_data[(m_last - 1) % m_array_size]; }
 
-    [[nodiscard]] inline uint32_t capacity() const { return std::max(0, m_array_size - 1); };
+    [[nodiscard]] inline size_t capacity() const { return std::max<size_t>(0, m_array_size - 1); };
 
     inline void set_capacity(uint32_t the_cap) { *this = CircularBuffer(the_cap); }
 
@@ -196,11 +196,11 @@ public:
             return *this + (-i);
         }
 
-        inline int operator-(const iterator &the_other) const
+        inline int64_t operator-(const iterator &other) const
         {
-            auto index = m_ptr - m_array - m_buf->m_first;
+            int64_t index = m_ptr - m_array - m_buf->m_first;
             index += index < 0 ? m_size : 0;
-            auto other_index = the_other.m_ptr - m_array - m_buf->m_first;
+            int64_t other_index = other.m_ptr - m_array - m_buf->m_first;
             other_index += index < 0 ? m_size : 0;
             return index - other_index;
         }
@@ -225,7 +225,7 @@ public:
     }
 
 private:
-    int32_t m_array_size = 0, m_first = 0, m_last = 0;
+    size_t m_array_size = 0, m_first = 0, m_last = 0;
     T *m_data = nullptr;
 };
 
