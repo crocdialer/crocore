@@ -100,7 +100,7 @@ std::string local_ip(bool ipV6)
             ip_set.insert(endpoint.address().to_string());
         }
         ip_set.erase("127.0.1.1");
-    } catch(std::exception &e){}
+    } catch(std::exception&){}
     if(!ip_set.empty()) { ret = *ip_set.begin(); }
     return ret;
 }

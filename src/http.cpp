@@ -309,10 +309,10 @@ Client &Client::operator=(Client other)
 void ClientImpl::poll()
 {
     curl_multi_perform(m_curl_multi_handle.get(), &m_num_connections);
-    CURLMsg *msg;
     int msgs_left;
+    CURLMsg *msg = curl_multi_info_read(m_curl_multi_handle.get(), &msgs_left);
 
-    while((msg = curl_multi_info_read(m_curl_multi_handle.get(), &msgs_left)))
+    while(msg)
     {
         if(msg->msg == CURLMSG_DONE)
         {
@@ -340,12 +340,8 @@ void ClientImpl::poll()
                 m_handle_map.erase(itr);
             }
         }
+        msg = curl_multi_info_read(m_curl_multi_handle.get(), &msgs_left);
     }
-
-//    if(m_num_connections && m_io_service)
-//    {
-//        m_io_service->post([this] { poll(); });
-//    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

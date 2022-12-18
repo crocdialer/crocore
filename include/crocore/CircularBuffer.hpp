@@ -23,7 +23,7 @@ public:
     CircularBuffer() = default;
 
     explicit CircularBuffer(uint32_t cap) :
-            m_array_size((int32_t)cap + 1),
+            m_array_size((int32_t) cap + 1),
             m_first(0),
             m_last(0),
             m_data(new T[m_array_size]())
@@ -42,7 +42,7 @@ public:
     }
 
     // move constructor
-    CircularBuffer(CircularBuffer &&other) noexcept : CircularBuffer()
+    CircularBuffer(CircularBuffer &&other) noexcept: CircularBuffer()
     {
         swap(*this, other);
     }
@@ -84,26 +84,26 @@ public:
         if(!empty()){ m_first = (m_first + 1) % m_array_size; }
     }
 
-    inline T &front() { return m_data[m_first]; }
+    inline T &front(){ return m_data[m_first]; }
 
-    inline T &back() { return m_data[(m_last - 1) % m_array_size]; }
+    inline T &back(){ return m_data[(m_last - 1) % m_array_size]; }
 
-    inline const T &front() const { return m_data[m_first]; }
+    inline const T &front() const{ return m_data[m_first]; }
 
-    inline const T &back() const { return m_data[(m_last - 1) % m_array_size]; }
+    inline const T &back() const{ return m_data[(m_last - 1) % m_array_size]; }
 
-    [[nodiscard]] inline size_t capacity() const { return std::max<size_t>(0, m_array_size - 1); };
+    [[nodiscard]] inline size_t capacity() const{ return std::max<size_t>(0, m_array_size - 1); };
 
-    inline void set_capacity(uint32_t the_cap) { *this = CircularBuffer(the_cap); }
+    inline void set_capacity(uint32_t the_cap){ *this = CircularBuffer(the_cap); }
 
     [[nodiscard]] inline size_t size() const
     {
-        int ret = m_last - m_first;
+        int64_t ret = m_last - m_first;
         if(ret < 0){ ret += m_array_size; }
-        return ret;
+        return static_cast<size_t>(ret);
     };
 
-    [[nodiscard]] inline bool empty() const { return m_first == m_last; }
+    [[nodiscard]] inline bool empty() const{ return m_first == m_last; }
 
     inline T &operator[](uint32_t the_index)
     {
@@ -124,26 +124,26 @@ public:
         using iterator_category = std::random_access_iterator_tag;
         using value_type = T;
         using difference_type = std::ptrdiff_t;
-        using pointer = T*;
-        using reference = T&;
+        using pointer = T *;
+        using reference = T &;
 
         iterator() :
                 m_buf(nullptr),
                 m_array(nullptr),
                 m_ptr(nullptr),
-                m_size(0) {}
+                m_size(0){}
 
         iterator(const iterator &the_other) :
                 m_buf(the_other.m_buf),
                 m_array(the_other.m_array),
                 m_ptr(the_other.m_ptr),
-                m_size(the_other.m_size) {}
+                m_size(the_other.m_size){}
 
-        iterator(const CircularBuffer<T> *the_buf, uint32_t the_pos) :
+        iterator(const CircularBuffer<T> *the_buf, size_t the_pos) :
                 m_buf(the_buf),
                 m_array(the_buf->m_data),
                 m_ptr(the_buf->m_data + the_pos),
-                m_size(the_buf->m_array_size) {}
+                m_size(the_buf->m_array_size){}
 
         inline iterator &operator=(iterator the_other)
         {
@@ -173,15 +173,15 @@ public:
             return m_array == the_other.m_array && m_ptr == the_other.m_ptr;
         }
 
-        inline bool operator!=(const iterator &the_other) const { return !(*this == the_other); }
+        inline bool operator!=(const iterator &the_other) const{ return !(*this == the_other); }
 
-        inline T &operator*() { return *m_ptr; }
+        inline T &operator*(){ return *m_ptr; }
 
-        inline const T &operator*() const { return *m_ptr; }
+        inline const T &operator*() const{ return *m_ptr; }
 
-        inline T *operator->() { return m_ptr; }
+        inline T *operator->(){ return m_ptr; }
 
-        inline const T *operator->() const { return m_ptr; }
+        inline const T *operator->() const{ return m_ptr; }
 
         inline iterator &operator+(int i)
         {
@@ -204,17 +204,18 @@ public:
             other_index += index < 0 ? m_size : 0;
             return index - other_index;
         }
+
     private:
         friend CircularBuffer<T>;
 
         const CircularBuffer<T> *m_buf;
         T *m_array, *m_ptr;
-        uint32_t m_size;
+        size_t m_size;
     };
 
-    iterator begin() const { return iterator(this, m_first); }
+    iterator begin() const{ return iterator(this, m_first); }
 
-    iterator end() const { return iterator(this, m_last); }
+    iterator end() const{ return iterator(this, m_last); }
 
     friend void swap(CircularBuffer<T> &lhs, CircularBuffer<T> &rhs)
     {

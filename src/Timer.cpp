@@ -20,7 +20,8 @@ using std::chrono::steady_clock;
 // 1 double per second
 using duration_t = std::chrono::duration<double>;
 
-namespace crocore {
+namespace crocore
+{
 
 Stopwatch::Stopwatch() :
         m_running(true),
@@ -31,7 +32,7 @@ Stopwatch::Stopwatch() :
 
 void Stopwatch::start()
 {
-    if(m_running) return;
+    if(m_running){ return; }
 
     m_running = true;
     m_start_time = steady_clock::now();
@@ -39,7 +40,7 @@ void Stopwatch::start()
 
 void Stopwatch::stop()
 {
-    if(!m_running) return;
+    if(!m_running){ return; }
     m_running = false;
     m_laps.back() += duration_cast<duration_t>(steady_clock::now() - m_start_time).count();
 }
@@ -57,7 +58,7 @@ void Stopwatch::reset()
 
 void Stopwatch::new_lap()
 {
-    if(!m_running) return;
+    if(!m_running){ return; }
 
     m_laps.back() += duration_cast<duration_t>(steady_clock::now() - m_start_time).count();
     m_start_time = steady_clock::now();
@@ -68,9 +69,9 @@ double Stopwatch::time_elapsed() const
 {
     double ret = 0.0;
 
-    for(auto lap_time : m_laps){ ret += lap_time; }
+    for(auto lap_time: m_laps){ ret += lap_time; }
 
-    if(!m_running) return ret;
+    if(!m_running){ return ret; }
 
     ret += duration_cast<duration_t>(steady_clock::now() - m_start_time).count();
     return ret;
@@ -81,7 +82,8 @@ double Stopwatch::time_elapsed_for_lap() const
     if(m_running)
     {
         return m_laps.back() + duration_cast<duration_t>(steady_clock::now() - m_start_time).count();
-    }else{ return m_laps.back(); }
+    }
+    else{ return m_laps.back(); }
 }
 
 const std::vector<double> &Stopwatch::laps() const
@@ -102,23 +104,23 @@ struct timer_impl
             m_timer(io),
             m_callback(std::move(cb)),
             m_periodic(false),
-            m_running(false) {}
+            m_running(false){}
 
     ~timer_impl()
     {
-        try { m_timer.cancel(); }
-        catch(boost::system::system_error &e) { }
+        try{ m_timer.cancel(); }
+        catch(boost::system::system_error &){}
     }
 };
 
-Timer::Timer(Timer &&other) noexcept :
+Timer::Timer(Timer &&other) noexcept:
         Timer()
 {
     swap(*this, other);
 }
 
 Timer::Timer(io_service_t &io, Timer::timer_cb_t cb) :
-        m_impl(new timer_impl(io, std::move(cb))) {}
+        m_impl(new timer_impl(io, std::move(cb))){}
 
 Timer &Timer::operator=(Timer other)
 {
@@ -133,7 +135,7 @@ void swap(Timer &lhs, Timer &rhs)
 
 void Timer::expires_from_now(double secs)
 {
-    if(!m_impl) return;
+    if(!m_impl){ return; }
     std::weak_ptr<timer_impl> weak_impl = m_impl;
 
     m_impl->m_timer.expires_from_now(duration_cast<steady_clock::duration>(duration_t(secs)));
@@ -158,7 +160,7 @@ void Timer::expires_from_now(double secs)
 
 double Timer::expires_from_now() const
 {
-    if(!m_impl) return 0.0;
+    if(!m_impl){ return 0.0; }
     auto duration = m_impl->m_timer.expires_from_now();
     return duration_cast<duration_t>(duration).count();
 }
