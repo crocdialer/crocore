@@ -333,7 +333,7 @@ template<typename T = double, typename C>
 inline T mean(const C &the_container)
 {
     size_t size = std::end(the_container) - std::begin(the_container);
-    return size ? sum<T>(the_container) / (T) (size) : T(0);
+    return size ? sum<T>(the_container) / static_cast<T>(size) : T(0);
 }
 
 template<typename T = double, typename C>
