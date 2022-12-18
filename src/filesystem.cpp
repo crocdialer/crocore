@@ -9,7 +9,7 @@
 
 #include <shared_mutex>
 #include <fstream>
-#include <mutex>
+#include "crocore/crocore.hpp"
 #include "crocore/filesystem.hpp"
 
 namespace crocore::filesystem
@@ -83,7 +83,7 @@ std::vector<std::string> get_directory_entries(const std::filesystem::path &theP
                     }
 
                     try{ ++it; }
-                    catch(std::exception &e)
+                    catch(std::exception &)
                     {
                         // e.g. no permission
                         it.disable_recursion_pending();
@@ -112,22 +112,13 @@ std::vector<std::string> get_directory_entries(const std::filesystem::path &theP
                     }
 
                     try{ ++it; }
-                    catch(std::exception &e)
-                    {
-//                        LOG_ERROR << e.what();
-                    }
+                    catch(std::exception &e){ spdlog::warn(e.what()); }
                 }
             }
         }
-        else
-        {
-//            LOG_TRACE << p << " does not exist";
-        }
+        else{ spdlog::trace("{} does not exist", p.string()); }
     }
-    catch(const std::exception &e)
-    {
-//        LOG_ERROR << e.what();
-    }
+    catch(const std::exception &e){ spdlog::error(e.what()); }
     std::sort(ret.begin(), ret.end());
     return ret;
 }
@@ -271,7 +262,7 @@ bool create_directory(const std::filesystem::path &the_file_name)
     if(!std::filesystem::exists(the_file_name))
     {
         try{ return std::filesystem::create_directory(the_file_name); }
-        catch(std::exception &e){ return false; }
+        catch(std::exception &){ return false; }
     }
     return false;
 }

@@ -106,11 +106,11 @@ void Application::update_timing()
 
     if(loop_throttling && fps > 0)
     {
-        const uint32_t desired_frametime_us = std::ceil(1.0e6 / fps);
+        auto desired_frametime_us = static_cast<uint32_t>(std::ceil(1.0e6 / fps));
 
         if(frame_us < desired_frametime_us)
         {
-            uint32_t sleep_us = desired_frametime_us - frame_us;
+            auto sleep_us = desired_frametime_us - frame_us;
             std::this_thread::sleep_for(std::chrono::microseconds(sleep_us));
         }
 //    spdlog::trace("frame: {} us -- target-fps: {} Hz -- sleeping: {} us", frame_us, fps, sleep_us);

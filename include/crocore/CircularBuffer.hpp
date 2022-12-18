@@ -22,8 +22,8 @@ public:
 
     CircularBuffer() = default;
 
-    explicit CircularBuffer(uint32_t the_cap) :
-            m_array_size(the_cap + 1),
+    explicit CircularBuffer(uint32_t cap) :
+            m_array_size((int32_t)cap + 1),
             m_first(0),
             m_last(0),
             m_data(new T[m_array_size]())
@@ -198,9 +198,9 @@ public:
 
         inline int operator-(const iterator &the_other) const
         {
-            int index = m_ptr - m_array - m_buf->m_first;
+            auto index = m_ptr - m_array - m_buf->m_first;
             index += index < 0 ? m_size : 0;
-            int other_index = the_other.m_ptr - m_array - m_buf->m_first;
+            auto other_index = the_other.m_ptr - m_array - m_buf->m_first;
             other_index += index < 0 ? m_size : 0;
             return index - other_index;
         }

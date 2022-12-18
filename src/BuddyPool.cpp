@@ -20,11 +20,11 @@ inline size_t right(size_t index){ return 2 * index + 2; }
 
 inline size_t buddy(size_t index){ return index > 0 ? index - 1 + (index & 1UL) * 2 : 0; }
 
-inline bool is_left(size_t index){ return index & 1UL; }
+inline bool is_left(size_t index){ return index & 1; }
 
 inline size_t index_offset(size_t index, size_t level, size_t max_level)
 {
-    return ((index + 1) - (1UL << level)) << (max_level - level);
+    return ((index + 1) - (size_t(1UL) << level)) << (max_level - level);
 }
 
 }// namespace tree
@@ -78,9 +78,9 @@ void buddy_collect_allocations(const block_t &b, size_t index, size_t level,
 
 block_t buddy_create(size_t height)
 {
-    size_t num_leaves = 1U << height;
+    size_t num_leaves = size_t(1U) << height;
     block_t ret = {};
-    ret.height = height;
+    ret.height = static_cast<uint32_t>(height);
     ret.tree = std::unique_ptr<NodeState[]>(new NodeState[num_leaves * 2 - 1]);
     memset(ret.tree.get(), static_cast<uint8_t>(NodeState::UNUSED), num_leaves * 2 - 1);
     return ret;
@@ -107,7 +107,7 @@ size_t buddy_alloc(block_t &b, size_t size)
     else{ size = next_pow_2(size); }
 
     // start with maximum number of leaves in tree
-    size_t length = 1UL << b.height;
+    size_t length = size_t(1UL) << b.height;
 
     // requested size is too large
     if(size > length){ return tree::INDEX_MAX; }
@@ -133,8 +133,7 @@ size_t buddy_alloc(block_t &b, size_t size)
             switch(b.tree[index])
             {
                 case NodeState::USED:
-                case NodeState::FULL:
-                    break;
+                case NodeState::FULL:break;
 
                 case NodeState::UNUSED:
                     // split first
@@ -142,8 +141,7 @@ size_t buddy_alloc(block_t &b, size_t size)
                     b.tree[tree::left(index)] = NodeState::UNUSED;
                     b.tree[tree::right(index)] = NodeState::UNUSED;
                     [[fallthrough]];
-                case NodeState::SPLIT:
-                    index = tree::left(index);
+                case NodeState::SPLIT:index = tree::left(index);
                     length /= 2;
                     level++;
                     continue;
@@ -199,28 +197,25 @@ void buddy_combine(block_t &b, size_t index)
 
 void buddy_free(block_t &b, size_t offset)
 {
-    assert(offset < (1UL << b.height));
+    assert(offset < (size_t(1UL) << b.height));
 
     size_t left = 0;
-    size_t length = 1UL << b.height;
+    size_t length = size_t(1UL) << b.height;
     size_t index = 0;
 
     for(;;)
     {
         switch(b.tree[index])
         {
-            case NodeState::USED:
-                assert(offset == left);
+            case NodeState::USED:assert(offset == left);
                 buddy_combine(b, index);
                 return;
 
-            case NodeState::UNUSED:
-                assert(0);
+            case NodeState::UNUSED:assert(0);
                 return;
 
             case NodeState::SPLIT:
-            case NodeState::FULL:
-                length /= 2;
+            case NodeState::FULL:length /= 2;
 
                 if(offset < left + length){ index = tree::left(index); }
                 else
@@ -241,16 +236,13 @@ void buddy_collect_allocations(const block_t &b, size_t index, size_t level,
 
     switch(b.tree[index])
     {
-        case NodeState::USED:
-            allocations[blockSize]++;
+        case NodeState::USED:allocations[blockSize]++;
             break;
 
-        case NodeState::UNUSED:
-            break;
+        case NodeState::UNUSED:break;
 
         case NodeState::SPLIT:
-        case NodeState::FULL:
-            buddy_collect_allocations(b, tree::left(index), level + 1, minBlockSize, allocations);
+        case NodeState::FULL:buddy_collect_allocations(b, tree::left(index), level + 1, minBlockSize, allocations);
             buddy_collect_allocations(b, tree::right(index), level + 1, minBlockSize, allocations);
             break;
     }
@@ -304,10 +296,11 @@ void *BuddyPool::allocate(size_t num_bytes)
     std::unique_lock lock(m_mutex);
 
     // derive number of minimum blocks required
-    size_t size = std::ceil(static_cast<float>(num_bytes) / static_cast<float>(m_format.min_block_size));
+    auto size = static_cast<size_t>(std::ceil(
+            static_cast<float>(num_bytes) / static_cast<float>(m_format.min_block_size)));
 
     // iterate toplevel blocks
-    for(auto &b : m_toplevel_blocks)
+    for(auto &b: m_toplevel_blocks)
     {
         // within block, try to allocate, recursively split, find proper index
         size_t allocation_index = buddy_alloc(b, size);
@@ -407,7 +400,7 @@ Allocator::state_t BuddyPool::state() const
     ret.num_allocations = pool.num_blocks;
     ret.num_bytes_allocated = m_format.block_size * m_toplevel_blocks.size();
 
-    for (const auto &[block_size, numAllocations] : pool.allocations)
+    for(const auto &[block_size, numAllocations]: pool.allocations)
     {
         ret.num_bytes_used += block_size * numAllocations;
     }
@@ -423,7 +416,7 @@ BuddyPool::pool_state_t BuddyPool::pool_state() const
     ret.block_size = m_format.block_size;
     ret.max_level = static_cast<size_t>(std::log2(m_format.block_size / m_format.min_block_size));
 
-    for(const auto &b : m_toplevel_blocks)
+    for(const auto &b: m_toplevel_blocks)
     {
         buddy_collect_allocations(b, 0, 0, m_format.min_block_size, ret.allocations);
     }
