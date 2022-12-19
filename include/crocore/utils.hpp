@@ -316,30 +316,32 @@ void concat_helper(C1 &l, const C2 &r)
 } // namespace details
 
 template<typename T, typename... C>
-inline std::vector<T> concat_containers(C &&... the_containers)
+inline std::vector<T> concat_containers(C &&... containers)
 {
     std::vector<T> ret;
-    details::do_in_order{(details::concat_helper(ret, std::forward<C>(the_containers)), 0)...};
+    details::do_in_order{(details::concat_helper(ret, std::forward<C>(containers)), 0)...};
     return ret;
 }
 
-template<typename T = double, typename C>
-inline T sum(const C &the_container)
+template<typename C>
+inline auto sum(const C &container)
 {
-    return std::accumulate(std::begin(the_container), std::end(the_container), T(0));
+    using elem_t = typename C::value_type;
+    return std::accumulate(std::begin(container), std::end(container), elem_t(0));
 }
 
-template<typename T = double, typename C>
-inline T mean(const C &the_container)
+template<typename C>
+inline auto mean(const C &container)
 {
-    size_t size = std::end(the_container) - std::begin(the_container);
-    return size ? sum<T>(the_container) / T(size) : T(0);
+    using elem_t = typename C::value_type;
+    auto size = static_cast<double>(std::end(container) - std::begin(container));
+    return size > 0 ? sum(container) / elem_t(size) : elem_t(0);
 }
 
 template<typename T = double, typename C>
 inline T standard_deviation(const C &the_container)
 {
-    auto mean = crocore::mean<T>(the_container);
+    auto mean = crocore::mean(the_container);
     std::vector<T> diff(std::begin(the_container), std::end(the_container));
     std::transform(std::begin(the_container), std::end(the_container), diff.begin(),
                    [mean](T x){ return x - mean; });

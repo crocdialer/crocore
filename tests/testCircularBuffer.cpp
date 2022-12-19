@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE( testCircularBuffer )
     int k = 0;
     for(const auto &v : circ_buf){ printf("val[%d]: %.2f\n", k, v); k++; }
     
-    printf("median: %.2f\n", crocore::median<float>(circ_buf));
+    printf("median: %.2f\n", crocore::median(circ_buf));
     
     circ_buf.clear();
     BOOST_CHECK(circ_buf.empty());
@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE( testCircularBuffer )
         BOOST_CHECK(circ_buf.size() == std::min<uint32_t>(i, 1250));
         circ_buf.push_back(crocore::random_int(0, 100));
     }
-    printf("mean: %.2f\n", crocore::mean<float>(circ_buf));
+    printf("mean: %.2f\n", crocore::mean(circ_buf));
     printf("standard deviation: %.2f\n", crocore::standard_deviation(circ_buf));
     BOOST_CHECK(circ_buf.size() == 1250);
     

@@ -266,7 +266,7 @@ ImagePtr Image_<T>::convolve(const std::vector<float> &the_kernel)
 {
     Image_<T>::Ptr ret;
     auto norm_kernel = the_kernel;
-    auto kernel_sum = sum<float>(the_kernel);
+    auto kernel_sum = crocore::sum(the_kernel);
     for(auto &e: norm_kernel){ e /= kernel_sum; }
 
     int kernel_dim = static_cast<int>(sqrt(the_kernel.size()));
