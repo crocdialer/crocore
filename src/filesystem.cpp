@@ -21,14 +21,13 @@ std::string expand_user(std::string path)
 {
     path = trim(path);
 
+#if !defined(_WIN32) && (defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__)))
     if(!path.empty() && path[0] == '~')
     {
         if(path.size() != 1 && path[1] != '/'){ return path; } // or other error handling ?
         char const *home = getenv("HOME");
-        if(home || ((home = getenv("USERPROFILE"))))
-        {
-            path.replace(0, 1, home);
-        }
+        home = home ? home : getenv("USERPROFILE");
+        if(home){ path.replace(0, 1, home); }
         else
         {
             char const *hdrive = getenv("HOMEDRIVE"),
@@ -37,10 +36,9 @@ std::string expand_user(std::string path)
             path.replace(0, 1, std::string(hdrive) + hpath);
         }
     }
+#endif
     return path;
 }
-
-/////////// end implemantation internal /////////////
 
 ///////////////////////////////////////////////////////////////////////////////
 

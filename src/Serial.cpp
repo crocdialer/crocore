@@ -1,7 +1,6 @@
 #include <mutex>
 #include <boost/asio.hpp>
 #include <boost/asio/serial_port.hpp>
-#include <utility>
 #include "crocore/filesystem.hpp"
 #include "crocore/CircularBuffer.hpp"
 #include "crocore/Serial.hpp"
