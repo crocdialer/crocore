@@ -3,7 +3,8 @@
 #include <unordered_map>
 #include <chrono>
 
-#include "crocore/ThreadPool.hpp"
+#include <crocore/ThreadPool.hpp>
+#include <crocore/precise_sleep.hpp>
 
 namespace crocore
 {
@@ -87,6 +88,8 @@ private:
     std::vector<std::string> m_args;
 
     crocore::ThreadPool m_main_queue, m_background_queue;
+
+    crocore::precise_sleep m_precise_sleep;
 };
 
 }

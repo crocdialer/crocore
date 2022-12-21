@@ -111,7 +111,7 @@ void Application::update_timing()
         if(frame_us < desired_frametime_us)
         {
             auto sleep_us = desired_frametime_us - frame_us;
-            std::this_thread::sleep_for(std::chrono::microseconds(sleep_us));
+            m_precise_sleep(std::chrono::microseconds(sleep_us));
         }
 //    spdlog::trace("frame: {} us -- target-fps: {} Hz -- sleeping: {} us", frame_us, fps, sleep_us);
     }

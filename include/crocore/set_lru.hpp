@@ -41,68 +41,68 @@ public:
      */
     inline bool contains(const Key &key) const
     {
-        return _objects.find(key) != _objects.end();
+        return m_objects.find(key) != m_objects.end();
     }
 
     inline void push_back(const Key &key)
     {
-        auto mapIt = _objects.find(key);
+        auto mapIt = m_objects.find(key);
 
-        if(mapIt != _objects.end())
+        if(mapIt != m_objects.end())
         {
-            _list.erase(mapIt->second);
-            _objects.erase(mapIt);
+            m_list.erase(mapIt->second);
+            m_objects.erase(mapIt);
         }
-        auto it = _list.insert(_list.end(), key);
-        _objects.emplace(key, it);
+        auto it = m_list.insert(m_list.end(), key);
+        m_objects.emplace(key, it);
     }
 
     inline void pop_front()
     {
         if(!empty())
         {
-            _objects.erase(_list.front());
-            _list.pop_front();
+            m_objects.erase(m_list.front());
+            m_list.pop_front();
         }
     }
 
     void remove(Key k)
     {
-        auto it = _objects.find(k);
+        auto it = m_objects.find(k);
 
-        if(it != _objects.end())
+        if(it != m_objects.end())
         {
-            _list.erase(it->second);
-            _objects.erase(it);
+            m_list.erase(it->second);
+            m_objects.erase(it);
         }
     }
 
-    [[nodiscard]] inline size_t empty() const{ return _objects.empty(); }
+    [[nodiscard]] inline size_t empty() const{ return m_objects.empty(); }
 
-    [[nodiscard]] inline size_t size() const{ return _objects.size(); }
+    [[nodiscard]] inline size_t size() const{ return m_objects.size(); }
 
     inline void clear()
     {
-        _objects.clear();
-        _list.clear();
+        m_objects.clear();
+        m_list.clear();
     }
 
-    inline typename std::list<Key>::iterator begin() noexcept{ return _list.begin(); }
-    inline typename std::list<Key>::iterator rbegin() noexcept{ return _list.rbegin(); }
+    inline typename std::list<Key>::iterator begin() noexcept{ return m_list.begin(); }
+    inline typename std::list<Key>::iterator rbegin() noexcept{ return m_list.rbegin(); }
 
-    inline typename std::list<Key>::const_iterator cbegin() const noexcept{ return _list.cbegin(); }
-    inline typename std::list<Key>::const_iterator rcbegin() const noexcept{ return _list.rcbegin(); }
+    inline typename std::list<Key>::const_iterator cbegin() const noexcept{ return m_list.cbegin(); }
+    inline typename std::list<Key>::const_iterator rcbegin() const noexcept{ return m_list.rcbegin(); }
 
-    inline typename std::list<Key>::iterator end() noexcept{ return _list.end(); }
-    inline typename std::list<Key>::iterator rend() noexcept{ return _list.rend(); }
+    inline typename std::list<Key>::iterator end() noexcept{ return m_list.end(); }
+    inline typename std::list<Key>::iterator rend() noexcept{ return m_list.rend(); }
 
-    inline typename std::list<Key>::const_iterator cend() const noexcept{ return _list.cend(); }
-    inline typename std::list<Key>::const_iterator rcend() const noexcept{ return _list.rcend(); }
+    inline typename std::list<Key>::const_iterator cend() const noexcept{ return m_list.cend(); }
+    inline typename std::list<Key>::const_iterator rcend() const noexcept{ return m_list.rcend(); }
 
 private:
 
-    std::unordered_map<Key, typename std::list<Key>::iterator> _objects;
-    std::list<Key> _list;
+    std::unordered_map<Key, typename std::list<Key>::iterator> m_objects;
+    std::list<Key> m_list;
 };
 
 } // namespace crocore
