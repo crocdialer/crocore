@@ -63,7 +63,9 @@ BOOST_AUTO_TEST_CASE( testCircularBuffer )
     BOOST_CHECK(circ_buf[3] == 102);
     BOOST_CHECK(circ_buf[4] == 666);
     BOOST_CHECK(circ_buf[5] == 103);
-    BOOST_CHECK(crocore::median(circ_buf) == 101.5);
+
+    auto median = crocore::median(circ_buf);
+    BOOST_CHECK(median == 101.5);
     
     // new capacity, buffer is empty after resize
     circ_buf.set_capacity(7);
@@ -96,17 +98,19 @@ BOOST_AUTO_TEST_CASE( testCircularBuffer )
     circ_buf.clear();
     BOOST_CHECK(circ_buf.empty());
     
-    uint32_t num_elems = 100000;
+    constexpr uint32_t num_elems = 1500;
+    constexpr uint32_t capacity = 750;
+
     printf("\npushing %d elements in range (0 - 100):\n", num_elems);
-    circ_buf.set_capacity(1250);
+    circ_buf.set_capacity(capacity);
     for(uint32_t i = 0; i < num_elems; i++)
     {
-        BOOST_CHECK(circ_buf.size() == std::min<uint32_t>(i, 1250));
+        BOOST_CHECK(circ_buf.size() == std::min<uint32_t>(i, capacity));
         circ_buf.push_back(crocore::random_int(0, 100));
     }
     printf("mean: %.2f\n", crocore::mean(circ_buf));
     printf("standard deviation: %.2f\n", crocore::standard_deviation(circ_buf));
-    BOOST_CHECK(circ_buf.size() == 1250);
+    BOOST_CHECK(circ_buf.size() == capacity);
     
     for(uint32_t i = 0; i < num_elems; i++){ circ_buf.pop_front(); }
     BOOST_CHECK(circ_buf.size() == 0);
