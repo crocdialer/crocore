@@ -3,72 +3,32 @@
 //
 #pragma once
 
-#include <string>
-#include <ostream>
-
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
+#include <atomic>
 
 namespace crocore
 {
 
-/**
- * @brief   NamedIdBase is a common base-class for all NamedIds and offers a shared,
- *          thread_local boost::uuids::basic_random_generator.
- */
-class NamedIdBase
-{
-protected:
-
-    static boost::uuids::random_generator &generator()
-    {
-        static thread_local boost::uuids::random_generator gen;
-        return gen;
-    }
-};
-
 template<typename T>
-class NamedId : public NamedIdBase
+class NamedId
 {
 public:
-
-    static NamedId nil(){ return {boost::uuids::nil_uuid()}; }
+    static NamedId nil() { return {0}; }
 
     NamedId() = default;
 
-    explicit NamedId(const std::string &str) : m_uuid(boost::uuids::string_generator()(str)){}
+    [[nodiscard]] inline size_t hash() const { return std::hash<uint64_t>()(m_id); }
 
-    [[nodiscard]] std::string str() const{ return boost::uuids::to_string(m_uuid); }
+    [[nodiscard]] inline bool is_nil() const { return !m_id; }
 
-    [[nodiscard]] inline size_t hash() const
-    {
-        return boost::uuids::hash_value(m_uuid);
-    }
+    inline explicit operator bool() const { return !is_nil(); }
 
-    [[nodiscard]] inline bool is_nil() const{ return m_uuid.is_nil(); }
+    friend inline bool operator<(const NamedId &lhs, const NamedId &rhs) { return lhs.m_id < rhs.m_id; }
 
-    inline explicit operator bool() const{ return !is_nil(); }
+    friend inline bool operator==(const NamedId &lhs, const NamedId &rhs) { return lhs.m_id == rhs.m_id; }
 
-    friend inline bool operator<(const NamedId &lhs, const NamedId &rhs)
-    {
-        return lhs.m_uuid < rhs.m_uuid;
-    }
+    friend inline bool operator!=(const NamedId &lhs, const NamedId &rhs) { return lhs.m_id != rhs.m_id; }
 
-    friend inline bool operator==(const NamedId &lhs, const NamedId &rhs)
-    {
-        return lhs.m_uuid == rhs.m_uuid;
-    }
-
-    friend inline bool operator!=(const NamedId &lhs, const NamedId &rhs)
-    {
-        return lhs.m_uuid != rhs.m_uuid;
-    }
-
-    friend void swap(NamedId &lhs, NamedId &rhs)
-    {
-        lhs.m_uuid.swap(rhs.m_uuid);
-    }
+    friend void swap(NamedId &lhs, NamedId &rhs) { std::swap(lhs.m_id, rhs.m_id); }
 
     friend std::ostream &operator<<(std::ostream &os, const NamedId &self)
     {
@@ -77,11 +37,15 @@ public:
     }
 
 private:
-    explicit NamedId(const boost::uuids::uuid &uuid) : m_uuid(uuid){};
-    boost::uuids::uuid m_uuid = generator()();
+    explicit NamedId(uint64_t id) : m_id(id){};
+    static std::atomic<uint64_t> s_next_id;
+    uint64_t m_id = s_next_id++;
 };
 
-}
+template<typename T>
+std::atomic<uint64_t> NamedId<T>::s_next_id = 0;
+
+}// namespace crocore
 
 //! enables usage of NamedId as key in std::unordered_set / std::unordered_map
 namespace std
@@ -89,6 +53,6 @@ namespace std
 template<typename T>
 struct hash<crocore::NamedId<T>>
 {
-    size_t operator()(crocore::NamedId<T> const &named_id) const{ return named_id.hash(); }
+    size_t operator()(crocore::NamedId<T> const &named_id) const { return named_id.hash(); }
 };
-} // namespace std
+}// namespace std
