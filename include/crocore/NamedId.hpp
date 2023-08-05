@@ -39,7 +39,7 @@ public:
 private:
     explicit NamedId(uint64_t id) : m_id(id){};
     static std::atomic<uint64_t> s_next_id;
-    uint64_t m_id = s_next_id++;
+    uint64_t m_id = ++s_next_id;
 };
 
 template<typename T>
