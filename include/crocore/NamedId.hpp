@@ -8,11 +8,16 @@
 namespace crocore
 {
 
+//! helper-macro to define a NamedId
+#define DEFINE_NAMED_ID(ID_NAME) \
+namespace named_id_internal{ struct ID_NAME##Param; }\
+using ID_NAME = crocore::NamedId<named_id_internal::ID_NAME##Param>;
+
 template<typename T>
 class NamedId
 {
 public:
-    static NamedId nil() { return {0}; }
+    static NamedId<T> nil() { return NamedId(0); }
 
     NamedId() = default;
 
@@ -32,7 +37,7 @@ public:
 
     friend std::ostream &operator<<(std::ostream &os, const NamedId &self)
     {
-        os << self.str();
+        os << self.m_id;
         return os;
     }
 

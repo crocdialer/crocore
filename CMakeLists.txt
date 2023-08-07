@@ -6,8 +6,8 @@ project(crocore)
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 option(BUILD_TESTS "Build Tests" ON)
 
-## request C++17
-set(CMAKE_CXX_STANDARD 17)
+## request C++20
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(LIB_NAME ${PROJECT_NAME})
 
