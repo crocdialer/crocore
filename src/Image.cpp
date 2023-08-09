@@ -1,27 +1,16 @@
-// __ ___ ____ _____ ______ _______ ________ _______ ______ _____ ____ ___ __
-//
-// Copyright (C) 2012-2016, Fabian Schmidt <crocdialer@googlemail.com>
-//
-// It is distributed under the Boost Software License, Version 1.0.
-// (See accompanying file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt
-// __ ___ ____ _____ ______ _______ ________ _______ ______ _____ ____ ___ __
-
 //  Image
 //
 //  Created by Croc Dialer on 11/09/16.
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_STDIO
-
 #include "stb_image.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-
+#define _CRT_SECURE_NO_WARNINGS
 #include "stb_image_write.h"
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
-
 #include "stb_image_resize.h"
 
 #include "crocore/filesystem.hpp"
