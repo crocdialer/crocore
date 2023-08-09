@@ -23,7 +23,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules ${CMAKE_MODULE_P
 set(LIBS ${LIBS})
 
 ##### BOOST
-set(BOOST_COMPONENTS system)
+set(BOOST_COMPONENTS system program_options)
 if (BUILD_TESTS)
     ENABLE_TESTING()
     set(BOOST_COMPONENTS ${BOOST_COMPONENTS} unit_test_framework)
