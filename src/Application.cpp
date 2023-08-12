@@ -75,7 +75,7 @@ int Application::run()
     // manage teardown, save stuff etc.
     teardown();
 
-    return EXIT_SUCCESS;
+    return return_type;
 }
 
 double Application::application_time() const

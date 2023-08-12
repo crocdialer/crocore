@@ -25,6 +25,8 @@ public:
 
     std::atomic<bool> running = false;
 
+    std::atomic<int> return_type = EXIT_SUCCESS;
+
     std::atomic<bool> loop_throttling = false;
 
     std::atomic<double> target_loop_frequency = 0.f;
