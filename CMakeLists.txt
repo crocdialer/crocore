@@ -23,7 +23,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules ${CMAKE_MODULE_P
 set(LIBS ${LIBS})
 
 ##### BOOST
-set(BOOST_COMPONENTS system program_options)
+set(BOOST_COMPONENTS program_options)
 if (BUILD_TESTS)
     ENABLE_TESTING()
     set(BOOST_COMPONENTS ${BOOST_COMPONENTS} unit_test_framework)
@@ -43,12 +43,6 @@ set(LIBS ${LIBS} spdlog)
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory(submodules/json)
 set(LIBS ${LIBS} nlohmann_json::nlohmann_json)
-
-##### TODO: source out CURL
-find_package(CURL REQUIRED)
-include_directories(${CURL_INCLUDE_DIR})
-set(LIBS ${LIBS} ${CURL_LIBRARY})
-#####
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
