@@ -16,7 +16,6 @@ DEFINE_CLASS_PTR(Allocator)
 class Allocator
 {
 public:
-
     /**
      * @brief   state_t is an aggregate,
      *          grouping information about the current state of an Allocator.
@@ -57,7 +56,30 @@ public:
      * @brief   Return a summary of the allocator's internal state.
      */
     [[nodiscard]] virtual Allocator::state_t state() const = 0;
+};
 
+template<class T>
+struct stl_allocator
+{
+    using value_type = T;
+
+    explicit stl_allocator(AllocatorPtr allocator_ = nullptr) : allocator(std::move(allocator_)) {}
+
+    template<class U>
+    constexpr explicit stl_allocator(const stl_allocator<U> &other) noexcept : allocator(other.allocator)
+    {}
+
+    [[nodiscard]] T *allocate(std::size_t n)
+    {
+        if(n > std::numeric_limits<std::size_t>::max() / sizeof(T)) throw std::bad_array_new_length();
+        T *ptr = allocator ? static_cast<T *>(allocator->allocate(n * sizeof(T))) : nullptr;
+        if(ptr) { return ptr; }
+        throw std::bad_alloc();
+    }
+
+    void deallocate(T *p, std::size_t) noexcept { allocator->free(p); }
+
+    AllocatorPtr allocator;
 };
 
 }// namespace crocore
@@ -84,8 +106,4 @@ inline void *operator new(size_t num_bytes, const crocore::AllocatorPtr &allocat
  *          Do not invoke delete on memory obtained from an uf::Allocator.
  *          Purpose is solely exception-safe usage of above operator-new.
  */
-inline void operator delete(void *ptr, const crocore::AllocatorPtr &allocator)
-{
-    allocator->free(ptr);
-}
-
+inline void operator delete(void *ptr, const crocore::AllocatorPtr &allocator) { allocator->free(ptr); }
