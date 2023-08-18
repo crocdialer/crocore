@@ -31,7 +31,7 @@ if (BUILD_TESTS)
         add_definitions(-DBOOST_TEST_DYN_LINK)
     endif (BUILD_SHARED_LIBS)
 endif (BUILD_TESTS)
-find_package(Boost REQUIRED COMPONENTS ${BOOST_COMPONENTS})
+find_package(Boost COMPONENTS ${BOOST_COMPONENTS})
 include_directories(${Boost_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${Boost_LIBRARIES})
 #####
