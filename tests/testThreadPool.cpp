@@ -21,7 +21,7 @@ std::vector<std::future<float>> schedule_work(crocore::ThreadPool &pool)
 
             for(uint32_t i = 0; i < n; ++i)
             {
-                sum += sqrtf(i);
+                sum += sqrtf(static_cast<float>(i));
             }
             return sum;
         };

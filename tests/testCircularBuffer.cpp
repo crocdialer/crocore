@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE( testCircularBuffer )
     for(uint32_t i = 0; i < num_elems; i++)
     {
         BOOST_CHECK(circ_buf.size() == std::min<uint32_t>(i, capacity));
-        circ_buf.push_back(crocore::random_int(0, 100));
+        circ_buf.push_back(static_cast<float>(crocore::random_int(0, 100)));
     }
     printf("mean: %.2f\n", crocore::mean(circ_buf));
     printf("standard deviation: %.2f\n", crocore::standard_deviation(circ_buf));
