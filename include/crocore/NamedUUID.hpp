@@ -13,8 +13,8 @@ namespace crocore
 
 //! helper-macro to define a NamedId
 #define DEFINE_NAMED_UUID(UUID_NAME) \
-namespace named_id_internal{ struct UUID_NAME##Param; }\
-using UUID_NAME = crocore::NamedUUID<named_id_internal::UUID_NAME##Param>;
+namespace named_uuid_internal{ struct UUID_NAME##Param; }\
+using UUID_NAME = crocore::NamedUUID<named_uuid_internal::UUID_NAME##Param>;
 
 /**
  * @brief   NamedIdBase is a common base-class for all NamedIds and offers a shared,
@@ -45,7 +45,9 @@ template<typename T>
 class NamedUUID : public NamedUUIDBase
 {
 public:
-    static NamedUUID nil() { return NamedUUID(uuids::uuid()); }
+    static constexpr NamedUUID nil() { return NamedUUID(uuids::uuid()); }
+
+    static NamedUUID random() { return NamedUUID(generator()()); }
 
     NamedUUID() = default;
 
