@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.12)
 ## define our project
 project(crocore)
 
-option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
+option(BUILD_SHARED_LIBS "Build Shared Libraries" OFF)
 option(BUILD_TESTS "Build Tests" ON)
 
 ## request C++20
@@ -43,7 +43,6 @@ else()
 endif()
 
 if (BUILD_TESTS)
-
     ##### gtest
     set(gtest_force_shared_crt on)# this bs is only required for viusal studio
     add_subdirectory(submodules/googletest EXCLUDE_FROM_ALL)
