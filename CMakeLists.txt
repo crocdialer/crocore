@@ -32,6 +32,7 @@ add_subdirectory(submodules/json)
 set(LIBS ${LIBS} nlohmann_json::nlohmann_json)
 
 ##### gtest
+set(gtest_force_shared_crt on)# this bs is only required for viusal studio
 add_subdirectory(submodules/googletest EXCLUDE_FROM_ALL)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
