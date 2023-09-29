@@ -11,11 +11,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(LIB_NAME ${PROJECT_NAME})
 
-set(LIB_TYPE SHARED)
-if (NOT BUILD_SHARED_LIBS)
+if (BUILD_SHARED_LIBS)
+    set(LIB_TYPE SHARED)
+else()
     set(LIB_TYPE STATIC)
-    set(Boost_USE_STATIC_LIBS ON)
-endif (NOT BUILD_SHARED_LIBS)
+endif (BUILD_SHARED_LIBS)
 
 ## cmake modules
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules ${CMAKE_MODULE_PATH})
@@ -31,10 +31,6 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory(submodules/json)
 set(LIBS ${LIBS} nlohmann_json::nlohmann_json)
 
-##### gtest
-set(gtest_force_shared_crt on)# this bs is only required for viusal studio
-add_subdirectory(submodules/googletest EXCLUDE_FROM_ALL)
-
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # add library-target
@@ -47,6 +43,11 @@ else()
 endif()
 
 if (BUILD_TESTS)
+
+    ##### gtest
+    set(gtest_force_shared_crt on)# this bs is only required for viusal studio
+    add_subdirectory(submodules/googletest EXCLUDE_FROM_ALL)
+
     enable_testing()
     add_subdirectory(tests)
 endif (BUILD_TESTS)
