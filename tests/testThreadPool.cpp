@@ -1,11 +1,4 @@
-//  See http://www.boost.org/libs/test for the library home page.
-
-// Boost.Test
-
-// each test module could contain no more then one 'main' file with init function defined
-// alternatively you could define init function yourself
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
+#include <gtest/gtest.h>
 #include "crocore/crocore.hpp"
 #include "crocore/ThreadPool.hpp"
 
@@ -27,26 +20,25 @@ std::vector<std::future<float>> schedule_work(crocore::ThreadPool &pool)
         };
         async_tasks.emplace_back(pool.post(fn, n));
     }
-
-    // check if all futures are valid
-    for(auto& future : async_tasks){ BOOST_CHECK(future.valid()); }
     return async_tasks;
 }
 
 //____________________________________________________________________________//
 
-BOOST_AUTO_TEST_CASE( testThreadPool )
+TEST(ThreadPool, basic)
 {
     auto pool = crocore::ThreadPool(2);
     std::vector<std::future<float>> futures;
 
-    BOOST_CHECK(pool.num_threads() == 2);
+    ASSERT_TRUE(pool.num_threads() == 2);
     futures = schedule_work(pool);
+    for(auto& f : futures){ ASSERT_TRUE(f.valid()); }
     crocore::wait_all(futures);
 
     pool.set_num_threads(4);
-    BOOST_CHECK(pool.num_threads() == 4);
+    ASSERT_TRUE(pool.num_threads() == 4);
     futures = schedule_work(pool);
+    for(auto& f : futures){ ASSERT_TRUE(f.valid()); }
     for(auto& f : futures){ f.get(); }
 }
 

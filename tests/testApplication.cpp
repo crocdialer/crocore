@@ -1,12 +1,4 @@
-//  See http://www.boost.org/libs/test for the library home page.
-
-// Boost.Test
-
-// each test module could contain no more then one 'main' file with init function defined
-// alternatively you could define init function yourself
-#define BOOST_TEST_MAIN
-
-#include <boost/test/unit_test.hpp>
+#include <gtest/gtest.h>
 #include "crocore/Application.hpp"
 
 constexpr uint32_t num_runs = 100;
@@ -47,15 +39,15 @@ private:
     void poll_events() override { num_poll_events++; }
 };
 
-BOOST_AUTO_TEST_CASE(testApplication)
+TEST(testApplication, basic)
 {
     crocore::Application::create_info_t create_info = {};
     auto app = std::make_shared<TestApplication>(create_info);
 
-    BOOST_CHECK_EQUAL(app->run(), EXIT_SUCCESS);
-    BOOST_CHECK(app->setup_complete);
-    BOOST_CHECK(app->teardown_complete);
-    BOOST_CHECK(app->background_task_complete);
-    BOOST_CHECK_EQUAL(app->num_poll_events, app->num_updates);
-    BOOST_CHECK_EQUAL(num_runs, app->num_updates);
+    ASSERT_EQ(app->run(), EXIT_SUCCESS);
+    ASSERT_TRUE(app->setup_complete);
+    ASSERT_TRUE(app->teardown_complete);
+    ASSERT_TRUE(app->background_task_complete);
+    ASSERT_EQ(app->num_poll_events, app->num_updates);
+    ASSERT_EQ(num_runs, app->num_updates);
 }

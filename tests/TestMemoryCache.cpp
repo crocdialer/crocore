@@ -1,12 +1,8 @@
-#define BOOST_TEST_MAIN
-
-#include <boost/test/unit_test.hpp>
-
+#include <gtest/gtest.h>
 #include <crocore/MemoryCache.hpp>
 #include <unordered_map>
 
-
-BOOST_AUTO_TEST_CASE(Constructors)
+TEST(MemoryCache, Constructors)
 {
     // nothing fancy here
     {
@@ -16,17 +12,16 @@ BOOST_AUTO_TEST_CASE(Constructors)
         createInfo.min_size = 1U << 12U;
 
         // check for existence of default allocator/de-allocator (malloc/free)
-        BOOST_CHECK(createInfo.alloc_fn);
-        BOOST_CHECK(createInfo.dealloc_fn);
+        ASSERT_TRUE(createInfo.alloc_fn);
+        ASSERT_TRUE(createInfo.dealloc_fn);
 
         auto cache = crocore::MemoryCache::create(createInfo);
 
-        BOOST_CHECK_NE(cache, nullptr);
+        ASSERT_NE(cache, nullptr);
     }
 }
 
-
-BOOST_AUTO_TEST_CASE(Allocations)
+TEST(MemoryCache, Allocations)
 {
     crocore::MemoryCache::create_info_t create_info;
 
@@ -38,7 +33,7 @@ BOOST_AUTO_TEST_CASE(Allocations)
 
     auto cache = crocore::MemoryCache::create(create_info);
 
-    BOOST_CHECK_NE(cache, nullptr);
+    ASSERT_NE(cache, nullptr);
 
     constexpr size_t num_bytes_32Mb = 1U << 25U;
     constexpr size_t num_bytes_16Mb = 1U << 24U;
@@ -46,7 +41,7 @@ BOOST_AUTO_TEST_CASE(Allocations)
 
     // allocate first block
     void* ptr1 = cache->allocate(num_bytes_32Mb);
-    BOOST_CHECK_NE(ptr1, nullptr);
+    ASSERT_NE(ptr1, nullptr);
 
     // free again
     cache->free(ptr1);
@@ -55,21 +50,21 @@ BOOST_AUTO_TEST_CASE(Allocations)
     void* ptr2 = cache->allocate(num_bytes_1Mb);
 
     // allocation succeeded
-    BOOST_CHECK_NE(ptr2, nullptr);
+    ASSERT_NE(ptr2, nullptr);
 
-    BOOST_CHECK_EQUAL(cache->state().num_allocations, 2);
-    BOOST_CHECK_EQUAL(cache->state().num_bytes_allocated, num_bytes_32Mb + num_bytes_1Mb);
-    BOOST_CHECK_EQUAL(cache->state().num_bytes_used, num_bytes_1Mb);
+    ASSERT_EQ(cache->state().num_allocations, 2);
+    ASSERT_EQ(cache->state().num_bytes_allocated, num_bytes_32Mb + num_bytes_1Mb);
+    ASSERT_EQ(cache->state().num_bytes_used, num_bytes_1Mb);
 
     // should have been assigned different chunks
     // -> 32MB chunk is too big and was not re-used here
-    BOOST_CHECK_NE(ptr1, ptr2);
+    ASSERT_NE(ptr1, ptr2);
 
     void* ptr3 = cache->allocate(num_bytes_16Mb);
-    BOOST_CHECK_NE(ptr3, nullptr);
+    ASSERT_NE(ptr3, nullptr);
 
     // corner case, 32MB chunk should have been re-used
-    BOOST_CHECK_EQUAL(ptr1, ptr3);
+    ASSERT_EQ(ptr1, ptr3);
 
     // free once again
     cache->free(ptr3);
@@ -78,7 +73,7 @@ BOOST_AUTO_TEST_CASE(Allocations)
     ptr3 = cache->allocate(num_bytes_16Mb - 1);
 
     // corner case, 32MB chunk should NOT have been re-used
-    BOOST_CHECK_NE(ptr1, ptr3);
+    ASSERT_NE(ptr1, ptr3);
 
     // check minimum size
     void *ptr4 = cache->allocate(1);
@@ -86,21 +81,21 @@ BOOST_AUTO_TEST_CASE(Allocations)
     void *ptr5 = cache->allocate(create_info.min_size);
 
     // 1 byte and min_size allocation end up being the same
-    BOOST_CHECK_EQUAL(ptr4, ptr5);
+    ASSERT_EQ(ptr4, ptr5);
 
     // free once again
     cache->free(ptr3);
 
-    BOOST_CHECK_EQUAL(cache->state().num_allocations, 4);
+    ASSERT_EQ(cache->state().num_allocations, 4);
 
     // frees unused chunks
     cache->shrink();
 
-    BOOST_CHECK_EQUAL(cache->state().num_allocations, 2);
+    ASSERT_EQ(cache->state().num_allocations, 2);
 }
 
 //! test leak-free destruction via baseclass-pointer
-BOOST_AUTO_TEST_CASE(BaseClassPointer)
+TEST(MemoryCache, BaseClassPointer)
 {
     crocore::MemoryCache::create_info_t create_info;
 
@@ -115,11 +110,11 @@ BOOST_AUTO_TEST_CASE(BaseClassPointer)
     crocore::AllocatorPtr allocator = crocore::MemoryCache::create(create_info);
 
     // allocate something
-    BOOST_CHECK_NE(allocator->allocate(42), nullptr);
+    ASSERT_NE(allocator->allocate(42), nullptr);
 
     // MemoryCache reset via baseclass-pointer, still held some memory
     allocator.reset();
 
     // flag should have been set -> virtual destruction worked + no leak
-    BOOST_CHECK(flag);
+    ASSERT_TRUE(flag);
 }

@@ -1,7 +1,4 @@
-#define BOOST_TEST_MAIN
-
-#include <boost/test/unit_test.hpp>
-
+#include <gtest/gtest.h>
 #include "crocore/BuddyPool.hpp"
 
 crocore::AllocatorPtr create_base_allocator()
@@ -16,7 +13,7 @@ crocore::AllocatorPtr create_base_allocator()
     return crocore::BuddyPool::create(fmt);
 }
 
-BOOST_AUTO_TEST_CASE(stl_custom_vector_allocator)
+TEST(stl_custom_allocator, vector)
 {
     // construct a crocore::stl_allocator, wrapping an existing crocore::Allocator
     auto base_allocator = create_base_allocator();
@@ -29,20 +26,20 @@ BOOST_AUTO_TEST_CASE(stl_custom_vector_allocator)
         constexpr size_t elem_count = 42;
         stl_vec_custom.resize(elem_count);
 
-        BOOST_CHECK_EQUAL(stl_vec_custom.size(), elem_count);
-        BOOST_CHECK(base_allocator->state().num_bytes_used >= stl_vec_custom.capacity() * sizeof(int));
+        ASSERT_EQ(stl_vec_custom.size(), elem_count);
+        ASSERT_TRUE(base_allocator->state().num_bytes_used >= stl_vec_custom.capacity() * sizeof(int));
     }
 
     // default ctor
     {
         // default ctor works but no backend-allocator is present -> will throw upon usage
         std::vector<int, crocore::stl_allocator<int>> stl_vec_default_ctor;
-        BOOST_CHECK_THROW(stl_vec_default_ctor.resize(10), std::bad_alloc);
+        ASSERT_THROW(stl_vec_default_ctor.resize(10), std::bad_alloc);
     }
-    BOOST_CHECK_EQUAL(base_allocator->state().num_bytes_used, 0);
+    ASSERT_EQ(base_allocator->state().num_bytes_used, 0);
 }
 
-BOOST_AUTO_TEST_CASE(stl_custom_map_allocator)
+TEST(stl_custom_allocator, map)
 {
     // construct a crocore::stl_allocator, wrapping an existing crocore::Allocator
     auto base_allocator = create_base_allocator();
@@ -62,10 +59,10 @@ BOOST_AUTO_TEST_CASE(stl_custom_map_allocator)
         stl_map_custom["poop"] = 69;
         stl_map_custom["foo"] = 42;
 
-        BOOST_CHECK_EQUAL(stl_map_custom.size(), 2);
-        BOOST_CHECK_EQUAL(stl_map_custom["foo"], 42);
+        ASSERT_EQ(stl_map_custom.size(), 2);
+        ASSERT_EQ(stl_map_custom["foo"], 42);
     }
-    BOOST_CHECK_EQUAL(base_allocator->state().num_bytes_used, 0);
+    ASSERT_EQ(base_allocator->state().num_bytes_used, 0);
 
     //    std::unordered_map
     {
@@ -75,8 +72,8 @@ BOOST_AUTO_TEST_CASE(stl_custom_map_allocator)
         auto stl_map_custom = custom_map_type_t(custom_allocator);
         stl_map_custom["poop"] = 69;
         stl_map_custom["foo"] = 42;
-        BOOST_CHECK_EQUAL(stl_map_custom.size(), 2);
-        BOOST_CHECK_EQUAL(stl_map_custom["foo"], 42);
+        ASSERT_EQ(stl_map_custom.size(), 2);
+        ASSERT_EQ(stl_map_custom["foo"], 42);
     }
-    BOOST_CHECK_EQUAL(base_allocator->state().num_bytes_used, 0);
+    ASSERT_EQ(base_allocator->state().num_bytes_used, 0);
 }

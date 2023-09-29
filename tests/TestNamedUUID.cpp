@@ -1,11 +1,4 @@
-//  See http://www.boost.org/libs/test for the library home page.
-
-// Boost.Test
-
-// each test module could contain no more then one 'main' file with init function defined
-// alternatively you could define init function yourself
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
+#include <gtest/gtest.h>
 
 #include <set>
 #include "crocore/NamedUUID.hpp"
@@ -15,41 +8,41 @@ using namespace crocore;
 DEFINE_NAMED_UUID(TestId)
 DEFINE_NAMED_UUID(AnotherId)
 
-BOOST_AUTO_TEST_CASE(nilId)
+TEST(NamedUUID, nilId)
 {
     TestId nil = TestId::nil();
-    BOOST_CHECK(nil.is_nil());
-    BOOST_CHECK(!nil);
+    ASSERT_TRUE(nil.is_nil());
+    ASSERT_TRUE(!nil);
 }
 
-BOOST_AUTO_TEST_CASE(newRandomId)
+TEST(NamedUUID, newRandomId)
 {
     TestId a;
     TestId b;
 
-    BOOST_CHECK(!a.is_nil());
-    BOOST_CHECK(!b.is_nil());
-    BOOST_CHECK(a != b);
-    BOOST_CHECK(!(a == b));
-    BOOST_CHECK_NE(a, b);
+    ASSERT_TRUE(!a.is_nil());
+    ASSERT_TRUE(!b.is_nil());
+    ASSERT_TRUE(a != b);
+    ASSERT_TRUE(!(a == b));
+    ASSERT_NE(a, b);
 }
 
-BOOST_AUTO_TEST_CASE(trivialCopyConstruct)
+TEST(NamedUUID, trivialCopyConstruct)
 {
     TestId a;
     TestId b(a);
-    BOOST_CHECK_EQUAL(a, b);
+    ASSERT_EQ(a, b);
 }
 
-BOOST_AUTO_TEST_CASE(copyAssign)
+TEST(NamedUUID, copyAssign)
 {
     TestId a;
     TestId b;
     b = a;
-    BOOST_CHECK(a == b);
+    ASSERT_TRUE(a == b);
 }
 
-BOOST_AUTO_TEST_CASE(useInMap)
+TEST(NamedUUID, useInMap)
 {
     TestId a;
     TestId b;
@@ -58,11 +51,11 @@ BOOST_AUTO_TEST_CASE(useInMap)
             {a, "a"},
             {b, "b"}};
 
-    BOOST_CHECK_EQUAL(map[a], "a");
-    BOOST_CHECK_EQUAL(map[b], "b");
+    ASSERT_EQ(map[a], "a");
+    ASSERT_EQ(map[b], "b");
 }
 
-BOOST_AUTO_TEST_CASE(useInUnorderedMap)
+TEST(NamedUUID, useInUnorderedMap)
 {
     TestId a;
     TestId b;
@@ -71,22 +64,22 @@ BOOST_AUTO_TEST_CASE(useInUnorderedMap)
             {a, "a"},
             {b, "b"}};
 
-    BOOST_CHECK_EQUAL(map[a], "a");
-    BOOST_CHECK_EQUAL(map[b], "b");
+    ASSERT_EQ(map[a], "a");
+    ASSERT_EQ(map[b], "b");
 }
 
-BOOST_AUTO_TEST_CASE(useInSet)
+TEST(NamedUUID, useInSet)
 {
     TestId a;
     TestId b;
     TestId c;
     std::set<TestId> set = {a, b};
 
-    BOOST_CHECK(set.contains(a));
-    BOOST_CHECK(!set.contains(c));
+    ASSERT_TRUE(set.contains(a));
+    ASSERT_TRUE(!set.contains(c));
 }
 
-BOOST_AUTO_TEST_CASE(different)
+TEST(NamedUUID, different)
 {
     AnotherId a;
     TestId b;

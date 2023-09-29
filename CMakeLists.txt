@@ -22,20 +22,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules ${CMAKE_MODULE_P
 
 set(LIBS ${LIBS})
 
-##### BOOST
-set(BOOST_COMPONENTS program_options)
-if (BUILD_TESTS)
-    ENABLE_TESTING()
-    set(BOOST_COMPONENTS ${BOOST_COMPONENTS} unit_test_framework)
-    if (BUILD_SHARED_LIBS)
-        add_definitions(-DBOOST_TEST_DYN_LINK)
-    endif (BUILD_SHARED_LIBS)
-endif (BUILD_TESTS)
-find_package(Boost COMPONENTS ${BOOST_COMPONENTS})
-include_directories(${Boost_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${Boost_LIBRARIES})
-#####
-
+##### spdlog
 add_subdirectory(submodules/spdlog EXCLUDE_FROM_ALL)
 set(LIBS ${LIBS} spdlog)
 
@@ -43,6 +30,9 @@ set(LIBS ${LIBS} spdlog)
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory(submodules/json)
 set(LIBS ${LIBS} nlohmann_json::nlohmann_json)
+
+##### gtest
+add_subdirectory(submodules/googletest EXCLUDE_FROM_ALL)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 

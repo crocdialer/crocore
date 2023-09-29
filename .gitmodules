@@ -6,3 +6,7 @@
 	path = submodules/json
 	url = https://github.com/nlohmann/json
 	shallow = true
+[submodule "submodules/googletest"]
+	path = submodules/googletest
+	url = git@github.com:google/googletest.git
+	shallow = true
