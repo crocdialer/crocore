@@ -436,8 +436,7 @@ inline T random_int(const T &min, const T &max)
 
     // random mean
     std::default_random_engine e1(r());
-    std::uniform_int_distribution<T>
-            uniform_dist(min, std::nextafter(max, std::numeric_limits<T>::max()));
+    std::uniform_int_distribution<T> uniform_dist(min, max);
     return uniform_dist(e1);
 }
 
