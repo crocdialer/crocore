@@ -4,19 +4,25 @@
 
 #pragma once
 
-#include "crocore.hpp"
 #include "Area.hpp"
+#include "crocore.hpp"
 
-namespace crocore {
+namespace crocore
+{
 
-DEFINE_CLASS_PTR(Image);
+DEFINE_CLASS_PTR(Image)
 
 class Image
 {
 public:
     enum class Type
     {
-        UNKNOWN = 0, GRAY, RGB, BGR, RGBA, BGRA
+        UNKNOWN = 0,
+        GRAY,
+        RGB,
+        BGR,
+        RGBA,
+        BGRA
     };
 
     [[nodiscard]] virtual uint32_t width() const = 0;
@@ -49,12 +55,11 @@ template<class T>
 class Image_ : public Image
 {
 public:
-
     using Ptr = std::shared_ptr<Image_<T>>;
     using ConstPtr = std::shared_ptr<const Image_<T>>;
 
-    static Ptr create(T *theData, uint32_t the_width, uint32_t the_height,
-                      uint32_t the_num_components = 0, bool not_dispose = false)
+    static Ptr create(T *theData, uint32_t the_width, uint32_t the_height, uint32_t the_num_components = 0,
+                      bool not_dispose = false)
     {
         return Ptr(new Image_<T>(theData, the_width, the_height, the_num_components, not_dispose));
     };
@@ -66,10 +71,7 @@ public:
 
     inline T *at(uint32_t x, uint32_t y) const { return m_data + (x + y * m_width) * m_num_components * sizeof(T); };
 
-    inline T *data_start_for_roi() const
-    {
-        return m_data + (roi.y * m_width + roi.x) * m_num_components * sizeof(T);
-    }
+    inline T *data_start_for_roi() const { return m_data + (roi.y * m_width + roi.x) * m_num_components * sizeof(T); }
 
     [[nodiscard]] inline size_t num_bytes() const override { return m_height * m_width * m_num_components * sizeof(T); }
 
@@ -88,7 +90,7 @@ public:
 
     [[nodiscard]] inline uint32_t height() const override { return m_height; };
 
-    inline void *data() override { return (void *)m_data; };
+    inline void *data() override { return (void *) m_data; };
 
     [[nodiscard]] inline uint32_t num_components() const override { return m_num_components; };
 
@@ -104,18 +106,11 @@ public:
     friend void swap(Image_<S> &lhs, Image_<S> &rhs);
 
 private:
-
     Image_() = default;
 
-    Image_(T *data,
-           uint32_t width,
-           uint32_t height,
-           uint32_t the_num_components,
-           bool not_dispose);
+    Image_(T *data, uint32_t width, uint32_t height, uint32_t the_num_components, bool not_dispose);
 
-    Image_(uint32_t width,
-           uint32_t height,
-           uint32_t num_components);
+    Image_(uint32_t width, uint32_t height, uint32_t num_components);
 
     T *m_data = nullptr;
     uint32_t m_width = 0, m_height = 0;
@@ -126,7 +121,7 @@ private:
 class ImageLoadException : public std::runtime_error
 {
 public:
-    ImageLoadException() : std::runtime_error("Got trouble decoding image file") {};
+    ImageLoadException() : std::runtime_error("Got trouble decoding image file"){};
 };
 
 ImagePtr create_image_from_file(const std::string &the_path, int num_channels = 0);
@@ -144,5 +139,5 @@ std::vector<uint8_t> encode_png(const ImagePtr &img);
 
 std::vector<uint8_t> encode_jpg(const ImagePtr &img);
 
-ImagePtr compute_distance_field(const ImagePtr& the_img, float spread);
-}
+ImagePtr compute_distance_field(const ImagePtr &the_img, float spread);
+}// namespace crocore

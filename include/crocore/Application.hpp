@@ -9,7 +9,7 @@
 namespace crocore
 {
 
-DEFINE_CLASS_PTR(Application);
+DEFINE_CLASS_PTR(Application)
 
 class Application : public std::enable_shared_from_this<Application>
 {
