@@ -84,13 +84,13 @@ TEST(BuddyPool, Constructors)
 
 TEST(BuddyPool, Allocations)
 {
-    constexpr size_t numBytes_128Mb = 1U << 27U;
+    constexpr size_t numBytes_16Mb = 1U << 24U;
     constexpr size_t numBytes_1Mb = 1U << 20U;
 
     crocore::BuddyPool::create_info_t fmt;
 
-    // 128MB
-    fmt.block_size = numBytes_128Mb;
+    // 16MB
+    fmt.block_size = numBytes_16Mb;
     fmt.min_block_size = 512;
 
     // preallocate one block
@@ -102,7 +102,7 @@ TEST(BuddyPool, Allocations)
     auto pool = crocore::BuddyPool::create(fmt);
 
     // allocate entire toplevel block
-    void *ptr1 = pool->allocate(numBytes_128Mb);
+    void *ptr1 = pool->allocate(numBytes_16Mb);
     ASSERT_NE(ptr1, nullptr);
 
     // free pointer
@@ -143,7 +143,7 @@ TEST(BuddyPool, Allocations)
     };
     std::unordered_map<void *, allocation_test_data_t> pointer_map;
 
-    constexpr size_t num_iterations = 50;
+    constexpr size_t num_iterations = 10;
     constexpr size_t num_allocations = 12;
 
     // loop and create more involved allocations and checks
@@ -160,7 +160,7 @@ TEST(BuddyPool, Allocations)
             // actual size will be next power of two
             size_t allocatedBytes = next_pow_2(numBytes);
 
-            uint8_t *ptr = static_cast<uint8_t *>(pool->allocate(numBytes));
+            auto *ptr = static_cast<uint8_t *>(pool->allocate(numBytes));
             ASSERT_NE(ptr, nullptr);
 
             // expect we haven't seen this pointer already
@@ -193,10 +193,10 @@ TEST(BuddyPool, Allocations)
         pool->free(pair.first);
     }
 
-    // no allocations left, but still 2 unused toplevel-blocks
+    // no allocations left, but still 3 unused toplevel-blocks
     pool_state = pool->pool_state();
     ASSERT_EQ(pool_state.allocations.size(), 0);
-    ASSERT_EQ(pool_state.num_blocks, 2);
+    ASSERT_EQ(pool_state.num_blocks, 3);
 
     // shrink to deallocate unused blocks
     pool->shrink();

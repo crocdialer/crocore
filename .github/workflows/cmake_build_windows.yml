@@ -1,6 +1,7 @@
-name: build_windows
+name: windows_x64
 
 on:
+  workflow_dispatch:
   push:
     branches: [ master, integration ]
   pull_request:

@@ -1,6 +1,7 @@
-name: CMake
+name: ubuntu_x64
 
 on:
+  workflow_dispatch:
   push:
     branches: [ master ]
   pull_request:
