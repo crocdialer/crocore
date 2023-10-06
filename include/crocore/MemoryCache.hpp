@@ -72,7 +72,7 @@ public:
     /**
      * @brief   Return a summary of the allocator's internal state.
      */
-    Allocator::state_t state() const;
+    Allocator::state_t state() const override;
 
 private:
 

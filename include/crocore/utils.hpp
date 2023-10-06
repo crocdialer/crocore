@@ -143,19 +143,6 @@ inline std::string secs_to_time_str(float the_secs)
 
 inline bool is_pow_2(size_t v) { return !(v & (v - 1)); }
 
-inline uint32_t next_pow_2(uint32_t v)
-{
-    if(is_pow_2(v)) { return v; }
-    v--;
-    v |= v >> 1U;
-    v |= v >> 2U;
-    v |= v >> 4U;
-    v |= v >> 8U;
-    v |= v >> 16U;
-    v++;
-    return v;
-}
-
 inline uint64_t next_pow_2(uint64_t v)
 {
     if(is_pow_2(v)) { return v; }
