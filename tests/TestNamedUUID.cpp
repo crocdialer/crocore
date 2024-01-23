@@ -55,6 +55,15 @@ TEST(NamedUUID, useInMap)
     ASSERT_EQ(map[b], "b");
 }
 
+TEST(NamedUUID, hashing)
+{
+    TestId a;
+
+    std::hash<TestId> hasher;
+    size_t h = hasher(a);
+    (void)h;
+}
+
 TEST(NamedUUID, useInUnorderedMap)
 {
     TestId a;

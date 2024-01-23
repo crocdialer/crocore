@@ -157,25 +157,6 @@ inline uint64_t next_pow_2(uint64_t v)
     return v;
 }
 
-template<class T>
-inline void hash_combine(std::size_t &seed, const T &v)
-{
-    std::hash<T> hasher;
-    seed ^= hasher(v) + 0x9e3779b9 + (seed << 6U) + (seed >> 2U);
-}
-
-template<class T, class U>
-struct pair_hash
-{
-    inline size_t operator()(const std::pair<T, U> &the_pair) const
-    {
-        size_t h = 0;
-        hash_combine(h, the_pair.first);
-        hash_combine(h, the_pair.second);
-        return h;
-    }
-};
-
 template<typename T>
 inline T swap_endian(T u)
 {
