@@ -17,7 +17,7 @@ template<typename T>
 class NamedId
 {
 public:
-    static NamedId<T> nil() { return NamedId(0); }
+    static constexpr NamedId<T> nil() { return NamedId(0); }
 
     NamedId() = default;
 
