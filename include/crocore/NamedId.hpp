@@ -33,13 +33,9 @@ public:
 
     friend inline bool operator!=(const NamedId &lhs, const NamedId &rhs) { return lhs.m_id != rhs.m_id; }
 
-    friend void swap(NamedId &lhs, NamedId &rhs) { std::swap(lhs.m_id, rhs.m_id); }
+    [[nodiscard]] uint64_t value() const{ return m_id; }
 
-    friend std::ostream &operator<<(std::ostream &os, const NamedId &self)
-    {
-        os << self.m_id;
-        return os;
-    }
+    friend void swap(NamedId &lhs, NamedId &rhs) { std::swap(lhs.m_id, rhs.m_id); }
 
 private:
     explicit NamedId(uint64_t id) : m_id(id){};
