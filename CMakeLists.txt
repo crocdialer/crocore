@@ -26,11 +26,6 @@ set(LIBS ${LIBS})
 add_subdirectory(submodules/spdlog EXCLUDE_FROM_ALL)
 set(LIBS ${LIBS} spdlog)
 
-##### nlohmann/json
-set(JSON_BuildTests OFF CACHE INTERNAL "")
-add_subdirectory(submodules/json)
-set(LIBS ${LIBS} nlohmann_json::nlohmann_json)
-
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # add library-target
