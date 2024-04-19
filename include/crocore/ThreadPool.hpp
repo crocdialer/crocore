@@ -79,12 +79,12 @@ public:
                 std::make_shared<packaged_task_t>(std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
         auto future = packed_task->get_future();
 
-        // Loop until we can get a job from the free list
+        // loop until we get a task from the free list
         uint32_t index;
         for(;;)
         {
             index = m_tasks.create();
-            if(index != fixed_size_free_list<task_t>::s_invalid_index) break;
+            if(index != fixed_size_free_list<task_t>::s_invalid_index) { break; }
 
             // No jobs available
             assert(false);
@@ -93,7 +93,6 @@ public:
         t = std::bind(&packaged_task_t::operator(), packed_task);
         queue_task(&t);
         m_semaphore.release();
-
         return future;
     }
 
@@ -106,15 +105,18 @@ public:
     std::size_t poll()
     {
         size_t ret = 0;
-        for(uint32_t head = 0; head != m_tail; ++head)
+        if(!m_running && m_threads.empty())
         {
-            // Fetch job
-            task_t *job_ptr = mQueue[head & (QUEUE_SIZE - 1)].exchange(nullptr);
-            if(job_ptr)
+            for(uint32_t head = 0; head != m_tail; ++head)
             {
-                if(*job_ptr) { (*job_ptr)(); }
-                m_tasks.destroy(job_ptr);
-                ret++;
+                // Fetch job
+                task_t *job_ptr = m_queue[head & (QUEUE_SIZE - 1)].exchange(nullptr);
+                if(job_ptr)
+                {
+                    if(*job_ptr) { (*job_ptr)(); }
+                    m_tasks.destroy(job_ptr);
+                    ret++;
+                }
             }
         }
         return ret;
@@ -126,7 +128,7 @@ public:
     void join_all()
     {
         // signal threads that we want to stop and wake them up
-        m_quit = true;
+        m_running = false;
         m_semaphore.release((int32_t) m_threads.size());
 
         for(auto &thread: m_threads)
@@ -148,16 +150,12 @@ public:
         std::unique_lock<std::mutex> lock_lhs(lhs.m_mutex, std::adopt_lock);
         std::unique_lock<std::mutex> lock_rhs(rhs.m_mutex, std::adopt_lock);
 
-        std::swap(lhs.m_running, rhs.m_running);
         std::swap(lhs.m_threads, rhs.m_threads);
-        std::swap(lhs.m_queue, rhs.m_queue);
-
         std::swap(lhs.m_tasks, rhs.m_tasks);
-
-        for(uint32_t i = 0; i < QUEUE_SIZE; ++i) { rhs.mQueue[i] = lhs.mQueue[i].exchange(rhs.mQueue[i]); }
+        for(uint32_t i = 0; i < QUEUE_SIZE; ++i) { rhs.m_queue[i] = lhs.m_queue[i].exchange(rhs.m_queue[i]); }
         std::swap(lhs.m_heads, rhs.m_heads);
         rhs.m_tail = lhs.m_tail.exchange(rhs.m_tail);
-        rhs.m_quit = lhs.m_quit.exchange(rhs.m_quit);
+        rhs.m_running = lhs.m_running.exchange(rhs.m_running);
 
         // TODO: semaphore
     }
@@ -173,18 +171,17 @@ private:
         if(!num_threads) { return; }
         m_threads.resize(num_threads);
 
-        for(auto &t: mQueue) { t = nullptr; }
-        m_quit = false;
+        for(auto &t: m_queue) { t = nullptr; }
+        m_running = true;
 
         // allocate heads
         m_heads = std::make_unique<std::atomic<uint32_t>[]>(num_threads);
         for(uint32_t i = 0; i < num_threads; ++i) { m_heads[i] = 0; }
 
         auto worker_fn = [this](uint32_t thread_idx) noexcept {
-
             auto &head = m_heads[thread_idx];
 
-            while(!m_quit)
+            while(m_running)
             {
                 // Wait for jobs
                 m_semaphore.acquire();
@@ -193,7 +190,7 @@ private:
                 while(head != m_tail)
                 {
                     // Exchange any job pointer we find with a nullptr
-                    std::atomic<task_t *> &task = mQueue[head & (QUEUE_SIZE - 1)];
+                    std::atomic<task_t *> &task = m_queue[head & (QUEUE_SIZE - 1)];
 
                     if(task.load() != nullptr)
                     {
@@ -255,7 +252,7 @@ private:
 
             // Write the job pointer if the slot is empty
             task_t *expected_job = nullptr;
-            bool success = mQueue[old_value & (QUEUE_SIZE - 1)].compare_exchange_strong(expected_job, t);
+            bool success = m_queue[old_value & (QUEUE_SIZE - 1)].compare_exchange_strong(expected_job, t);
 
             // Regardless of who wrote the slot, we will update the tail (if the successful thread got scheduled out
             // after writing the pointer we still want to be able to continue)
@@ -270,9 +267,9 @@ private:
 
     // job queue
     fixed_size_free_list<task_t> m_tasks;
-    std::atomic<task_t *> mQueue[QUEUE_SIZE];
+    std::atomic<task_t *> m_queue[QUEUE_SIZE];
 
-    // Head and tail of the queue, do this value modulo s_max_queue_size - 1 to get the element in the mQueue array
+    // Head and tail of the queue, do this value modulo s_max_queue_size - 1 to get the element in the m_queue array
 
     // per executing thread the head of the current queue
     std::unique_ptr<std::atomic<uint32_t>[]> m_heads = nullptr;
@@ -283,7 +280,7 @@ private:
 
     // semaphore used to signal worker threads
     std::counting_semaphore<32> m_semaphore{0};
-    std::atomic<bool> m_quit = false;
+    std::atomic<bool> m_running = false;
 };
 
 using ThreadPool = ThreadPool_<2048>;
