@@ -12,7 +12,7 @@ inline void fixed_size_free_list<T>::swap(fixed_size_free_list &lhs, fixed_size_
     std::unique_lock<std::mutex> lock_lhs(lhs.m_page_mutex, std::adopt_lock);
     std::unique_lock<std::mutex> lock_rhs(rhs.m_page_mutex, std::adopt_lock);
 
-    lhs.m_num_free_objects = rhs.m_num_free_objects.exchange(lhs.m_num_free_objects);
+    CROCORE_IF_DEBUG(lhs.m_num_free_objects = rhs.m_num_free_objects.exchange(lhs.m_num_free_objects);)
     lhs.m_allocation_tag = rhs.m_allocation_tag.exchange(lhs.m_allocation_tag);
     lhs.m_first_free_object_and_tag = rhs.m_first_free_object_and_tag.exchange(lhs.m_first_free_object_and_tag);
     lhs.m_first_free_object_in_new_page =
@@ -66,7 +66,7 @@ fixed_size_free_list<T>::fixed_size_free_list(uint32_t inMaxObjects, uint32_t in
     m_page_size = inPageSize;
     m_page_shift = std::countr_zero(inPageSize);
     m_object_mask = inPageSize - 1;
-    m_num_free_objects = m_num_pages * inPageSize;
+    CROCORE_IF_DEBUG(m_num_free_objects = m_num_pages * inPageSize;)
 
     // Allocate page table
     m_pages.reset(new storage *[m_num_pages]);
@@ -84,7 +84,7 @@ fixed_size_free_list<T>::fixed_size_free_list(uint32_t inMaxObjects, uint32_t in
 
 template<typename T>
 template<typename... Parameters>
-uint32_t fixed_size_free_list<T>::ConstructObject(Parameters &&...inParameters)
+uint32_t fixed_size_free_list<T>::create(Parameters &&...inParameters)
 {
     for(;;)
     {
@@ -110,9 +110,9 @@ uint32_t fixed_size_free_list<T>::ConstructObject(Parameters &&...inParameters)
             }
 
             // Allocation successful
-            m_num_free_objects.fetch_sub(1, std::memory_order_relaxed);
+            CROCORE_IF_DEBUG(m_num_free_objects.fetch_sub(1, std::memory_order_relaxed);)
 
-            storage &storage = GetStorage(first_free);
+            storage &storage = get_storage(first_free);
             ::new(&storage.object) T(std::forward<Parameters>(inParameters)...);
             storage.next_free_object.store(first_free, std::memory_order_release);
             return first_free;
@@ -120,7 +120,7 @@ uint32_t fixed_size_free_list<T>::ConstructObject(Parameters &&...inParameters)
         else
         {
             // Load next pointer
-            uint32_t new_first_free = GetStorage(first_free).next_free_object.load(std::memory_order_acquire);
+            uint32_t new_first_free = get_storage(first_free).next_free_object.load(std::memory_order_acquire);
 
             // Construct a new first free object tag
             uint64_t new_first_free_object_and_tag =
@@ -132,8 +132,8 @@ uint32_t fixed_size_free_list<T>::ConstructObject(Parameters &&...inParameters)
                        first_free_object_and_tag, new_first_free_object_and_tag, std::memory_order_release))
             {
                 // Allocation successful
-                m_num_free_objects.fetch_sub(1, std::memory_order_relaxed);
-                storage &storage = GetStorage(first_free);
+                CROCORE_IF_DEBUG(m_num_free_objects.fetch_sub(1, std::memory_order_relaxed);)
+                storage &storage = get_storage(first_free);
                 ::new(&storage.object) T(std::forward<Parameters>(inParameters)...);
                 storage.next_free_object.store(first_free, std::memory_order_release);
                 return first_free;
@@ -143,10 +143,10 @@ uint32_t fixed_size_free_list<T>::ConstructObject(Parameters &&...inParameters)
 }
 
 template<typename T>
-void fixed_size_free_list<T>::AddObjectToBatch(Batch &ioBatch, uint32_t inObjectIndex)
+void fixed_size_free_list<T>::add_to_batch(Batch &ioBatch, uint32_t inObjectIndex)
 {
     // Trying to add a object to the batch that is already in a free list
-    assert(GetStorage(inObjectIndex).next_free_object.load(std::memory_order_relaxed) == inObjectIndex);
+    assert(get_storage(inObjectIndex).next_free_object.load(std::memory_order_relaxed) == inObjectIndex);
 
     // Trying to reuse a batch that has already been freed
     assert(ioBatch.mNumObjects != uint32_t(-1));
@@ -160,7 +160,7 @@ void fixed_size_free_list<T>::AddObjectToBatch(Batch &ioBatch, uint32_t inObject
 }
 
 template<typename T>
-void fixed_size_free_list<T>::DestructObjectBatch(Batch &ioBatch)
+void fixed_size_free_list<T>::destroy_batch(Batch &ioBatch)
 {
     if(ioBatch.mFirstObjectIndex != s_invalid_index)
     {
@@ -169,7 +169,7 @@ void fixed_size_free_list<T>::DestructObjectBatch(Batch &ioBatch)
         {
             uint32_t object_idx = ioBatch.mFirstObjectIndex;
             do {
-                storage &storage = GetStorage(object_idx);
+                storage &storage = get_storage(object_idx);
                 storage.object.~Object();
                 object_idx = storage.next_free_object.load(std::memory_order_relaxed);
             } while(object_idx != s_invalid_index);
@@ -196,7 +196,7 @@ void fixed_size_free_list<T>::DestructObjectBatch(Batch &ioBatch)
                        first_free_object_and_tag, new_first_free_object_and_tag, std::memory_order_release))
             {
                 // Free successful
-                m_num_free_objects.fetch_add(ioBatch.mNumObjects, std::memory_order_relaxed);
+                CROCORE_IF_DEBUG(m_num_free_objects.fetch_add(ioBatch.mNumObjects, std::memory_order_relaxed);)
 
                 // Mark the batch as freed
 #ifdef JPH_ENABLE_ASSERTS
@@ -209,12 +209,12 @@ void fixed_size_free_list<T>::DestructObjectBatch(Batch &ioBatch)
 }
 
 template<typename T>
-void fixed_size_free_list<T>::DestructObject(uint32_t inObjectIndex)
+void fixed_size_free_list<T>::destroy(uint32_t inObjectIndex)
 {
     assert(inObjectIndex != s_invalid_index);
 
     // Call destructor
-    storage &storage = GetStorage(inObjectIndex);
+    storage &storage = get_storage(inObjectIndex);
     storage.object.~T();
 
     // Add to object free list
@@ -236,18 +236,18 @@ void fixed_size_free_list<T>::DestructObject(uint32_t inObjectIndex)
                                                              std::memory_order_release))
         {
             // Free successful
-            m_num_free_objects.fetch_add(1, std::memory_order_relaxed);
+            CROCORE_IF_DEBUG(m_num_free_objects.fetch_add(1, std::memory_order_relaxed);)
             return;
         }
     }
 }
 
 template<typename T>
-inline void fixed_size_free_list<T>::DestructObject(T *inObject)
+inline void fixed_size_free_list<T>::destroy(T *inObject)
 {
     uint32_t index = reinterpret_cast<storage *>(inObject)->next_free_object.load(std::memory_order_relaxed);
     assert(index < m_num_objects_allocated);
-    DestructObject(index);
+    destroy(index);
 }
 
 }// namespace crocore

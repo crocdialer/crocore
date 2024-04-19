@@ -23,6 +23,12 @@
 namespace crocore
 {
 
+#ifdef NDEBUG
+#define CROCORE_IF_DEBUG(...)
+#else
+#define CROCORE_IF_DEBUG(...)		__VA_ARGS__
+#endif
+
 template<typename T>
 std::vector<uint8_t> to_bytes(const T &t)
 {

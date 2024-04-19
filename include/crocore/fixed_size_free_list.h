@@ -40,13 +40,13 @@ public:
 
     /// Lockless construct a new object, inParameters are passed on to the constructor
     template<typename... Parameters>
-    inline uint32_t ConstructObject(Parameters &&...inParameters);
+    inline uint32_t create(Parameters &&...inParameters);
 
     /// Lockless destruct an object and return it to the free pool
-    inline void DestructObject(uint32_t inObjectIndex);
+    inline void destroy(uint32_t inObjectIndex);
 
     /// Lockless destruct an object and return it to the free pool
-    inline void DestructObject(T *inObject);
+    inline void destroy(T *inObject);
 
     /// A batch of objects that can be destructed
     struct Batch
@@ -59,16 +59,16 @@ public:
     /// Add a object to an existing batch to be destructed.
     /// Adding objects to a batch does not destroy or modify the objects, this will merely link them
     /// so that the entire batch can be returned to the free list in a single atomic operation
-    inline void AddObjectToBatch(Batch &ioBatch, uint32_t inObjectIndex);
+    inline void add_to_batch(Batch &ioBatch, uint32_t inObjectIndex);
 
     /// Lockless destruct batch of objects
-    inline void DestructObjectBatch(Batch &ioBatch);
+    inline void destroy_batch(Batch &ioBatch);
 
     /// Access an object by index.
-    inline T &Get(uint32_t inObjectIndex) { return GetStorage(inObjectIndex).object; }
+    inline T &get(uint32_t inObjectIndex) { return get_storage(inObjectIndex).object; }
 
     /// Access an object by index.
-    inline const T &Get(uint32_t inObjectIndex) const { return GetStorage(inObjectIndex).object; }
+    inline const T &get(uint32_t inObjectIndex) const { return get_storage(inObjectIndex).object; }
 
     inline void swap(fixed_size_free_list &lhs, fixed_size_free_list &rhs);
 
@@ -86,19 +86,17 @@ private:
     static_assert(alignof(storage) == alignof(T), "Object not properly aligned");
 
     /// Access the object storage given the object index
-    inline const storage &GetStorage(uint32_t inObjectIndex) const
+    inline const storage &get_storage(uint32_t inObjectIndex) const
     {
         return m_pages[inObjectIndex >> m_page_shift][inObjectIndex & m_object_mask];
     }
-    inline storage &GetStorage(uint32_t inObjectIndex)
+    inline storage &get_storage(uint32_t inObjectIndex)
     {
         return m_pages[inObjectIndex >> m_page_shift][inObjectIndex & m_object_mask];
     }
 
     /// Number of objects that we currently have in the free list / new pages
-    //#ifdef JPH_ENABLE_ASSERTS
-    std::atomic<uint32_t> m_num_free_objects;
-    //#endif// JPH_ENABLE_ASSERTS
+    CROCORE_IF_DEBUG(std::atomic<uint32_t> m_num_free_objects;)
 
     /// Simple counter that makes the first free object pointer update with every CAS so that we don't suffer from the ABA problem
     std::atomic<uint32_t> m_allocation_tag = 1;

@@ -78,23 +78,17 @@ public:
                 std::make_shared<packaged_task_t>(std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
         auto future = packed_task->get_future();
 
-        //        {
-        //            std::unique_lock<std::mutex> lock(m_mutex);
-        //            m_queue.push_back(std::bind(&packaged_task_t::operator(), packed_task));
-        //        }
-        //        m_condition.notify_one();
-
         // Loop until we can get a job from the free list
         uint32_t index;
         for(;;)
         {
-            index = m_tasks.ConstructObject();
+            index = m_tasks.create();
             if(index != fixed_size_free_list<task_t>::s_invalid_index) break;
 
             // No jobs available
             assert(false);
         }
-        auto &t = m_tasks.Get(index);
+        auto &t = m_tasks.get(index);
         t = std::bind(&packaged_task_t::operator(), packed_task);
         queue_task(&t);
         m_semaphore.release();
@@ -110,19 +104,6 @@ public:
      */
     std::size_t poll()
     {
-        //        if(!m_running && m_threads.empty())
-        //        {
-        //            std::unique_lock<std::mutex> lock(m_mutex);
-        //            size_t ret = m_queue.size();
-        //
-        //            while(!m_queue.empty())
-        //            {
-        //                auto task = std::move(m_queue.front());
-        //                m_queue.pop_front();
-        //                if(task) { task(); }
-        //            }
-        //            return ret;
-        //        }
         size_t ret = 0;
         for(uint32_t head = 0; head != m_tail; ++head)
         {
@@ -131,7 +112,7 @@ public:
             if(job_ptr)
             {
                 if(*job_ptr) { (*job_ptr)(); }
-                m_tasks.DestructObject(job_ptr);
+                m_tasks.destroy(job_ptr);
                 ret++;
             }
         }
@@ -143,20 +124,7 @@ public:
      */
     void join_all()
     {
-        //        {
-        //            std::unique_lock<std::mutex> lock(m_mutex);
-        //            m_running = false;
-        //            m_queue.clear();
-        //        }
-        //        m_condition.notify_all();
-        //
-        //        for(auto &thread: m_threads)
-        //        {
-        //            if(thread.joinable()) { thread.join(); }
-        //        }
-        //        m_threads.clear();
-
-        // Signal threads that we want to stop and wake them up
+        // signal threads that we want to stop and wake them up
         m_quit = true;
         m_semaphore.release((int32_t) m_threads.size());
 
@@ -214,25 +182,7 @@ private:
         for(uint32_t i = 0; i < num_threads; ++i) { m_heads[i] = 0; }
 
         auto worker_fn = [this](uint32_t thread_idx) noexcept {
-            //            task_t task;
-            //            for(;;)
-            //            {
-            //                {
-            //                    std::unique_lock<std::mutex> lock(m_mutex);
-            //
-            //                    // wait for next task
-            //                    m_condition.wait(lock, [this] { return !m_running || !m_queue.empty(); });
-            //
-            //                    // exit worker if requested and nothing is left in queue
-            //                    if(!m_running && m_queue.empty()) { return; }
-            //
-            //                    task = std::move(m_queue.front());
-            //                    m_queue.pop_front();
-            //                }
-            //
-            //                // run task
-            //                if(task) { task(); }
-            //            }
+
             auto &head = m_heads[thread_idx];
 
             while(!m_quit)
@@ -249,8 +199,11 @@ private:
                     if(task.load() != nullptr)
                     {
                         task_t *task_ptr = task.exchange(nullptr);
-                        if(task_ptr && *task_ptr) { (*task_ptr)(); }
-                        m_tasks.DestructObject(task_ptr);
+                        if(task_ptr)
+                        {
+                            if(*task_ptr) { (*task_ptr)(); }
+                            m_tasks.destroy(task_ptr);
+                        }
                     }
                     head++;
                 }
