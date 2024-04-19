@@ -141,9 +141,9 @@ inline std::string secs_to_time_str(float the_secs)
     return format("%d:%02d:%04.1f", (int) the_secs / 3600, ((int) the_secs / 60) % 60, fmodf(the_secs, 60));
 }
 
-inline bool is_pow_2(size_t v) { return !(v & (v - 1)); }
+inline constexpr bool is_pow_2(size_t v) { return !(v & (v - 1)); }
 
-inline uint64_t next_pow_2(uint64_t v)
+inline constexpr uint64_t next_pow_2(uint64_t v)
 {
     if(is_pow_2(v)) { return v; }
     v--;

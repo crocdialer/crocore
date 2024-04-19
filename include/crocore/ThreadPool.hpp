@@ -1,11 +1,13 @@
 #pragma once
 
 #include <atomic>
-#include <future>
 #include <deque>
+#include <future>
 #include <mutex>
+#include <semaphore>
 
-#include "crocore.hpp"
+#include "fixed_size_free_list.h"
+#include "utils.hpp"
 
 namespace crocore
 {
@@ -19,27 +21,22 @@ inline void wait_all(const Collection &futures)
 {
     for(const auto &f: futures)
     {
-        if(f.valid()){ f.wait(); }
+        if(f.valid()) { f.wait(); }
     }
 }
 
 class ThreadPool
 {
 public:
-
     ThreadPool() = default;
 
-    explicit ThreadPool(size_t num_threads){ start(num_threads); }
+    explicit ThreadPool(size_t num_threads) { start(num_threads); }
 
-    ThreadPool(ThreadPool &&other) noexcept:
-            ThreadPool()
-    {
-        swap(*this, other);
-    }
+    ThreadPool(ThreadPool &&other) noexcept : ThreadPool() { swap(*this, other); }
 
     ThreadPool(const ThreadPool &other) = delete;
 
-    ~ThreadPool(){ join_all(); }
+    ~ThreadPool() { join_all(); }
 
     ThreadPool &operator=(ThreadPool other)
     {
@@ -60,7 +57,7 @@ public:
     /**
      * @return  the number of worker-threads
      */
-    [[nodiscard]] size_t num_threads() const{ return m_threads.size(); }
+    [[nodiscard]] size_t num_threads() const { return m_threads.size(); }
 
     /**
      * @brief   post work to be processed by the ThreadPool
@@ -72,12 +69,12 @@ public:
      * @return  a std::future holding the return value.
      */
     template<typename Func, typename... Args>
-    std::future<typename std::invoke_result<Func, Args...>::type> post(Func &&f, Args &&... args)
+    std::future<typename std::invoke_result<Func, Args...>::type> post(Func &&f, Args &&...args)
     {
         using result_t = typename std::invoke_result<Func, Args...>::type;
         using packaged_task_t = std::packaged_task<result_t()>;
-        auto packed_task = std::make_shared<packaged_task_t>(
-                std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
+        auto packed_task =
+                std::make_shared<packaged_task_t>(std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
         auto future = packed_task->get_future();
 
         {
@@ -105,7 +102,7 @@ public:
             {
                 auto task = std::move(m_queue.front());
                 m_queue.pop_front();
-                if(task){ task(); }
+                if(task) { task(); }
             }
             return ret;
         }
@@ -126,7 +123,7 @@ public:
 
         for(auto &thread: m_threads)
         {
-            if(thread.joinable()){ thread.join(); }
+            if(thread.joinable()) { thread.join(); }
         }
         m_threads.clear();
     }
@@ -143,18 +140,16 @@ public:
     }
 
 private:
-
     using task_t = std::function<void()>;
 
     void start(size_t num_threads)
     {
-        if(!num_threads){ return; }
+        if(!num_threads) { return; }
 
         m_running = true;
         m_threads.resize(num_threads);
 
-        auto worker_fn = [this]() noexcept
-        {
+        auto worker_fn = [this]() noexcept {
             task_t task;
 
             for(;;)
@@ -163,20 +158,20 @@ private:
                     std::unique_lock<std::mutex> lock(m_mutex);
 
                     // wait for next task
-                    m_condition.wait(lock, [this]{ return !m_running || !m_queue.empty(); });
+                    m_condition.wait(lock, [this] { return !m_running || !m_queue.empty(); });
 
                     // exit worker if requested and nothing is left in queue
-                    if(!m_running && m_queue.empty()){ return; }
+                    if(!m_running && m_queue.empty()) { return; }
 
                     task = std::move(m_queue.front());
                     m_queue.pop_front();
                 }
 
                 // run task
-                if(task){ task(); }
+                if(task) { task(); }
             }
         };
-        for(auto &thread: m_threads){ thread = std::thread(worker_fn); }
+        for(auto &thread: m_threads) { thread = std::thread(worker_fn); }
     }
 
     bool m_running = false;
@@ -185,5 +180,22 @@ private:
     std::mutex m_mutex;
     std::condition_variable m_condition;
     std::deque<task_t> m_queue;
+
+    // job queue
+    static constexpr uint32_t s_max_queue_size = 1024;
+    static_assert(crocore::is_pow_2(s_max_queue_size));
+    std::atomic<task_t *> mQueue[s_max_queue_size];
+
+    // Head and tail of the queue, do this value modulo s_max_queue_size - 1 to get the element in the mQueue array
+
+    // per executing thread the head of the current queue
+    std::unique_ptr<std::atomic<uint32_t>[]> m_heads = nullptr;
+
+    // tail (write end) of the queue
+    alignas(k_cache_line_size) std::atomic<uint> m_tail = 0;
+
+    // semaphore used to signal worker threads
+    std::counting_semaphore<32> m_semaphore{0};
+    std::atomic<bool> m_quit = false;
 };
-}//namespace
+}// namespace crocore
