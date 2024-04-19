@@ -123,7 +123,19 @@ public:
         //            }
         //            return ret;
         //        }
-        return 0;
+        size_t ret = 0;
+        for(uint32_t head = 0; head != m_tail; ++head)
+        {
+            // Fetch job
+            task_t *job_ptr = mQueue[head & (s_max_queue_size - 1)].exchange(nullptr);
+            if(job_ptr)
+            {
+                if(*job_ptr) { (*job_ptr)(); }
+                m_tasks.DestructObject(job_ptr);
+                ret++;
+            }
+        }
+        return ret;
     }
 
     /**
@@ -154,17 +166,7 @@ public:
         }
         m_threads.clear();
 
-        // potentially lingering jobs
-        for(uint32_t head = 0; head != m_tail; ++head)
-        {
-            // Fetch job
-            task_t *job_ptr = mQueue[head & (s_max_queue_size - 1)].exchange(nullptr);
-            if(job_ptr)
-            {
-                if(*job_ptr) { (*job_ptr)(); }
-                m_tasks.DestructObject(job_ptr);
-            }
-        }
+        poll();
 
         // destroy heads and reset tail
         m_heads.reset();
@@ -196,13 +198,14 @@ private:
 
     void start(size_t num_threads)
     {
+        constexpr uint32_t max_num_tasks = 1024;
+        m_tasks = fixed_size_free_list<task_t>(max_num_tasks, max_num_tasks);
+
         if(!num_threads) { return; }
 
         m_running = true;
         m_threads.resize(num_threads);
 
-        constexpr uint32_t max_num_tasks = 1024;
-        m_tasks = fixed_size_free_list<task_t>(max_num_tasks, max_num_tasks);
         for(auto &t: mQueue) { t = nullptr; }
         m_quit = false;
 
