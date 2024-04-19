@@ -26,20 +26,21 @@ inline void wait_all(const Collection &futures)
     }
 }
 
-class ThreadPool
+template<uint32_t QUEUE_SIZE = 2048>
+class ThreadPool_
 {
 public:
-    ThreadPool() = default;
+    ThreadPool_() = default;
 
-    explicit ThreadPool(size_t num_threads) { start(num_threads); }
+    explicit ThreadPool_(size_t num_threads) { start(num_threads); }
 
-    ThreadPool(ThreadPool &&other) noexcept : ThreadPool() { swap(*this, other); }
+    ThreadPool_(ThreadPool_ &&other) noexcept : ThreadPool_() { swap(*this, other); }
 
-    ThreadPool(const ThreadPool &other) = delete;
+    ThreadPool_(const ThreadPool_ &other) = delete;
 
-    ~ThreadPool() { join_all(); }
+    ~ThreadPool_() { join_all(); }
 
-    ThreadPool &operator=(ThreadPool other)
+    ThreadPool_ &operator=(ThreadPool_ other)
     {
         swap(*this, other);
         return *this;
@@ -108,7 +109,7 @@ public:
         for(uint32_t head = 0; head != m_tail; ++head)
         {
             // Fetch job
-            task_t *job_ptr = mQueue[head & (s_max_queue_size - 1)].exchange(nullptr);
+            task_t *job_ptr = mQueue[head & (QUEUE_SIZE - 1)].exchange(nullptr);
             if(job_ptr)
             {
                 if(*job_ptr) { (*job_ptr)(); }
@@ -141,7 +142,7 @@ public:
         m_tail = 0;
     }
 
-    friend void swap(ThreadPool &lhs, ThreadPool &rhs) noexcept
+    friend void swap(ThreadPool_ &lhs, ThreadPool_ &rhs) noexcept
     {
         std::lock(lhs.m_mutex, rhs.m_mutex);
         std::unique_lock<std::mutex> lock_lhs(lhs.m_mutex, std::adopt_lock);
@@ -153,7 +154,7 @@ public:
 
         std::swap(lhs.m_tasks, rhs.m_tasks);
 
-        for(uint32_t i = 0; i < s_max_queue_size; ++i) { rhs.mQueue[i] = lhs.mQueue[i].exchange(rhs.mQueue[i]); }
+        for(uint32_t i = 0; i < QUEUE_SIZE; ++i) { rhs.mQueue[i] = lhs.mQueue[i].exchange(rhs.mQueue[i]); }
         std::swap(lhs.m_heads, rhs.m_heads);
         rhs.m_tail = lhs.m_tail.exchange(rhs.m_tail);
         rhs.m_quit = lhs.m_quit.exchange(rhs.m_quit);
@@ -194,7 +195,7 @@ private:
                 while(head != m_tail)
                 {
                     // Exchange any job pointer we find with a nullptr
-                    std::atomic<task_t *> &task = mQueue[head & (s_max_queue_size - 1)];
+                    std::atomic<task_t *> &task = mQueue[head & (QUEUE_SIZE - 1)];
 
                     if(task.load() != nullptr)
                     {
@@ -236,14 +237,14 @@ private:
             // Check if there's space in the queue
             uint32_t old_value = m_tail;
 
-            if(old_value - head >= s_max_queue_size)
+            if(old_value - head >= QUEUE_SIZE)
             {
                 // We calculated the head outside of the loop, update head (and we also need to update tail to prevent it from passing head)
                 head = get_head();
                 old_value = m_tail;
 
                 // Second check if there's space in the queue
-                if(old_value - head >= s_max_queue_size)
+                if(old_value - head >= QUEUE_SIZE)
                 {
                     // Wake up all threads in order to ensure that they can clear any nullptrs they may not have processed yet
                     m_semaphore.release((uint32_t) m_threads.size());
@@ -256,7 +257,7 @@ private:
 
             // Write the job pointer if the slot is empty
             task_t *expected_job = nullptr;
-            bool success = mQueue[old_value & (s_max_queue_size - 1)].compare_exchange_strong(expected_job, t);
+            bool success = mQueue[old_value & (QUEUE_SIZE - 1)].compare_exchange_strong(expected_job, t);
 
             // Regardless of who wrote the slot, we will update the tail (if the successful thread got scheduled out
             // after writing the pointer we still want to be able to continue)
@@ -276,9 +277,7 @@ private:
 
     // job queue
     fixed_size_free_list<task_t> m_tasks;
-    static constexpr uint32_t s_max_queue_size = 1024;
-    static_assert(crocore::is_pow_2(s_max_queue_size));
-    std::atomic<task_t *> mQueue[s_max_queue_size];
+    std::atomic<task_t *> mQueue[QUEUE_SIZE];
 
     // Head and tail of the queue, do this value modulo s_max_queue_size - 1 to get the element in the mQueue array
 
@@ -292,4 +291,7 @@ private:
     std::counting_semaphore<32> m_semaphore{0};
     std::atomic<bool> m_quit = false;
 };
+
+using ThreadPool = ThreadPool_<2048>;
+
 }// namespace crocore
