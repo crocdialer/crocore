@@ -7,9 +7,9 @@
 #include <atomic>
 #include <bit>
 #include <cassert>
+#include <crocore/utils.hpp>
 #include <cstdint>
 #include <mutex>
-#include <crocore/utils.hpp>
 
 namespace crocore
 {
@@ -24,19 +24,19 @@ class fixed_size_free_list
 {
 public:
     /// Invalid index
-    static const uint32_t cInvalidObjectIndex = std::numeric_limits<uint32_t>::max();
+    static const uint32_t s_invalid_index = std::numeric_limits<uint32_t>::max();
 
     fixed_size_free_list() = default;
 
     inline fixed_size_free_list(fixed_size_free_list &&other) noexcept;
 
-    fixed_size_free_list(const fixed_size_free_list&) = delete;
+    fixed_size_free_list(const fixed_size_free_list &) = delete;
 
     inline fixed_size_free_list(uint32_t inMaxObjects, uint32_t inPageSize);
 
     inline ~fixed_size_free_list();
 
-    inline fixed_size_free_list& operator=(fixed_size_free_list other);
+    inline fixed_size_free_list &operator=(fixed_size_free_list other);
 
     /// Lockless construct a new object, inParameters are passed on to the constructor
     template<typename... Parameters>
@@ -51,8 +51,8 @@ public:
     /// A batch of objects that can be destructed
     struct Batch
     {
-        uint32_t mFirstObjectIndex = cInvalidObjectIndex;
-        uint32_t mLastObjectIndex = cInvalidObjectIndex;
+        uint32_t mFirstObjectIndex = s_invalid_index;
+        uint32_t mLastObjectIndex = s_invalid_index;
         uint32_t mNumObjects = 0;
     };
 
@@ -71,8 +71,8 @@ public:
     inline const T &Get(uint32_t inObjectIndex) const { return GetStorage(inObjectIndex).object; }
 
     inline void swap(fixed_size_free_list &lhs, fixed_size_free_list &rhs);
-private:
 
+private:
     /// storage type, containing an object
     struct storage
     {
@@ -101,10 +101,10 @@ private:
     //#endif// JPH_ENABLE_ASSERTS
 
     /// Simple counter that makes the first free object pointer update with every CAS so that we don't suffer from the ABA problem
-    std::atomic<uint32_t> m_allocation_tag;
+    std::atomic<uint32_t> m_allocation_tag = 1;
 
     /// Index of first free object, the first 32 bits of an object are used to point to the next free object
-    std::atomic<uint64_t> m_first_free_object_and_tag;
+    std::atomic<uint64_t> m_first_free_object_and_tag = s_invalid_index;
 
     /// Size (in objects) of a single page
     uint32_t m_page_size = 0;
@@ -122,7 +122,7 @@ private:
     uint32_t m_num_objects_allocated = 0;
 
     /// The first free object to use when the free list is empty (may need to allocate a new page)
-    std::atomic<uint32_t> m_first_free_object_in_new_page;
+    std::atomic<uint32_t> m_first_free_object_in_new_page = 0;
 
     /// Array of pages of objects
     std::unique_ptr<storage *[]> m_pages = nullptr;

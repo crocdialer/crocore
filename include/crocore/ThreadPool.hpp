@@ -3,6 +3,7 @@
 #include <atomic>
 #include <deque>
 #include <future>
+#include <memory>
 #include <mutex>
 #include <semaphore>
 
@@ -77,11 +78,27 @@ public:
                 std::make_shared<packaged_task_t>(std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
         auto future = packed_task->get_future();
 
+        //        {
+        //            std::unique_lock<std::mutex> lock(m_mutex);
+        //            m_queue.push_back(std::bind(&packaged_task_t::operator(), packed_task));
+        //        }
+        //        m_condition.notify_one();
+
+        // Loop until we can get a job from the free list
+        uint32_t index;
+        for(;;)
         {
-            std::unique_lock<std::mutex> lock(m_mutex);
-            m_queue.push_back(std::bind(&packaged_task_t::operator(), packed_task));
+            index = m_tasks.ConstructObject();
+            if(index != fixed_size_free_list<task_t>::s_invalid_index) break;
+
+            // No jobs available
+            assert(false);
         }
-        m_condition.notify_one();
+        auto &t = m_tasks.Get(index);
+        t = std::bind(&packaged_task_t::operator(), packed_task);
+        queue_task(&t);
+        m_semaphore.release();
+
         return future;
     }
 
@@ -93,19 +110,19 @@ public:
      */
     std::size_t poll()
     {
-        if(!m_running && m_threads.empty())
-        {
-            std::unique_lock<std::mutex> lock(m_mutex);
-            size_t ret = m_queue.size();
-
-            while(!m_queue.empty())
-            {
-                auto task = std::move(m_queue.front());
-                m_queue.pop_front();
-                if(task) { task(); }
-            }
-            return ret;
-        }
+        //        if(!m_running && m_threads.empty())
+        //        {
+        //            std::unique_lock<std::mutex> lock(m_mutex);
+        //            size_t ret = m_queue.size();
+        //
+        //            while(!m_queue.empty())
+        //            {
+        //                auto task = std::move(m_queue.front());
+        //                m_queue.pop_front();
+        //                if(task) { task(); }
+        //            }
+        //            return ret;
+        //        }
         return 0;
     }
 
@@ -114,18 +131,44 @@ public:
      */
     void join_all()
     {
-        {
-            std::unique_lock<std::mutex> lock(m_mutex);
-            m_running = false;
-            m_queue.clear();
-        }
-        m_condition.notify_all();
+        //        {
+        //            std::unique_lock<std::mutex> lock(m_mutex);
+        //            m_running = false;
+        //            m_queue.clear();
+        //        }
+        //        m_condition.notify_all();
+        //
+        //        for(auto &thread: m_threads)
+        //        {
+        //            if(thread.joinable()) { thread.join(); }
+        //        }
+        //        m_threads.clear();
+
+        // Signal threads that we want to stop and wake them up
+        m_quit = true;
+        m_semaphore.release((int32_t) m_threads.size());
 
         for(auto &thread: m_threads)
         {
             if(thread.joinable()) { thread.join(); }
         }
         m_threads.clear();
+
+        // potentially lingering jobs
+        for(uint32_t head = 0; head != m_tail; ++head)
+        {
+            // Fetch job
+            task_t *job_ptr = mQueue[head & (s_max_queue_size - 1)].exchange(nullptr);
+            if(job_ptr)
+            {
+                if(*job_ptr) { (*job_ptr)(); }
+                m_tasks.DestructObject(job_ptr);
+            }
+        }
+
+        // destroy heads and reset tail
+        m_heads.reset();
+        m_tail = 0;
     }
 
     friend void swap(ThreadPool &lhs, ThreadPool &rhs) noexcept
@@ -137,6 +180,15 @@ public:
         std::swap(lhs.m_running, rhs.m_running);
         std::swap(lhs.m_threads, rhs.m_threads);
         std::swap(lhs.m_queue, rhs.m_queue);
+
+        std::swap(lhs.m_tasks, rhs.m_tasks);
+
+        for(uint32_t i = 0; i < s_max_queue_size; ++i) { rhs.mQueue[i] = lhs.mQueue[i].exchange(rhs.mQueue[i]); }
+        std::swap(lhs.m_heads, rhs.m_heads);
+        rhs.m_tail = lhs.m_tail.exchange(rhs.m_tail);
+        rhs.m_quit = lhs.m_quit.exchange(rhs.m_quit);
+
+        // TODO: semaphore
     }
 
 private:
@@ -149,29 +201,114 @@ private:
         m_running = true;
         m_threads.resize(num_threads);
 
-        auto worker_fn = [this]() noexcept {
-            task_t task;
+        constexpr uint32_t max_num_tasks = 1024;
+        m_tasks = fixed_size_free_list<task_t>(max_num_tasks, max_num_tasks);
+        for(auto &t: mQueue) { t = nullptr; }
+        m_quit = false;
 
-            for(;;)
+        // Allocate heads
+        m_heads = std::make_unique<std::atomic<uint32_t>[]>(num_threads);
+        for(uint32_t i = 0; i < num_threads; ++i) { m_heads[i] = 0; }
+
+        auto worker_fn = [this](uint32_t thread_idx) noexcept {
+            //            task_t task;
+            //            for(;;)
+            //            {
+            //                {
+            //                    std::unique_lock<std::mutex> lock(m_mutex);
+            //
+            //                    // wait for next task
+            //                    m_condition.wait(lock, [this] { return !m_running || !m_queue.empty(); });
+            //
+            //                    // exit worker if requested and nothing is left in queue
+            //                    if(!m_running && m_queue.empty()) { return; }
+            //
+            //                    task = std::move(m_queue.front());
+            //                    m_queue.pop_front();
+            //                }
+            //
+            //                // run task
+            //                if(task) { task(); }
+            //            }
+            auto &head = m_heads[thread_idx];
+
+            while(!m_quit)
             {
+                // Wait for jobs
+                m_semaphore.acquire();
+
+                // Loop over the queue
+                while(head != m_tail)
                 {
-                    std::unique_lock<std::mutex> lock(m_mutex);
+                    // Exchange any job pointer we find with a nullptr
+                    std::atomic<task_t *> &task = mQueue[head & (s_max_queue_size - 1)];
 
-                    // wait for next task
-                    m_condition.wait(lock, [this] { return !m_running || !m_queue.empty(); });
-
-                    // exit worker if requested and nothing is left in queue
-                    if(!m_running && m_queue.empty()) { return; }
-
-                    task = std::move(m_queue.front());
-                    m_queue.pop_front();
+                    if(task.load() != nullptr)
+                    {
+                        task_t *task_ptr = task.exchange(nullptr);
+                        if(task_ptr && *task_ptr) { (*task_ptr)(); }
+                        m_tasks.DestructObject(task_ptr);
+                    }
+                    head++;
                 }
-
-                // run task
-                if(task) { task(); }
             }
         };
-        for(auto &thread: m_threads) { thread = std::thread(worker_fn); }
+
+        for(uint32_t i = 0; i < num_threads; ++i)
+        {
+            m_threads[i] = std::thread([worker_fn, i] { worker_fn(i); });
+        }
+    }
+
+    [[nodiscard]] uint32_t get_head() const
+    {
+        // find minimal value across all threads
+        uint32_t head = m_tail;
+        for(size_t i = 0; i < m_threads.size(); ++i) { head = std::min(head, m_heads[i].load()); }
+        return head;
+    }
+
+    void queue_task(task_t *t)
+    {
+        // Need to read head first because otherwise the tail can already have passed the head
+        // We read the head outside of the loop since it involves iterating over all threads and we only need to update
+        // it if there's not enough space in the queue.
+        uint32_t head = get_head();
+
+        for(;;)
+        {
+            // Check if there's space in the queue
+            uint32_t old_value = m_tail;
+
+            if(old_value - head >= s_max_queue_size)
+            {
+                // We calculated the head outside of the loop, update head (and we also need to update tail to prevent it from passing head)
+                head = get_head();
+                old_value = m_tail;
+
+                // Second check if there's space in the queue
+                if(old_value - head >= s_max_queue_size)
+                {
+                    // Wake up all threads in order to ensure that they can clear any nullptrs they may not have processed yet
+                    m_semaphore.release((uint32_t) m_threads.size());
+
+                    // Sleep a little (we have to wait for other threads to update their head pointer in order for us to be able to continue)
+                    std::this_thread::sleep_for(std::chrono::microseconds(100));
+                    continue;
+                }
+            }
+
+            // Write the job pointer if the slot is empty
+            task_t *expected_job = nullptr;
+            bool success = mQueue[old_value & (s_max_queue_size - 1)].compare_exchange_strong(expected_job, t);
+
+            // Regardless of who wrote the slot, we will update the tail (if the successful thread got scheduled out
+            // after writing the pointer we still want to be able to continue)
+            m_tail.compare_exchange_strong(old_value, old_value + 1);
+
+            // If we successfully added our job we're done
+            if(success) break;
+        }
     }
 
     bool m_running = false;
@@ -193,7 +330,7 @@ private:
     std::unique_ptr<std::atomic<uint32_t>[]> m_heads = nullptr;
 
     // tail (write end) of the queue
-    alignas(k_cache_line_size) std::atomic<uint> m_tail = 0;
+    alignas(k_cache_line_size) std::atomic<uint32_t> m_tail = 0;
 
     // semaphore used to signal worker threads
     std::counting_semaphore<32> m_semaphore{0};
