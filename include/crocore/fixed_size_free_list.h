@@ -28,11 +28,15 @@ public:
 
     fixed_size_free_list() = default;
 
+    inline fixed_size_free_list(fixed_size_free_list &&other) noexcept;
+
     fixed_size_free_list(const fixed_size_free_list&) = delete;
 
     inline fixed_size_free_list(uint32_t inMaxObjects, uint32_t inPageSize);
 
     inline ~fixed_size_free_list();
+
+    inline fixed_size_free_list& operator=(fixed_size_free_list other);
 
     /// Lockless construct a new object, inParameters are passed on to the constructor
     template<typename... Parameters>
@@ -66,6 +70,7 @@ public:
     /// Access an object by index.
     inline const T &Get(uint32_t inObjectIndex) const { return GetStorage(inObjectIndex).object; }
 
+    inline void swap(fixed_size_free_list &lhs, fixed_size_free_list &rhs);
 private:
 
     /// storage type, containing an object
@@ -81,13 +86,13 @@ private:
     static_assert(alignof(storage) == alignof(T), "Object not properly aligned");
 
     /// Access the object storage given the object index
-    const storage &GetStorage(uint32_t inObjectIndex) const
+    inline const storage &GetStorage(uint32_t inObjectIndex) const
     {
-        return m_pages[inObjectIndex >> m_page_shift][inObjectIndex & mObjectMask];
+        return m_pages[inObjectIndex >> m_page_shift][inObjectIndex & m_object_mask];
     }
-    storage &GetStorage(uint32_t inObjectIndex)
+    inline storage &GetStorage(uint32_t inObjectIndex)
     {
-        return m_pages[inObjectIndex >> m_page_shift][inObjectIndex & mObjectMask];
+        return m_pages[inObjectIndex >> m_page_shift][inObjectIndex & m_object_mask];
     }
 
     /// Number of objects that we currently have in the free list / new pages
@@ -99,31 +104,31 @@ private:
     std::atomic<uint32_t> m_allocation_tag;
 
     /// Index of first free object, the first 32 bits of an object are used to point to the next free object
-    std::atomic<uint64_t> mFirstFreeObjectAndTag;
+    std::atomic<uint64_t> m_first_free_object_and_tag;
 
     /// Size (in objects) of a single page
-    uint32_t mPageSize = 0;
+    uint32_t m_page_size = 0;
 
     /// Number of bits to shift an object index to the right to get the page number
     uint32_t m_page_shift = 0;
 
     /// Mask to and an object index with to get the page number
-    uint32_t mObjectMask = 0;
+    uint32_t m_object_mask = 0;
 
     /// Total number of pages that are usable
-    uint32_t mNumPages = 0;
+    uint32_t m_num_pages = 0;
 
     /// Total number of objects that have been allocated
-    uint32_t mNumObjectsAllocated = 0;
+    uint32_t m_num_objects_allocated = 0;
 
     /// The first free object to use when the free list is empty (may need to allocate a new page)
-    std::atomic<uint32_t> mFirstFreeObjectInNewPage;
+    std::atomic<uint32_t> m_first_free_object_in_new_page;
 
     /// Array of pages of objects
     std::unique_ptr<storage *[]> m_pages = nullptr;
 
     /// Mutex that is used to allocate a new page if the storage runs out
-    std::mutex mPageMutex;
+    std::mutex m_page_mutex;
 };
 
 }// namespace crocore

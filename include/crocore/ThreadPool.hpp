@@ -182,6 +182,7 @@ private:
     std::deque<task_t> m_queue;
 
     // job queue
+    fixed_size_free_list<task_t> m_tasks;
     static constexpr uint32_t s_max_queue_size = 1024;
     static_assert(crocore::is_pow_2(s_max_queue_size));
     std::atomic<task_t *> mQueue[s_max_queue_size];
