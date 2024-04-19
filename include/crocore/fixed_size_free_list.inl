@@ -143,31 +143,31 @@ uint32_t fixed_size_free_list<T>::create(Parameters &&...inParameters)
 }
 
 template<typename T>
-void fixed_size_free_list<T>::add_to_batch(Batch &ioBatch, uint32_t inObjectIndex)
+void fixed_size_free_list<T>::add_to_batch(batch_t &batch, uint32_t object_index)
 {
     // Trying to add a object to the batch that is already in a free list
-    assert(get_storage(inObjectIndex).next_free_object.load(std::memory_order_relaxed) == inObjectIndex);
+    assert(get_storage(object_index).next_free_object.load(std::memory_order_relaxed) == object_index);
 
     // Trying to reuse a batch that has already been freed
-    assert(ioBatch.mNumObjects != uint32_t(-1));
+    assert(batch.m_num_objects != uint32_t(-1));
 
     // Link object in batch to free
-    if(ioBatch.mFirstObjectIndex == s_invalid_index) ioBatch.mFirstObjectIndex = inObjectIndex;
+    if(batch.m_first_object_index == s_invalid_index) batch.m_first_object_index = object_index;
     else
-        GetStorage(ioBatch.mLastObjectIndex).next_free_object.store(inObjectIndex, std::memory_order_release);
-    ioBatch.mLastObjectIndex = inObjectIndex;
-    ioBatch.mNumObjects++;
+        GetStorage(batch.m_last_object_index).next_free_object.store(object_index, std::memory_order_release);
+    batch.m_last_object_index = object_index;
+    batch.m_num_objects++;
 }
 
 template<typename T>
-void fixed_size_free_list<T>::destroy_batch(Batch &ioBatch)
+void fixed_size_free_list<T>::destroy_batch(batch_t &batch)
 {
-    if(ioBatch.mFirstObjectIndex != s_invalid_index)
+    if(batch.m_first_object_index != s_invalid_index)
     {
         // Call destructors
         if constexpr(!std::is_trivially_destructible<T>())
         {
-            uint32_t object_idx = ioBatch.mFirstObjectIndex;
+            uint32_t object_idx = batch.m_first_object_index;
             do {
                 storage &storage = get_storage(object_idx);
                 storage.object.~Object();
@@ -176,7 +176,7 @@ void fixed_size_free_list<T>::destroy_batch(Batch &ioBatch)
         }
 
         // Add to objects free list
-        storage &storage = GetStorage(ioBatch.mLastObjectIndex);
+        storage &storage = GetStorage(batch.m_last_object_index);
         for(;;)
         {
             // Get first object from the list
@@ -188,7 +188,7 @@ void fixed_size_free_list<T>::destroy_batch(Batch &ioBatch)
 
             // Construct a new first free object tag
             uint64_t new_first_free_object_and_tag =
-                    uint64(ioBatch.mFirstObjectIndex) +
+                    uint64(batch.m_first_object_index) +
                     (uint64_t(m_allocation_tag.fetch_add(1, std::memory_order_relaxed)) << 32);
 
             // Compare and swap
@@ -196,11 +196,11 @@ void fixed_size_free_list<T>::destroy_batch(Batch &ioBatch)
                        first_free_object_and_tag, new_first_free_object_and_tag, std::memory_order_release))
             {
                 // Free successful
-                CROCORE_IF_DEBUG(m_num_free_objects.fetch_add(ioBatch.mNumObjects, std::memory_order_relaxed);)
+                CROCORE_IF_DEBUG(m_num_free_objects.fetch_add(batch.m_num_objects, std::memory_order_relaxed);)
 
                 // Mark the batch as freed
-#ifdef JPH_ENABLE_ASSERTS
-                ioBatch.mNumObjects = uint32(-1);
+#if not defined(NDEBUG)
+                batch.m_num_objects = s_invalid_index;
 #endif
                 return;
             }

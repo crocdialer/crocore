@@ -49,20 +49,20 @@ public:
     inline void destroy(T *inObject);
 
     /// A batch of objects that can be destructed
-    struct Batch
+    struct batch_t
     {
-        uint32_t mFirstObjectIndex = s_invalid_index;
-        uint32_t mLastObjectIndex = s_invalid_index;
-        uint32_t mNumObjects = 0;
+        uint32_t m_first_object_index = s_invalid_index;
+        uint32_t m_last_object_index = s_invalid_index;
+        uint32_t m_num_objects = 0;
     };
 
     /// Add a object to an existing batch to be destructed.
     /// Adding objects to a batch does not destroy or modify the objects, this will merely link them
     /// so that the entire batch can be returned to the free list in a single atomic operation
-    inline void add_to_batch(Batch &ioBatch, uint32_t inObjectIndex);
+    inline void add_to_batch(batch_t &batch, uint32_t object_index);
 
     /// Lockless destruct batch of objects
-    inline void destroy_batch(Batch &ioBatch);
+    inline void destroy_batch(batch_t &batch);
 
     /// Access an object by index.
     inline T &get(uint32_t inObjectIndex) { return get_storage(inObjectIndex).object; }
