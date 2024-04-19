@@ -171,14 +171,12 @@ private:
         m_tasks = fixed_size_free_list<task_t>(max_num_tasks, max_num_tasks);
 
         if(!num_threads) { return; }
-
-        m_running = true;
         m_threads.resize(num_threads);
 
         for(auto &t: mQueue) { t = nullptr; }
         m_quit = false;
 
-        // Allocate heads
+        // allocate heads
         m_heads = std::make_unique<std::atomic<uint32_t>[]>(num_threads);
         for(uint32_t i = 0; i < num_threads; ++i) { m_heads[i] = 0; }
 
@@ -268,12 +266,7 @@ private:
         }
     }
 
-    bool m_running = false;
     std::vector<std::thread> m_threads;
-
-    std::mutex m_mutex;
-    std::condition_variable m_condition;
-    std::deque<task_t> m_queue;
 
     // job queue
     fixed_size_free_list<task_t> m_tasks;
@@ -285,7 +278,8 @@ private:
     std::unique_ptr<std::atomic<uint32_t>[]> m_heads = nullptr;
 
     // tail (write end) of the queue
-    alignas(k_cache_line_size) std::atomic<uint32_t> m_tail = 0;
+    /*alignas(k_cache_line_size) */
+    std::atomic<uint32_t> m_tail = 0;
 
     // semaphore used to signal worker threads
     std::counting_semaphore<32> m_semaphore{0};
