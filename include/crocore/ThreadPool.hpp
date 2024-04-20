@@ -30,7 +30,7 @@ template<uint32_t QUEUE_SIZE = 1024>
 class ThreadPool_
 {
 public:
-    ThreadPool_() { memset(m_queue, sizeof(m_queue), 0); }
+    ThreadPool_() = default;
 
     explicit ThreadPool_(size_t num_threads) { start(num_threads); }
 
