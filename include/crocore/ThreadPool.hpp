@@ -26,25 +26,17 @@ inline void wait_all(const Collection &futures)
     }
 }
 
-template<uint32_t QUEUE_SIZE = 2048>
+template<uint32_t QUEUE_SIZE = 1024>
 class ThreadPool_
 {
 public:
-    ThreadPool_() = default;
+    ThreadPool_() { memset(m_queue, sizeof(m_queue), 0); }
 
     explicit ThreadPool_(size_t num_threads) { start(num_threads); }
-
-    ThreadPool_(ThreadPool_ &&other) noexcept : ThreadPool_() { swap(*this, other); }
 
     ThreadPool_(const ThreadPool_ &other) = delete;
 
     ~ThreadPool_() { join_all(); }
-
-    ThreadPool_ &operator=(ThreadPool_ other)
-    {
-        swap(*this, other);
-        return *this;
-    }
 
     /**
      * @brief   Set the number of worker-threads
@@ -62,7 +54,7 @@ public:
     [[nodiscard]] size_t num_threads() const { return m_threads.size(); }
 
     /**
-     * @brief   post work to be processed by the ThreadPool
+     * @brief   post work to be processed by the ThreadPool, receive a std::future for the result.
      *
      * @tparam  Func    function template parameter
      * @tparam  Args    template params for optional arguments
@@ -78,22 +70,22 @@ public:
         auto packed_task =
                 std::make_shared<packaged_task_t>(std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
         auto future = packed_task->get_future();
-
-        // loop until we get a task from the free list
-        uint32_t index;
-        for(;;)
-        {
-            index = m_tasks.create();
-            if(index != fixed_size_free_list<task_t>::s_invalid_index) { break; }
-
-            // No jobs available
-            assert(false);
-        }
-        auto &t = m_tasks.get(index);
-        t = std::bind(&packaged_task_t::operator(), packed_task);
-        queue_task(&t);
-        m_semaphore.release();
+        queue_task(std::bind(&packaged_task_t::operator(), packed_task));
         return future;
+    }
+
+    /**
+     * @brief   post work to be processed by the ThreadPool.
+     *
+     * @tparam  Func    function template parameter
+     * @tparam  Args    template params for optional arguments
+     * @param   f       the function object to execute
+     * @param   args    optional params to bind to the function object
+     */
+    template<typename Func, typename... Args>
+    void post_no_track(Func &&f, Args &&...args)
+    {
+        queue_task(std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
     }
 
     /**
@@ -137,6 +129,7 @@ public:
         }
         m_threads.clear();
 
+        // poll remaining tasks
         poll();
 
         // destroy heads and reset tail
@@ -144,30 +137,11 @@ public:
         m_tail = 0;
     }
 
-    friend void swap(ThreadPool_ &lhs, ThreadPool_ &rhs) noexcept
-    {
-        std::lock(lhs.m_mutex, rhs.m_mutex);
-        std::unique_lock<std::mutex> lock_lhs(lhs.m_mutex, std::adopt_lock);
-        std::unique_lock<std::mutex> lock_rhs(rhs.m_mutex, std::adopt_lock);
-
-        std::swap(lhs.m_threads, rhs.m_threads);
-        std::swap(lhs.m_tasks, rhs.m_tasks);
-        for(uint32_t i = 0; i < QUEUE_SIZE; ++i) { rhs.m_queue[i] = lhs.m_queue[i].exchange(rhs.m_queue[i]); }
-        std::swap(lhs.m_heads, rhs.m_heads);
-        rhs.m_tail = lhs.m_tail.exchange(rhs.m_tail);
-        rhs.m_running = lhs.m_running.exchange(rhs.m_running);
-
-        // TODO: semaphore
-    }
-
 private:
     using task_t = std::function<void()>;
 
     void start(size_t num_threads)
     {
-        constexpr uint32_t max_num_tasks = 1024;
-        m_tasks = fixed_size_free_list<task_t>(max_num_tasks, max_num_tasks);
-
         if(!num_threads) { return; }
         m_threads.resize(num_threads);
 
@@ -220,8 +194,21 @@ private:
         return head;
     }
 
-    void queue_task(task_t *t)
+    void queue_task(task_t task)
     {
+        // loop until we get a task from the free list
+        uint32_t index;
+        for(;;)
+        {
+            index = m_tasks.create();
+            if(index != fixed_size_free_list<task_t>::s_invalid_index) { break; }
+
+            // No jobs available
+            assert(false);
+        }
+        auto &stored_task = m_tasks.get(index);
+        stored_task = std::move(task);
+
         // Need to read head first because otherwise the tail can already have passed the head
         // We read the head outside of the loop since it involves iterating over all threads and we only need to update
         // it if there's not enough space in the queue.
@@ -252,37 +239,37 @@ private:
 
             // Write the job pointer if the slot is empty
             task_t *expected_job = nullptr;
-            bool success = m_queue[old_value & (QUEUE_SIZE - 1)].compare_exchange_strong(expected_job, t);
+            bool success = m_queue[old_value & (QUEUE_SIZE - 1)].compare_exchange_strong(expected_job, &stored_task);
 
             // Regardless of who wrote the slot, we will update the tail (if the successful thread got scheduled out
             // after writing the pointer we still want to be able to continue)
             m_tail.compare_exchange_strong(old_value, old_value + 1);
 
-            // If we successfully added our job we're done
-            if(success) break;
+            // successfully added our task
+            if(success)
+            {
+                m_semaphore.release();
+                break;
+            }
         }
     }
 
-    std::vector<std::thread> m_threads;
-
-    // job queue
-    fixed_size_free_list<task_t> m_tasks;
+    // task queue
+    fixed_size_free_list<task_t> m_tasks = fixed_size_free_list<task_t>(QUEUE_SIZE, QUEUE_SIZE);
     std::atomic<task_t *> m_queue[QUEUE_SIZE];
-
-    // Head and tail of the queue, do this value modulo s_max_queue_size - 1 to get the element in the m_queue array
 
     // per executing thread the head of the current queue
     std::unique_ptr<std::atomic<uint32_t>[]> m_heads = nullptr;
 
     // tail (write end) of the queue
-    /*alignas(k_cache_line_size) */
     std::atomic<uint32_t> m_tail = 0;
 
     // semaphore used to signal worker threads
     std::counting_semaphore<32> m_semaphore{0};
+    std::vector<std::thread> m_threads;
     std::atomic<bool> m_running = false;
 };
 
-using ThreadPool = ThreadPool_<2048>;
+using ThreadPool = ThreadPool_<>;
 
 }// namespace crocore
