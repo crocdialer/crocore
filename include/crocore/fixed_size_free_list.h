@@ -19,8 +19,8 @@ template<typename T>
 class fixed_size_free_list
 {
 public:
-    /// Invalid index
-    static const uint32_t s_invalid_index = std::numeric_limits<uint32_t>::max();
+    //! invalid index
+    static constexpr uint32_t s_invalid_index = std::numeric_limits<uint32_t>::max();
 
     fixed_size_free_list() = default;
 
