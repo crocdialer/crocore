@@ -51,21 +51,21 @@ fixed_size_free_list<T>::~fixed_size_free_list()
 }
 
 template<typename T>
-fixed_size_free_list<T>::fixed_size_free_list(uint32_t inMaxObjects, uint32_t inPageSize)
+fixed_size_free_list<T>::fixed_size_free_list(uint32_t max_num_objects, uint32_t page_size)
 {
     // Check sanity
-    assert(inPageSize > 0 && crocore::is_pow_2(inPageSize));
+    assert(page_size > 0 && crocore::is_pow_2(page_size));
     assert(m_pages == nullptr);
 
     // Store configuration parameters
-    m_num_pages = (inMaxObjects + inPageSize - 1) / inPageSize;
-    m_page_size = inPageSize;
-    m_page_shift = std::countr_zero(inPageSize);
-    m_object_mask = inPageSize - 1;
-    CROCORE_IF_DEBUG(m_num_free_objects = m_num_pages * inPageSize;)
+    m_num_pages = (max_num_objects + page_size - 1) / page_size;
+    m_page_size = page_size;
+    m_page_shift = std::countr_zero(page_size);
+    m_object_mask = page_size - 1;
+    CROCORE_IF_DEBUG(m_num_free_objects = m_num_pages * page_size;)
 
     // Allocate page table
-    m_pages.reset(new storage *[m_num_pages]);
+    m_pages.reset(new storage_t *[m_num_pages]);
 
     // We didn't yet use any objects of any page
     m_num_objects_allocated = 0;
@@ -99,8 +99,8 @@ uint32_t fixed_size_free_list<T>::create(Parameters &&...inParameters)
                 {
                     uint32_t next_page = m_num_objects_allocated / m_page_size;
                     if(next_page == m_num_pages) return s_invalid_index;// Out of space!
-                    m_pages[next_page] = reinterpret_cast<storage *>(crocore::aligned_alloc(
-                            m_page_size * sizeof(storage), std::max<size_t>(alignof(storage), k_cache_line_size)));
+                    m_pages[next_page] = reinterpret_cast<storage_t *>(crocore::aligned_alloc(
+                            m_page_size * sizeof(storage_t), std::max<size_t>(alignof(storage_t), k_cache_line_size)));
                     m_num_objects_allocated += m_page_size;
                 }
             }
@@ -108,7 +108,7 @@ uint32_t fixed_size_free_list<T>::create(Parameters &&...inParameters)
             // Allocation successful
             CROCORE_IF_DEBUG(m_num_free_objects.fetch_sub(1, std::memory_order_relaxed);)
 
-            storage &storage = get_storage(first_free);
+            storage_t &storage = get_storage(first_free);
             ::new(&storage.object) T(std::forward<Parameters>(inParameters)...);
             storage.next_free_object.store(first_free, std::memory_order_release);
             return first_free;
@@ -129,7 +129,7 @@ uint32_t fixed_size_free_list<T>::create(Parameters &&...inParameters)
             {
                 // Allocation successful
                 CROCORE_IF_DEBUG(m_num_free_objects.fetch_sub(1, std::memory_order_relaxed);)
-                storage &storage = get_storage(first_free);
+                storage_t &storage = get_storage(first_free);
                 ::new(&storage.object) T(std::forward<Parameters>(inParameters)...);
                 storage.next_free_object.store(first_free, std::memory_order_release);
                 return first_free;
@@ -165,36 +165,36 @@ void fixed_size_free_list<T>::destroy_batch(batch_t &batch)
         {
             uint32_t object_idx = batch.m_first_object_index;
             do {
-                storage &storage = get_storage(object_idx);
+                storage_t &storage = get_storage(object_idx);
                 storage.object.~Object();
                 object_idx = storage.next_free_object.load(std::memory_order_relaxed);
             } while(object_idx != s_invalid_index);
         }
 
-        // Add to objects free list
-        storage &storage = GetStorage(batch.m_last_object_index);
+        // add to objects free list
+        storage_t &storage = GetStorage(batch.m_last_object_index);
         for(;;)
         {
-            // Get first object from the list
+            // get first object from the list
             uint64_t first_free_object_and_tag = m_first_free_object_and_tag.load(std::memory_order_acquire);
             auto first_free = uint32_t(first_free_object_and_tag);
 
-            // Make it the next pointer of the last object in the batch that is to be freed
+            // make it the next pointer of the last object in the batch that is to be freed
             storage.next_free_object.store(first_free, std::memory_order_release);
 
-            // Construct a new first free object tag
+            // construct a new first free object tag
             uint64_t new_first_free_object_and_tag =
                     uint64(batch.m_first_object_index) +
                     (uint64_t(m_allocation_tag.fetch_add(1, std::memory_order_relaxed)) << 32);
 
-            // Compare and swap
+            // compare and swap
             if(m_first_free_object_and_tag.compare_exchange_weak(
                        first_free_object_and_tag, new_first_free_object_and_tag, std::memory_order_release))
             {
-                // Free successful
+                // free successful
                 CROCORE_IF_DEBUG(m_num_free_objects.fetch_add(batch.m_num_objects, std::memory_order_relaxed);)
 
-                // Mark the batch as freed
+                // mark batch as freed
 #if not defined(NDEBUG)
                 batch.m_num_objects = s_invalid_index;
 #endif
@@ -209,29 +209,29 @@ void fixed_size_free_list<T>::destroy(uint32_t inObjectIndex)
 {
     assert(inObjectIndex != s_invalid_index);
 
-    // Call destructor
-    storage &storage = get_storage(inObjectIndex);
+    // call destructor
+    storage_t &storage = get_storage(inObjectIndex);
     storage.object.~T();
 
-    // Add to object free list
+    // add to object free list
     for(;;)
     {
         // Get first object from the list
         uint64_t first_free_object_and_tag = m_first_free_object_and_tag.load(std::memory_order_acquire);
         auto first_free = uint32_t(first_free_object_and_tag);
 
-        // Make it the next pointer of the last object in the batch that is to be freed
+        // make it the next pointer of the last object in the batch that is to be freed
         storage.next_free_object.store(first_free, std::memory_order_release);
 
-        // Construct a new first free object tag
+        // construct a new first free object tag
         uint64_t new_first_free_object_and_tag =
                 uint64_t(inObjectIndex) + (uint64_t(m_allocation_tag.fetch_add(1, std::memory_order_relaxed)) << 32);
 
-        // Compare and swap
+        // compare and swap
         if(m_first_free_object_and_tag.compare_exchange_weak(first_free_object_and_tag, new_first_free_object_and_tag,
                                                              std::memory_order_release))
         {
-            // Free successful
+            // free successful
             CROCORE_IF_DEBUG(m_num_free_objects.fetch_add(1, std::memory_order_relaxed);)
             return;
         }
@@ -241,7 +241,7 @@ void fixed_size_free_list<T>::destroy(uint32_t inObjectIndex)
 template<typename T>
 inline void fixed_size_free_list<T>::destroy(T *inObject)
 {
-    uint32_t index = reinterpret_cast<storage *>(inObject)->next_free_object.load(std::memory_order_relaxed);
+    uint32_t index = reinterpret_cast<storage_t *>(inObject)->next_free_object.load(std::memory_order_relaxed);
     assert(index < m_num_objects_allocated);
     destroy(index);
 }

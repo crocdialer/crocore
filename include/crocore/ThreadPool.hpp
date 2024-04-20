@@ -30,6 +30,9 @@ template<uint32_t QUEUE_SIZE = 1024>
 class ThreadPool_
 {
 public:
+
+    static_assert(crocore::is_pow_2(QUEUE_SIZE), "queue-size must be a power of 2");
+
     ThreadPool_() = default;
 
     explicit ThreadPool_(size_t num_threads) { start(num_threads); }

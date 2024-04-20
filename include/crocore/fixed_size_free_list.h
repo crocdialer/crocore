@@ -28,20 +28,20 @@ public:
 
     fixed_size_free_list(const fixed_size_free_list &) = delete;
 
-    inline fixed_size_free_list(uint32_t inMaxObjects, uint32_t inPageSize);
+    inline fixed_size_free_list(uint32_t max_num_objects, uint32_t page_size);
 
     inline ~fixed_size_free_list();
 
     inline fixed_size_free_list &operator=(fixed_size_free_list other);
 
-    /// Lockless construct a new object, inParameters are passed on to the constructor
+    //! lockless construct a new object, inParameters are passed on to the constructor
     template<typename... Parameters>
     inline uint32_t create(Parameters &&...inParameters);
 
-    /// Lockless destruct an object and return it to the free pool
+    //! lockless destruct an object and return it to the free pool
     inline void destroy(uint32_t inObjectIndex);
 
-    /// Lockless destruct an object and return it to the free pool
+    //! lockless destruct an object and return it to the free pool
     inline void destroy(T *inObject);
 
     /// A batch of objects that can be destructed
@@ -57,20 +57,20 @@ public:
     /// so that the entire batch can be returned to the free list in a single atomic operation
     inline void add_to_batch(batch_t &batch, uint32_t object_index);
 
-    /// Lockless destruct batch of objects
+    //! lockless destruct batch of objects
     inline void destroy_batch(batch_t &batch);
 
-    /// Access an object by index.
+    //! access an object by index.
     inline T &get(uint32_t inObjectIndex) { return get_storage(inObjectIndex).object; }
 
-    /// Access an object by index.
+    //! access an object by index.
     inline const T &get(uint32_t inObjectIndex) const { return get_storage(inObjectIndex).object; }
 
     inline void swap(fixed_size_free_list &lhs, fixed_size_free_list &rhs);
 
 private:
-    /// storage type, containing an object
-    struct storage
+    //! storage type, containing an object
+    struct storage_t
     {
         T object;
 
@@ -79,49 +79,49 @@ private:
         std::atomic<uint32_t> next_free_object;
     };
 
-    static_assert(alignof(storage) == alignof(T), "Object not properly aligned");
+    static_assert(alignof(storage_t) == alignof(T), "Object not properly aligned");
 
     /// Access the object storage given the object index
-    inline const storage &get_storage(uint32_t inObjectIndex) const
+    inline const storage_t &get_storage(uint32_t inObjectIndex) const
     {
         return m_pages[inObjectIndex >> m_page_shift][inObjectIndex & m_object_mask];
     }
-    inline storage &get_storage(uint32_t inObjectIndex)
+    inline storage_t &get_storage(uint32_t inObjectIndex)
     {
         return m_pages[inObjectIndex >> m_page_shift][inObjectIndex & m_object_mask];
     }
 
-    /// Number of objects that we currently have in the free list / new pages
+    //! number of objects currently in the free list / new pages
     CROCORE_IF_DEBUG(std::atomic<uint32_t> m_num_free_objects;)
 
-    /// Simple counter that makes the first free object pointer update with every CAS so that we don't suffer from the ABA problem
+    //! simple counter that makes the first free object pointer update with every CAS so that we don't suffer from the ABA problem
     std::atomic<uint32_t> m_allocation_tag = 1;
 
-    /// Index of first free object, the first 32 bits of an object are used to point to the next free object
+    //! index of first free object, the first 32 bits of an object are used to point to the next free object
     std::atomic<uint64_t> m_first_free_object_and_tag = s_invalid_index;
 
-    /// Size (in objects) of a single page
+    //! size (in objects) of a single page
     uint32_t m_page_size = 0;
 
-    /// Number of bits to shift an object index to the right to get the page number
+    //! number of bits to shift an object index to the right to get the page number
     uint32_t m_page_shift = 0;
 
-    /// Mask to and an object index with to get the page number
+    //! mask to and an object index with to get the page number
     uint32_t m_object_mask = 0;
 
-    /// Total number of pages that are usable
+    //! total number of pages that are usable
     uint32_t m_num_pages = 0;
 
-    /// Total number of objects that have been allocated
+    //! total number of objects allocated
     uint32_t m_num_objects_allocated = 0;
 
-    /// The first free object to use when the free list is empty (may need to allocate a new page)
+    //! first free object to use when the free list is empty (may need to allocate a new page)
     std::atomic<uint32_t> m_first_free_object_in_new_page = 0;
 
-    /// Array of pages of objects
-    std::unique_ptr<storage *[]> m_pages = nullptr;
+    //! array of memory-pages
+    std::unique_ptr<storage_t *[]> m_pages = nullptr;
 
-    /// Mutex that is used to allocate a new page if the storage runs out
+    //! mutex used to allocate a new page if storage runs out
     std::mutex m_page_mutex;
 };
 
