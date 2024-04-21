@@ -30,7 +30,6 @@ template<uint32_t QUEUE_SIZE = 1024>
 class ThreadPool_
 {
 public:
-
     static_assert(crocore::is_pow_2(QUEUE_SIZE), "queue-size must be a power of 2");
 
     ThreadPool_() = default;
@@ -142,6 +141,7 @@ public:
 
 private:
     using task_t = std::function<void()>;
+    using task_list_t = crocore::fixed_size_free_list<task_t>;
 
     void start(size_t num_threads)
     {
@@ -204,7 +204,7 @@ private:
         for(;;)
         {
             index = m_tasks.create();
-            if(index != fixed_size_free_list<task_t>::s_invalid_index) { break; }
+            if(index != task_list_t::s_invalid_index) { break; }
 
             // No jobs available
             assert(false);
@@ -258,7 +258,7 @@ private:
     }
 
     // task queue
-    fixed_size_free_list<task_t> m_tasks = fixed_size_free_list<task_t>(QUEUE_SIZE, QUEUE_SIZE);
+    task_list_t m_tasks{QUEUE_SIZE, QUEUE_SIZE};
     std::atomic<task_t *> m_queue[QUEUE_SIZE];
 
     // per executing thread the head of the current queue
