@@ -9,9 +9,12 @@ namespace crocore
 {
 
 //! helper-macro to define a NamedId
-#define DEFINE_NAMED_ID(ID_NAME) \
-namespace named_id_internal{ struct ID_NAME##Param; }\
-using ID_NAME = crocore::NamedId<named_id_internal::ID_NAME##Param>;
+#define DEFINE_NAMED_ID(ID_NAME)                                                                                       \
+    namespace named_id_internal                                                                                        \
+    {                                                                                                                  \
+    struct ID_NAME##Param;                                                                                             \
+    }                                                                                                                  \
+    using ID_NAME = crocore::NamedId<named_id_internal::ID_NAME##Param>;
 
 template<typename T>
 class NamedId
@@ -27,13 +30,13 @@ public:
 
     inline explicit operator bool() const { return !is_nil(); }
 
-    friend inline bool operator<(const NamedId &lhs, const NamedId &rhs) { return lhs.m_id < rhs.m_id; }
+    inline constexpr bool operator<(const NamedId &other) const { return m_id < other.m_id; }
 
-    friend inline bool operator==(const NamedId &lhs, const NamedId &rhs) { return lhs.m_id == rhs.m_id; }
+    inline constexpr bool operator==(const NamedId &other) const { return m_id == other.m_id; }
 
-    friend inline bool operator!=(const NamedId &lhs, const NamedId &rhs) { return lhs.m_id != rhs.m_id; }
+    inline constexpr bool operator!=(const NamedId &other) const { return m_id != other.m_id; }
 
-    [[nodiscard]] uint64_t value() const{ return m_id; }
+    [[nodiscard]] uint64_t value() const { return m_id; }
 
     friend void swap(NamedId &lhs, NamedId &rhs) { std::swap(lhs.m_id, rhs.m_id); }
 

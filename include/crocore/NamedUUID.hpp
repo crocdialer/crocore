@@ -12,9 +12,12 @@ namespace crocore
 {
 
 //! helper-macro to define a NamedId
-#define DEFINE_NAMED_UUID(UUID_NAME) \
-namespace named_uuid_internal{ struct UUID_NAME##Param; }\
-using UUID_NAME = crocore::NamedUUID<named_uuid_internal::UUID_NAME##Param>;
+#define DEFINE_NAMED_UUID(UUID_NAME)                                                                                   \
+    namespace named_uuid_internal                                                                                      \
+    {                                                                                                                  \
+    struct UUID_NAME##Param;                                                                                           \
+    }                                                                                                                  \
+    using UUID_NAME = crocore::NamedUUID<named_uuid_internal::UUID_NAME##Param>;
 
 /**
  * @brief   NamedIdBase is a common base-class for all NamedIds and offers a shared,
@@ -65,11 +68,11 @@ public:
 
     inline explicit operator bool() const { return !is_nil(); }
 
-    friend inline bool operator<(const NamedUUID &lhs, const NamedUUID &rhs) { return lhs.m_uuid < rhs.m_uuid; }
+    inline constexpr bool operator<(const NamedUUID &other) const { return m_uuid < other.m_uuid; }
 
-    friend inline bool operator==(const NamedUUID &lhs, const NamedUUID &rhs) { return lhs.m_uuid == rhs.m_uuid; }
+    inline constexpr bool operator==(const NamedUUID &other) const { return m_uuid == other.m_uuid; }
 
-    friend inline bool operator!=(const NamedUUID &lhs, const NamedUUID &rhs) { return lhs.m_uuid != rhs.m_uuid; }
+    inline constexpr bool operator!=(const NamedUUID &other) const { return m_uuid != other.m_uuid; }
 
     friend void swap(NamedUUID &lhs, NamedUUID &rhs) { lhs.m_uuid.swap(rhs.m_uuid); }
 
