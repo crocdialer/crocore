@@ -34,15 +34,15 @@ public:
 
     inline fixed_size_free_list &operator=(fixed_size_free_list other);
 
-    //! lockless construct a new object, inParameters are passed on to the constructor
+    //! lockless construct a new object, parameters are passed on to the constructor
     template<typename... Parameters>
-    inline uint32_t create(Parameters &&...inParameters);
+    inline uint32_t create(Parameters &&...parameters);
 
     //! lockless destruct an object and return it to the free pool
-    inline void destroy(uint32_t inObjectIndex);
+    inline void destroy(uint32_t object_index);
 
     //! lockless destruct an object and return it to the free pool
-    inline void destroy(T *inObject);
+    inline void destroy(T *object);
 
     /// A batch of objects that can be destructed
     struct batch_t
@@ -61,10 +61,10 @@ public:
     inline void destroy_batch(batch_t &batch);
 
     //! access an object by index.
-    inline T &get(uint32_t inObjectIndex) { return get_storage(inObjectIndex).object; }
+    inline T &get(uint32_t object_index) { return get_storage(object_index).object; }
 
     //! access an object by index.
-    inline const T &get(uint32_t inObjectIndex) const { return get_storage(inObjectIndex).object; }
+    inline const T &get(uint32_t object_index) const { return get_storage(object_index).object; }
 
     inline void swap(fixed_size_free_list &lhs, fixed_size_free_list &rhs);
 
@@ -79,16 +79,16 @@ private:
         std::atomic<uint32_t> next_free_object;
     };
 
-    static_assert(alignof(storage_t) == alignof(T), "Object not properly aligned");
+    static_assert(alignof(storage_t) == alignof(T), "object not properly aligned");
 
     /// Access the object storage given the object index
-    inline const storage_t &get_storage(uint32_t inObjectIndex) const
+    inline const storage_t &get_storage(uint32_t object_index) const
     {
-        return m_pages[inObjectIndex >> m_page_shift][inObjectIndex & m_object_mask];
+        return m_pages[object_index >> m_page_shift][object_index & m_object_mask];
     }
-    inline storage_t &get_storage(uint32_t inObjectIndex)
+    inline storage_t &get_storage(uint32_t object_index)
     {
-        return m_pages[inObjectIndex >> m_page_shift][inObjectIndex & m_object_mask];
+        return m_pages[object_index >> m_page_shift][object_index & m_object_mask];
     }
 
     //! number of objects currently in the free list / new pages
