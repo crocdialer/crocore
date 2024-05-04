@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include <set>
 #include "crocore/NamedUUID.hpp"
+#include <set>
 
 using namespace crocore;
 
@@ -27,6 +27,24 @@ TEST(NamedUUID, newRandomId)
     ASSERT_NE(a, b);
 }
 
+TEST(NamedUUID, by_name)
+{
+    constexpr auto test_namespace_uuid = uuids::uuid::from_string("47183823-2574-4bfd-b411-99ed177d3e43");
+    ASSERT_TRUE(test_namespace_uuid);
+    TestId a = TestId::from_name("foo");
+    TestId b = TestId::from_name("foo");
+    TestId c = TestId::from_name("foo", *test_namespace_uuid);
+    TestId d = TestId::from_name("bar");
+
+    ASSERT_TRUE(a);
+    ASSERT_TRUE(b);
+    ASSERT_TRUE(c);
+    ASSERT_TRUE(d);
+    ASSERT_EQ(a, b);
+    ASSERT_NE(a, c);
+    ASSERT_NE(a, d);
+}
+
 TEST(NamedUUID, trivialCopyConstruct)
 {
     TestId a;
@@ -47,9 +65,7 @@ TEST(NamedUUID, useInMap)
     TestId a;
     TestId b;
 
-    std::map<TestId, std::string> map = {
-            {a, "a"},
-            {b, "b"}};
+    std::map<TestId, std::string> map = {{a, "a"}, {b, "b"}};
 
     ASSERT_EQ(map[a], "a");
     ASSERT_EQ(map[b], "b");
@@ -61,7 +77,7 @@ TEST(NamedUUID, hashing)
 
     std::hash<TestId> hasher;
     size_t h = hasher(a);
-    (void)h;
+    (void) h;
 }
 
 TEST(NamedUUID, useInUnorderedMap)
@@ -69,9 +85,7 @@ TEST(NamedUUID, useInUnorderedMap)
     TestId a;
     TestId b;
 
-    std::unordered_map<TestId, std::string> map = {
-            {a, "a"},
-            {b, "b"}};
+    std::unordered_map<TestId, std::string> map = {{a, "a"}, {b, "b"}};
 
     ASSERT_EQ(map[a], "a");
     ASSERT_EQ(map[b], "b");

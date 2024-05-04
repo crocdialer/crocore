@@ -52,6 +52,12 @@ public:
 
     static NamedUUID random() { return NamedUUID(generator()()); }
 
+    static NamedUUID from_name(const std::string_view &name, const uuids::uuid &namespace_uuid = {})
+    {
+        uuids::uuid_name_generator name_generator(namespace_uuid);
+        return NamedUUID(name_generator(name));
+    }
+
     NamedUUID() = default;
 
     explicit NamedUUID(const std::string &str)
