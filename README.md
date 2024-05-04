@@ -2,6 +2,7 @@
 
 ![example workflow](https://github.com/crocdialer/crocore/actions/workflows/cmake_build.yml/badge.svg)
 ![example workflow](https://github.com/crocdialer/crocore/actions/workflows/cmake_build_windows.yml/badge.svg)
+![example workflow](https://github.com/crocdialer/crocore/actions/workflows/cmake_build_macos.yml/badge.svg)
 
 crocdialer C++ core library
 
