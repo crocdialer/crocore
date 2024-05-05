@@ -1,5 +1,5 @@
 include_directories(${crocore_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${LIB_NAME} GTest::gtest_main)
+set(LIBS ${LIB_NAME} GTest::gtest_main)
 
 FILE(GLOB TEST_SOURCES "*.c*")
 FILE(GLOB TEST_HEADERS "*.h")
