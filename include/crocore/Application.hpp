@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <chrono>
 
-#include <crocore/ThreadPool.hpp>
+#include <crocore/ThreadPoolClassic.hpp>
 #include <crocore/precise_sleep.hpp>
 
 namespace crocore
@@ -54,16 +54,16 @@ public:
     /*!
      * this queue is processed by the main thread
      */
-    crocore::ThreadPool &main_queue(){ return m_main_queue; }
+    crocore::ThreadPoolClassic &main_queue(){ return m_main_queue; }
 
-    [[nodiscard]] const crocore::ThreadPool &main_queue() const{ return m_main_queue; }
+    [[nodiscard]] const crocore::ThreadPoolClassic &main_queue() const{ return m_main_queue; }
 
     /*!
     * the background queue is processed by a background threadpool
     */
-    crocore::ThreadPool &background_queue(){ return m_background_queue; }
+    crocore::ThreadPoolClassic &background_queue(){ return m_background_queue; }
 
-    [[nodiscard]] const crocore::ThreadPool &background_queue() const{ return m_background_queue; }
+    [[nodiscard]] const crocore::ThreadPoolClassic &background_queue() const{ return m_background_queue; }
 
 private:
 
@@ -89,7 +89,7 @@ private:
 
     std::vector<std::string> m_args;
 
-    crocore::ThreadPool m_main_queue, m_background_queue;
+    crocore::ThreadPoolClassic m_main_queue, m_background_queue;
 
     crocore::precise_sleep m_precise_sleep;
 };

@@ -29,6 +29,19 @@ namespace crocore
 #define CROCORE_IF_DEBUG(...)		__VA_ARGS__
 #endif
 
+/**
+ * @brief   wait for completion of all tasks, represented by their futures
+ * @param   tasks   the provided futures to wait for
+ */
+template<typename Collection>
+inline void wait_all(const Collection &futures)
+{
+    for(const auto &f: futures)
+    {
+        if(f.valid()){ f.wait(); }
+    }
+}
+
 template<typename T>
 std::vector<uint8_t> to_bytes(const T &t)
 {
