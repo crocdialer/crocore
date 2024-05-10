@@ -14,10 +14,10 @@
 
 #pragma once
 
-#include <thread>
 #include <deque>
 #include <future>
 #include <mutex>
+#include <thread>
 
 #include "crocore.hpp"
 
@@ -27,6 +27,13 @@ namespace crocore
 class ThreadPoolClassic
 {
 public:
+    enum class Priority : uint32_t
+    {
+        High = 0,
+        Default,
+        NumPriorities
+    };
+
     ThreadPoolClassic() = default;
 
     explicit ThreadPoolClassic(size_t num_threads) { start(num_threads); }
@@ -67,7 +74,7 @@ public:
      * @param   args    optional params to bind to the function object
      * @return  a std::future holding the return value.
      */
-    template<typename Func, typename... Args>
+    template<Priority prio = Priority::Default, typename Func, typename... Args>
     std::future<typename std::invoke_result<Func, Args...>::type> post(Func &&f, Args &&...args)
     {
         using result_t = typename std::invoke_result<Func, Args...>::type;
@@ -78,7 +85,9 @@ public:
 
         {
             std::unique_lock<std::mutex> lock(m_mutex);
-            m_queue.push_back(std::bind(&packaged_task_t::operator(), packed_task));
+            constexpr uint32_t queue_index =
+                    std::min(static_cast<uint32_t>(prio), static_cast<uint32_t>(Priority::Default));
+            m_queues[queue_index].push_back(std::bind(&packaged_task_t::operator(), packed_task));
         }
         m_condition.notify_one();
         return future;
@@ -95,13 +104,17 @@ public:
         if(!m_running && m_threads.empty())
         {
             std::unique_lock<std::mutex> lock(m_mutex);
-            size_t ret = m_queue.size();
+            size_t ret = 0;
 
-            while(!m_queue.empty())
+            for(auto &queue: m_queues)
             {
-                auto task = std::move(m_queue.front());
-                m_queue.pop_front();
-                if(task) { task(); }
+                ret += queue.size();
+                while(!queue.empty())
+                {
+                    auto task = std::move(queue.front());
+                    queue.pop_front();
+                    if(task) { task(); }
+                }
             }
             return ret;
         }
@@ -116,7 +129,7 @@ public:
         {
             std::unique_lock<std::mutex> lock(m_mutex);
             m_running = false;
-            m_queue.clear();
+            for(auto &queue: m_queues) { queue.clear(); }
         }
         m_condition.notify_all();
         m_threads.clear();
@@ -130,7 +143,11 @@ public:
 
         std::swap(lhs.m_running, rhs.m_running);
         std::swap(lhs.m_threads, rhs.m_threads);
-        std::swap(lhs.m_queue, rhs.m_queue);
+
+        for(uint32_t i = 0; i < static_cast<uint32_t>(Priority::NumPriorities); ++i)
+        {
+            std::swap(lhs.m_queues[i], rhs.m_queues[i]);
+        }
     }
 
 private:
@@ -150,15 +167,34 @@ private:
             {
                 {
                     std::unique_lock<std::mutex> lock(m_mutex);
+                    bool all_queues_empty = true;
 
                     // wait for next task
-                    m_condition.wait(lock, [this] { return !m_running || !m_queue.empty(); });
+                    m_condition.wait(lock, [this, &all_queues_empty] {
+                        for(const auto &queue: m_queues)
+                        {
+                            if(!queue.empty())
+                            {
+                                all_queues_empty = false;
+                                break;
+                            }
+                        }
+                        return !m_running || !all_queues_empty;
+                    });
 
                     // exit worker if requested and nothing is left in queue
-                    if(!m_running && m_queue.empty()) { return; }
+                    if(!m_running && all_queues_empty) { return; }
 
-                    task = std::move(m_queue.front());
-                    m_queue.pop_front();
+                    // grab task from highest prio, non-empty queue
+                    for(auto &queue: m_queues)
+                    {
+                        if(!queue.empty())
+                        {
+                            task = std::move(queue.front());
+                            queue.pop_front();
+                            break;
+                        }
+                    }
                 }
 
                 // run task
@@ -173,6 +209,6 @@ private:
 
     std::mutex m_mutex;
     std::condition_variable m_condition;
-    std::deque<task_t> m_queue;
+    std::deque<task_t> m_queues[static_cast<uint32_t>(Priority::NumPriorities)];
 };
 }// namespace crocore
