@@ -49,8 +49,14 @@ endif (BUILD_TESTS)
 # Expose public includes (including Boost transitively) to other
 # subprojects through cache variable.
 set(${PROJECT_NAME}_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/include
-        ${Boost_INCLUDE_DIRS}
         CACHE INTERNAL "${PROJECT_NAME}: Include Directories" FORCE)
 
 set(${PROJECT_NAME}_LIBRARIES ${PROJECT_NAME}
         CACHE INTERNAL "${PROJECT_NAME}: Libraries" FORCE)
+
+# install section
+FILE(GLOB FOLDER_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/${LIB_NAME}/*.h*)
+install (FILES ${FOLDER_HEADERS} DESTINATION "include/${LIB_NAME}")
+FILE(GLOB FOLDER_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/nlohmann/*.h*)
+install (FILES ${FOLDER_HEADERS} DESTINATION "include/nlohmann")
+install (TARGETS ${LIB_NAME} DESTINATION lib)
