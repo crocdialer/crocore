@@ -13,7 +13,7 @@ SET(LIB_NAME ${PROJECT_NAME})
 
 if (BUILD_SHARED_LIBS)
     set(LIB_TYPE SHARED)
-else()
+else ()
     set(LIB_TYPE STATIC)
 endif (BUILD_SHARED_LIBS)
 
@@ -31,11 +31,11 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 # add library-target
 add_subdirectory("src")
 
-if(MSVC)
+if (MSVC)
     target_compile_options(${LIB_NAME} PRIVATE /W4 /WX)
-else()
+else ()
     target_compile_options(${LIB_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
-endif()
+endif ()
 
 if (BUILD_TESTS)
     ##### gtest
@@ -55,8 +55,9 @@ set(${PROJECT_NAME}_LIBRARIES ${PROJECT_NAME}
         CACHE INTERNAL "${PROJECT_NAME}: Libraries" FORCE)
 
 # install section
-FILE(GLOB FOLDER_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/${LIB_NAME}/*.h*)
-install (FILES ${FOLDER_HEADERS} DESTINATION "include/${LIB_NAME}")
+FILE(GLOB FOLDER_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/${LIB_NAME}/*.h*
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/${LIB_NAME}/*.inl)
+install(FILES ${FOLDER_HEADERS} DESTINATION "include/${LIB_NAME}")
 FILE(GLOB FOLDER_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/nlohmann/*.h*)
-install (FILES ${FOLDER_HEADERS} DESTINATION "include/nlohmann")
-install (TARGETS ${LIB_NAME} DESTINATION lib)
+install(FILES ${FOLDER_HEADERS} DESTINATION "include/nlohmann")
+install(TARGETS ${LIB_NAME} DESTINATION lib)
