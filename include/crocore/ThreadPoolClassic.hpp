@@ -132,6 +132,11 @@ public:
             for(auto &queue: m_queues) { queue.clear(); }
         }
         m_condition.notify_all();
+
+        for(auto &thread: m_threads)
+        {
+            if(thread.joinable()) { thread.join(); }
+        }
         m_threads.clear();
     }
 
@@ -201,11 +206,11 @@ private:
                 if(task) { task(); }
             }
         };
-        for(auto &thread: m_threads) { thread = std::jthread(worker_fn); }
+        for(auto &thread: m_threads) { thread = std::thread(worker_fn); }
     }
 
     bool m_running = false;
-    std::vector<std::jthread> m_threads;
+    std::vector<std::thread> m_threads;
 
     std::mutex m_mutex;
     std::condition_variable m_condition;
