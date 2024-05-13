@@ -111,6 +111,10 @@ public:
         // signal threads that we want to stop and wake them up
         m_running = false;
         m_semaphore.release((int32_t) m_threads.size());
+        for(auto &thread: m_threads)
+        {
+            if(thread.joinable()) { thread.join(); }
+        }
         m_threads.clear();
 
         // poll remaining tasks
@@ -167,7 +171,7 @@ private:
 
         for(uint32_t i = 0; i < num_threads; ++i)
         {
-            m_threads[i] = std::jthread([worker_fn, i] { worker_fn(i); });
+            m_threads[i] = std::thread([worker_fn, i] { worker_fn(i); });
         }
     }
 
@@ -251,7 +255,7 @@ private:
 
     // semaphore used to signal worker threads
     std::counting_semaphore<32> m_semaphore{0};
-    std::vector<std::jthread> m_threads;
+    std::vector<std::thread> m_threads;
     std::atomic<bool> m_running = false;
 };
 
