@@ -39,7 +39,6 @@ endif()
 
 if (BUILD_TESTS)
     ##### gtest
-    set(gtest_force_shared_crt on)# this bs is only required for viusal studio
     add_subdirectory(submodules/googletest EXCLUDE_FROM_ALL)
 
     enable_testing()
