@@ -3,6 +3,7 @@
 //
 #pragma once
 
+#include <algorithm>
 #include <atomic>
 
 namespace crocore
@@ -41,7 +42,7 @@ public:
     friend void swap(NamedId &lhs, NamedId &rhs) { std::swap(lhs.m_id, rhs.m_id); }
 
 private:
-    explicit NamedId(uint64_t id) : m_id(id){};
+    explicit NamedId(uint64_t id) : m_id(id) {};
     static std::atomic<uint64_t> s_next_id;
     uint64_t m_id = ++s_next_id;
 };
