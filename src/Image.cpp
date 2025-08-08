@@ -104,22 +104,22 @@ void copy_image(const typename Image_<T>::Ptr &src_mat, typename Image_<T>::Ptr 
 
 bool save_image_to_file(const ImagePtr &the_img, const std::string &the_path)
 {
-    return fs::write_file(the_path, encode_png(the_img));
+    return fs::write_file(the_path, encode_png(*the_img));
 }
 
-std::vector<uint8_t> encode_png(const ImagePtr &img)
+std::vector<uint8_t> encode_png(const Image &img)
 {
     auto ret = std::vector<uint8_t>();
-    stbi_write_png_to_func(&stbi_write_func, &ret, static_cast<int>(img->width()), static_cast<int>(img->height()),
-                           static_cast<int>(img->num_components()), img->data(), 0);
+    stbi_write_png_to_func(&stbi_write_func, &ret, static_cast<int>(img.width()), static_cast<int>(img.height()),
+                           static_cast<int>(img.num_components()), img.data(), 0);
     return ret;
 }
 
-std::vector<uint8_t> encode_jpg(const ImagePtr &img)
+std::vector<uint8_t> encode_jpg(const Image &img)
 {
     auto ret = std::vector<uint8_t>();
-    stbi_write_jpg_to_func(&stbi_write_func, &ret, static_cast<int>(img->width()), static_cast<int>(img->height()),
-                           static_cast<int>(img->num_components()), img->data(), 83);
+    stbi_write_jpg_to_func(&stbi_write_func, &ret, static_cast<int>(img.width()), static_cast<int>(img.height()),
+                           static_cast<int>(img.num_components()), img.data(), 83);
     return ret;
 }
 

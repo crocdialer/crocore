@@ -31,7 +31,7 @@ public:
 
     [[nodiscard]] virtual uint32_t num_components() const = 0;
 
-    virtual void *data() = 0;
+    virtual const void *data() const = 0;
 
     [[nodiscard]] virtual size_t num_bytes() const = 0;
 
@@ -90,9 +90,15 @@ public:
 
     [[nodiscard]] inline uint32_t height() const override { return m_height; };
 
-    inline void *data() override { return (void *) m_data; };
+    inline const void *data() const override { return (const void *) m_data; };
 
     [[nodiscard]] inline uint32_t num_components() const override { return m_num_components; };
+
+    Image_() = default;
+
+    Image_(T *data, uint32_t width, uint32_t height, uint32_t the_num_components, bool not_dispose);
+
+    Image_(uint32_t width, uint32_t height, uint32_t num_components);
 
     Image_(const Image_ &the_other) = delete;
 
@@ -106,12 +112,6 @@ public:
     friend void swap(Image_<S> &lhs, Image_<S> &rhs);
 
 private:
-    Image_() = default;
-
-    Image_(T *data, uint32_t width, uint32_t height, uint32_t the_num_components, bool not_dispose);
-
-    Image_(uint32_t width, uint32_t height, uint32_t num_components);
-
     T *m_data = nullptr;
     uint32_t m_width = 0, m_height = 0;
     uint32_t m_num_components = 1;
@@ -135,9 +135,9 @@ void copy_image(const typename Image_<T>::Ptr &src_img, typename Image_<T>::Ptr 
 
 bool save_image_to_file(const ImagePtr &the_img, const std::string &the_path);
 
-std::vector<uint8_t> encode_png(const ImagePtr &img);
+std::vector<uint8_t> encode_png(const Image &img);
 
-std::vector<uint8_t> encode_jpg(const ImagePtr &img);
+std::vector<uint8_t> encode_jpg(const Image &img);
 
 ImagePtr compute_distance_field(const ImagePtr &the_img, float spread);
 }// namespace crocore
