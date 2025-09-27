@@ -15,6 +15,15 @@ TEST(NamedUUID, nilId)
     ASSERT_TRUE(!nil);
 }
 
+TEST(NamedUUID, string_conversion)
+{
+  TestId id1;
+  ASSERT_TRUE(id1);
+
+  TestId id2 = TestId::from_string(id1.str());
+  ASSERT_TRUE(id1 == id2);
+}
+
 TEST(NamedUUID, newRandomId)
 {
     TestId a;
