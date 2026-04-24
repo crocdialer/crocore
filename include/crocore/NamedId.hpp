@@ -3,7 +3,7 @@
 //
 #pragma once
 
-#include <algorithm>
+#include <functional>
 #include <atomic>
 
 namespace crocore
