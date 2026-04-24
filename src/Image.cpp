@@ -4,12 +4,12 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_STDIO
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstringop-overflow"
 #endif
 #include "stb_image.h"
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
 
