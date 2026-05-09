@@ -166,15 +166,17 @@ void fixed_size_free_list<T>::destroy_batch(batch_t &batch)
         if constexpr(!std::is_trivially_destructible<T>())
         {
             uint32_t object_idx = batch.m_first_object_index;
-            do {
+            for(uint32_t i = 0; i < batch.m_num_objects; ++i)
+            {
                 storage_t &storage = get_storage(object_idx);
-                storage.object.~Object();
-                object_idx = storage.next_free_object.load(std::memory_order_relaxed);
-            } while(object_idx != s_invalid_index);
+                uint32_t next = storage.next_free_object.load(std::memory_order_relaxed);
+                storage.object.~T();
+                object_idx = next;
+            }
         }
 
         // add to objects free list
-        storage_t &storage = GetStorage(batch.m_last_object_index);
+        storage_t &storage = get_storage(batch.m_last_object_index);
         for(;;)
         {
             // get first object from the list
@@ -186,7 +188,7 @@ void fixed_size_free_list<T>::destroy_batch(batch_t &batch)
 
             // construct a new first free object tag
             uint64_t new_first_free_object_and_tag =
-                    uint64(batch.m_first_object_index) +
+                    uint64_t(batch.m_first_object_index) +
                     (uint64_t(m_allocation_tag.fetch_add(1, std::memory_order_relaxed)) << 32);
 
             // compare and swap
